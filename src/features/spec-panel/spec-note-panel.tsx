@@ -1,5 +1,6 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { addCommentReply, addCommentThread, buildCommentTree, loadSpecNote, saveSpecNote } from "./store";
+import type { OrchestratorSpecDraft } from "../../shared/state";
 import type { SpecCommentTreeNode, SpecNoteDocument } from "./types";
 
 type SpecNotePanelProps = {
@@ -7,6 +8,8 @@ type SpecNotePanelProps = {
   autosaveDelayMs?: number;
   now?: () => string;
   makeId?: () => string;
+  draftArtifact?: OrchestratorSpecDraft;
+  onApplyDraftResult?: (runId: string, status: "applied" | "failed", message?: string) => void;
 };
 
 type ReplyDraft = {
@@ -19,9 +22,17 @@ const EMPTY_REPLY_DRAFT: ReplyDraft = {
   body: ""
 };
 
-export function SpecNotePanel({ storage, autosaveDelayMs = 350, now, makeId }: SpecNotePanelProps) {
+export function SpecNotePanel({
+  storage,
+  autosaveDelayMs = 350,
+  now,
+  makeId,
+  draftArtifact,
+  onApplyDraftResult
+}: SpecNotePanelProps) {
   const [note, setNote] = useState<SpecNoteDocument>(() => loadSpecNote(storage));
   const [autosaveStatus, setAutosaveStatus] = useState("Saved");
+  const [draftApplyStatus, setDraftApplyStatus] = useState<string | null>(null);
   const [threadAnchor, setThreadAnchor] = useState("## Goal");
   const [threadAuthor, setThreadAuthor] = useState("you");
   const [threadBody, setThreadBody] = useState("");
@@ -53,6 +64,10 @@ export function SpecNotePanel({ storage, autosaveDelayMs = 350, now, makeId }: S
       saveSpecNote(storage, noteRef.current);
     };
   }, [storage]);
+
+  useEffect(() => {
+    setDraftApplyStatus(null);
+  }, [draftArtifact?.runId]);
 
   const totalComments = useMemo(() => {
     return note.threads.reduce((sum, thread) => sum + thread.comments.length, 0);
@@ -103,7 +118,31 @@ export function SpecNotePanel({ storage, autosaveDelayMs = 350, now, makeId }: S
     }));
   };
 
-  const renderCommentTree = (threadId: string, nodes: SpecCommentTreeNode[]): JSX.Element => {
+  const applyDraft = () => {
+    if (!draftArtifact) {
+      return;
+    }
+
+    const updatedAt = now ? now() : new Date().toISOString();
+    const nextDocument: SpecNoteDocument = {
+      ...note,
+      content: draftArtifact.content,
+      updatedAt
+    };
+
+    try {
+      const saved = saveSpecNote(storage, nextDocument);
+      setNote(saved);
+      setAutosaveStatus("Saved");
+      setDraftApplyStatus(`Applied draft from run ${draftArtifact.runId}.`);
+      onApplyDraftResult?.(draftArtifact.runId, "applied");
+    } catch {
+      setDraftApplyStatus(`Failed to apply draft from run ${draftArtifact.runId}.`);
+      onApplyDraftResult?.(draftArtifact.runId, "failed", "Spec draft apply failed.");
+    }
+  };
+
+  const renderCommentTree = (threadId: string, nodes: SpecCommentTreeNode[]): ReactElement => {
     return (
       <ul className="spec-comments__tree">
         {nodes.map((node) => {
@@ -182,6 +221,20 @@ export function SpecNotePanel({ storage, autosaveDelayMs = 350, now, makeId }: S
         <span>{note.threads.length} thread(s)</span>
         <span>{totalComments} comment(s)</span>
       </div>
+
+      {draftArtifact ? (
+        <section className="info-card">
+          <h3>Orchestrator Draft</h3>
+          <p>Run {draftArtifact.runId}</p>
+          <p>Generated at {new Date(draftArtifact.generatedAt).toLocaleString()}</p>
+          <div className="space-create__actions">
+            <button type="button" className="pill-button" onClick={applyDraft}>
+              Apply Draft to Spec
+            </button>
+          </div>
+          {draftApplyStatus ? <p>{draftApplyStatus}</p> : null}
+        </section>
+      ) : null}
 
       <label className="spec-panel__editor" htmlFor="spec-content">
         Spec Markdown

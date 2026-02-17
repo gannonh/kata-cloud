@@ -4,7 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 import { SpecNotePanel } from "./spec-note-panel";
 import { SPEC_NOTE_STORAGE_KEY } from "./store";
 
-function createMemoryStorage(seed?: Record<string, string>): Storage {
+function createMemoryStorage(
+  seed?: Record<string, string>,
+  shouldFailWrite?: () => boolean
+): Storage {
   const memory = new Map<string, string>(seed ? Object.entries(seed) : []);
   return {
     clear() {
@@ -20,6 +23,9 @@ function createMemoryStorage(seed?: Record<string, string>): Storage {
       memory.delete(key);
     },
     setItem(key: string, value: string) {
+      if (shouldFailWrite?.()) {
+        throw new Error("storage write failed");
+      }
       memory.set(key, value);
     },
     get length() {
@@ -108,5 +114,62 @@ describe("SpecNotePanel", () => {
 
     expect(screen.getByLabelText("Spec Markdown")).toHaveValue("## Seeded");
     expect(screen.getByText("Restored")).toBeInTheDocument();
+  });
+
+  it("applies orchestrator draft content through the existing spec save pathway", () => {
+    const storage = createMemoryStorage();
+    const onApplyDraftResult = vi.fn();
+
+    render(
+      <SpecNotePanel
+        storage={storage}
+        autosaveDelayMs={10}
+        draftArtifact={{
+          runId: "run-123",
+          generatedAt: "2026-02-16T00:00:00.000Z",
+          content: "## Goal\nGenerated draft"
+        }}
+        onApplyDraftResult={onApplyDraftResult}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Apply Draft to Spec" }));
+
+    expect(screen.getByLabelText("Spec Markdown")).toHaveValue("## Goal\nGenerated draft");
+    expect(storage.getItem(SPEC_NOTE_STORAGE_KEY)).toContain("Generated draft");
+    expect(onApplyDraftResult).toHaveBeenCalledWith("run-123", "applied");
+  });
+
+  it("surfaces draft-apply failures and keeps current spec content unchanged", () => {
+    let failWrites = false;
+    const storage = createMemoryStorage(undefined, () => failWrites);
+    const onApplyDraftResult = vi.fn();
+
+    render(
+      <SpecNotePanel
+        storage={storage}
+        autosaveDelayMs={10}
+        onApplyDraftResult={onApplyDraftResult}
+        draftArtifact={{
+          runId: "run-999",
+          generatedAt: "2026-02-16T00:00:00.000Z",
+          content: "## Goal\nShould not persist"
+        }}
+      />
+    );
+
+    const editor = screen.getByLabelText("Spec Markdown");
+    fireEvent.change(editor, { target: { value: "## Goal\nKeep this content" } });
+    failWrites = true;
+    fireEvent.click(screen.getByRole("button", { name: "Apply Draft to Spec" }));
+    failWrites = false;
+
+    expect(screen.getByText("Failed to apply draft from run run-999.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Spec Markdown")).toHaveValue("## Goal\nKeep this content");
+    expect(onApplyDraftResult).toHaveBeenCalledWith(
+      "run-999",
+      "failed",
+      "Spec draft apply failed."
+    );
   });
 });

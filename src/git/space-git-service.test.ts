@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { GitCli } from "./git-cli";
 import { SpaceGitLifecycleService } from "./space-git-service";
 import {
   createSpaceGitRequest,
@@ -20,7 +21,7 @@ function createFakeGit(
     switchBranch: (worktreePath: string, branchName: string) => Promise<void>;
     currentBranch: (worktreePath: string) => Promise<string>;
   }> = {}
-) {
+) : GitCli {
   return {
     async isRepository() {
       return true;
@@ -41,7 +42,7 @@ function createFakeGit(
       return "kata-space/feature-1234";
     },
     ...overrides
-  };
+  } as unknown as GitCli;
 }
 
 function createBaseRequest(): SpaceGitLifecycleRequest {

@@ -6,6 +6,34 @@ import {
 export const APP_STATE_VERSION = 1;
 
 export type NavigationView = "explorer" | "orchestrator" | "spec" | "changes";
+export type OrchestratorRunStatus = "queued" | "running" | "completed" | "failed";
+export type OrchestratorTaskType = "implement" | "verify" | "debug";
+export type OrchestratorTaskStatus =
+  | "queued"
+  | "delegating"
+  | "delegated"
+  | "running"
+  | "completed"
+  | "failed";
+
+export interface OrchestratorSpecDraft {
+  runId: string;
+  generatedAt: string;
+  content: string;
+}
+
+export interface OrchestratorDelegatedTaskRecord {
+  id: string;
+  runId: string;
+  type: OrchestratorTaskType;
+  specialist: string;
+  status: OrchestratorTaskStatus;
+  statusTimeline: OrchestratorTaskStatus[];
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  errorMessage?: string;
+}
 
 export interface SpaceRecord {
   id: string;
@@ -27,6 +55,23 @@ export interface SessionRecord {
   updatedAt: string;
 }
 
+export interface OrchestratorRunRecord {
+  id: string;
+  spaceId: string;
+  sessionId: string;
+  prompt: string;
+  status: OrchestratorRunStatus;
+  statusTimeline: OrchestratorRunStatus[];
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  errorMessage?: string;
+  draft?: OrchestratorSpecDraft;
+  draftAppliedAt?: string;
+  draftApplyError?: string;
+  delegatedTasks?: OrchestratorDelegatedTaskRecord[];
+}
+
 export interface AppState {
   version: number;
   activeView: NavigationView;
@@ -34,6 +79,7 @@ export interface AppState {
   activeSessionId: string;
   spaces: SpaceRecord[];
   sessions: SessionRecord[];
+  orchestratorRuns: OrchestratorRunRecord[];
   lastOpenedAt: string;
 }
 
@@ -51,6 +97,57 @@ function isStringArray(value: unknown): value is string[] {
 
 function isNavigationView(value: unknown): value is NavigationView {
   return value === "explorer" || value === "orchestrator" || value === "spec" || value === "changes";
+}
+
+function isOrchestratorRunStatus(value: unknown): value is OrchestratorRunStatus {
+  return value === "queued" || value === "running" || value === "completed" || value === "failed";
+}
+
+function isOrchestratorTaskType(value: unknown): value is OrchestratorTaskType {
+  return value === "implement" || value === "verify" || value === "debug";
+}
+
+function isOrchestratorTaskStatus(value: unknown): value is OrchestratorTaskStatus {
+  return (
+    value === "queued" ||
+    value === "delegating" ||
+    value === "delegated" ||
+    value === "running" ||
+    value === "completed" ||
+    value === "failed"
+  );
+}
+
+function isOrchestratorSpecDraft(value: unknown): value is OrchestratorSpecDraft {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  return isString(value.runId) && isString(value.generatedAt) && typeof value.content === "string";
+}
+
+function isOrchestratorDelegatedTaskRecord(value: unknown): value is OrchestratorDelegatedTaskRecord {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  const completedAtIsValid = value.completedAt === undefined || isString(value.completedAt);
+  const errorMessageIsValid = value.errorMessage === undefined || isString(value.errorMessage);
+
+  return (
+    isString(value.id) &&
+    isString(value.runId) &&
+    isOrchestratorTaskType(value.type) &&
+    isString(value.specialist) &&
+    isOrchestratorTaskStatus(value.status) &&
+    Array.isArray(value.statusTimeline) &&
+    value.statusTimeline.length > 0 &&
+    value.statusTimeline.every(isOrchestratorTaskStatus) &&
+    isString(value.createdAt) &&
+    isString(value.updatedAt) &&
+    completedAtIsValid &&
+    errorMessageIsValid
+  );
 }
 
 function isSpaceRecord(value: unknown): value is SpaceRecord {
@@ -90,6 +187,41 @@ function isSessionRecord(value: unknown): value is SessionRecord {
   );
 }
 
+function isOrchestratorRunRecord(value: unknown): value is OrchestratorRunRecord {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  const completedAtIsValid = value.completedAt === undefined || isString(value.completedAt);
+  const errorMessageIsValid = value.errorMessage === undefined || isString(value.errorMessage);
+  const draftIsValid = value.draft === undefined || isOrchestratorSpecDraft(value.draft);
+  const draftAppliedAtIsValid = value.draftAppliedAt === undefined || isString(value.draftAppliedAt);
+  const draftApplyErrorIsValid = value.draftApplyError === undefined || isString(value.draftApplyError);
+  const delegatedTasksAreValid =
+    value.delegatedTasks === undefined ||
+    (Array.isArray(value.delegatedTasks) &&
+      value.delegatedTasks.every(isOrchestratorDelegatedTaskRecord));
+
+  return (
+    isString(value.id) &&
+    isString(value.spaceId) &&
+    isString(value.sessionId) &&
+    typeof value.prompt === "string" &&
+    isOrchestratorRunStatus(value.status) &&
+    Array.isArray(value.statusTimeline) &&
+    value.statusTimeline.length > 0 &&
+    value.statusTimeline.every(isOrchestratorRunStatus) &&
+    isString(value.createdAt) &&
+    isString(value.updatedAt) &&
+    completedAtIsValid &&
+    errorMessageIsValid &&
+    draftIsValid &&
+    draftAppliedAtIsValid &&
+    draftApplyErrorIsValid &&
+    delegatedTasksAreValid
+  );
+}
+
 export function createInitialAppState(nowIso = new Date().toISOString()): AppState {
   const starterSpaceId = "space-getting-started";
   const starterSessionId = "session-getting-started";
@@ -119,6 +251,7 @@ export function createInitialAppState(nowIso = new Date().toISOString()): AppSta
         updatedAt: nowIso
       }
     ],
+    orchestratorRuns: [],
     lastOpenedAt: nowIso
   };
 }
@@ -138,6 +271,12 @@ export function normalizeAppState(input: unknown): AppState {
   const linkedSessions = sessions.filter((session) => allowedSpaceIds.has(session.spaceId));
   const usableSessions = linkedSessions.length > 0 ? linkedSessions : fallback.sessions;
   const allowedSessionIds = new Set(usableSessions.map((session) => session.id));
+  const orchestratorRuns = Array.isArray(input.orchestratorRuns)
+    ? input.orchestratorRuns.filter(isOrchestratorRunRecord)
+    : [];
+  const linkedOrchestratorRuns = orchestratorRuns.filter(
+    (run) => allowedSpaceIds.has(run.spaceId) && allowedSessionIds.has(run.sessionId)
+  );
 
   const activeSpaceId = isString(input.activeSpaceId) && allowedSpaceIds.has(input.activeSpaceId)
     ? input.activeSpaceId
@@ -154,6 +293,7 @@ export function normalizeAppState(input: unknown): AppState {
     activeSessionId,
     spaces: usableSpaces,
     sessions: usableSessions,
+    orchestratorRuns: linkedOrchestratorRuns,
     lastOpenedAt: isString(input.lastOpenedAt) ? input.lastOpenedAt : fallback.lastOpenedAt
   };
 }

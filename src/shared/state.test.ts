@@ -1,0 +1,244 @@
+import { describe, expect, it } from "vitest";
+import {
+  APP_STATE_VERSION,
+  createInitialAppState,
+  normalizeAppState
+} from "./state";
+
+describe("shared state helpers", () => {
+  it("creates deterministic initial app state", () => {
+    const now = "2026-02-16T00:00:00.000Z";
+    const state = createInitialAppState(now);
+
+    expect(state.version).toBe(APP_STATE_VERSION);
+    expect(state.activeView).toBe("orchestrator");
+    expect(state.activeSpaceId).toBe("space-getting-started");
+    expect(state.activeSessionId).toBe("session-getting-started");
+    expect(state.lastOpenedAt).toBe(now);
+    expect(state.spaces).toHaveLength(1);
+    expect(state.sessions).toHaveLength(1);
+    expect(state.orchestratorRuns).toHaveLength(0);
+    expect(state.spaces[0]?.createdAt).toBe(now);
+    expect(state.sessions[0]?.createdAt).toBe(now);
+  });
+
+  it("returns fallback state for non-object input", () => {
+    const state = normalizeAppState(null);
+
+    expect(state.version).toBe(APP_STATE_VERSION);
+    expect(state.activeView).toBe("orchestrator");
+    expect(state.spaces).toHaveLength(1);
+    expect(state.sessions).toHaveLength(1);
+    expect(state.orchestratorRuns).toHaveLength(0);
+    expect(state.activeSpaceId).toBe(state.spaces[0]?.id);
+    expect(state.activeSessionId).toBe(state.sessions[0]?.id);
+  });
+
+  it("normalizes records and filters invalid spaces and sessions", () => {
+    const validSpace = {
+      id: "space-1",
+      name: "Space 1",
+      rootPath: "/tmp/space-1",
+      description: "desc",
+      tags: ["one", "two"],
+      repoUrl: "https://github.com/example/repo",
+      gitStatus: {
+        spaceId: "space-1",
+        repoPath: "/tmp/space-1",
+        branchName: "kata-space/space-1",
+        worktreePath: "/tmp/space-1-worktrees/space-1",
+        phase: "ready",
+        message: "ready",
+        remediation: null,
+        updatedAt: "2026-02-16T00:00:00.000Z"
+      },
+      createdAt: "2026-02-16T00:00:00.000Z",
+      updatedAt: "2026-02-16T00:00:00.000Z"
+    };
+
+    const state = normalizeAppState({
+      activeView: "changes",
+      activeSpaceId: "space-1",
+      activeSessionId: "session-1",
+      lastOpenedAt: "2026-02-16T00:00:00.000Z",
+      spaces: [
+        validSpace,
+        {
+          id: "",
+          name: "bad",
+          rootPath: "/tmp/bad",
+          description: "bad",
+          tags: ["bad"],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        },
+        {
+          id: "space-2",
+          name: "Space 2",
+          rootPath: "/tmp/space-2",
+          description: "desc",
+          tags: ["ok"],
+          gitStatus: {
+            phase: "unknown"
+          },
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        }
+      ],
+      sessions: [
+        {
+          id: "session-1",
+          spaceId: "space-1",
+          label: "linked",
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        },
+        {
+          id: "session-2",
+          spaceId: "missing-space",
+          label: "orphan",
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        },
+        {
+          id: "",
+          spaceId: "space-1",
+          label: "invalid",
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        }
+      ],
+      orchestratorRuns: [
+        {
+          id: "run-1",
+          spaceId: "space-1",
+          sessionId: "session-1",
+          prompt: "Draft a rollout plan",
+          status: "completed",
+          statusTimeline: ["queued", "running", "completed"],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z",
+          completedAt: "2026-02-16T00:00:00.000Z",
+          delegatedTasks: [
+            {
+              id: "run-1-implement",
+              runId: "run-1",
+              type: "implement",
+              specialist: "implementor",
+              status: "completed",
+              statusTimeline: ["queued", "delegating", "delegated", "running", "completed"],
+              createdAt: "2026-02-16T00:00:00.000Z",
+              updatedAt: "2026-02-16T00:00:00.000Z",
+              completedAt: "2026-02-16T00:00:00.000Z"
+            }
+          ]
+        },
+        {
+          id: "run-2",
+          spaceId: "missing-space",
+          sessionId: "session-1",
+          prompt: "orphan",
+          status: "queued",
+          statusTimeline: ["queued"],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        },
+        {
+          id: "run-3",
+          spaceId: "space-1",
+          sessionId: "session-1",
+          prompt: "invalid",
+          status: "completed",
+          statusTimeline: [],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        },
+        {
+          id: "run-4",
+          spaceId: "space-1",
+          sessionId: "session-1",
+          prompt: "invalid delegated task",
+          status: "completed",
+          statusTimeline: ["queued", "running", "completed"],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z",
+          delegatedTasks: [
+            {
+              id: "run-4-plan",
+              runId: "run-4",
+              type: "plan",
+              specialist: "planner",
+              status: "completed",
+              statusTimeline: ["queued", "completed"],
+              createdAt: "2026-02-16T00:00:00.000Z",
+              updatedAt: "2026-02-16T00:00:00.000Z"
+            }
+          ]
+        }
+      ]
+    });
+
+    expect(state.activeView).toBe("changes");
+    expect(state.activeSpaceId).toBe("space-1");
+    expect(state.activeSessionId).toBe("session-1");
+    expect(state.lastOpenedAt).toBe("2026-02-16T00:00:00.000Z");
+    expect(state.spaces).toHaveLength(1);
+    expect(state.sessions).toHaveLength(1);
+    expect(state.orchestratorRuns).toHaveLength(1);
+    expect(state.spaces[0]?.id).toBe("space-1");
+    expect(state.sessions[0]?.id).toBe("session-1");
+    expect(state.orchestratorRuns[0]?.id).toBe("run-1");
+    expect(state.orchestratorRuns[0]?.delegatedTasks).toHaveLength(1);
+    expect(state.orchestratorRuns[0]?.delegatedTasks?.[0]?.specialist).toBe("implementor");
+  });
+
+  it("falls back when active ids and view are invalid", () => {
+    const state = normalizeAppState({
+      activeView: "invalid",
+      activeSpaceId: "missing-space",
+      activeSessionId: "missing-session",
+      lastOpenedAt: "",
+      spaces: [
+        {
+          id: "space-a",
+          name: "Space A",
+          rootPath: "/tmp/space-a",
+          description: "A",
+          tags: [],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        },
+        {
+          id: "space-b",
+          name: "Space B",
+          rootPath: "/tmp/space-b",
+          description: "B",
+          tags: [],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        }
+      ],
+      sessions: [
+        {
+          id: "session-b",
+          spaceId: "space-b",
+          label: "B",
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        },
+        {
+          id: "session-a",
+          spaceId: "space-a",
+          label: "A",
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        }
+      ]
+    });
+
+    expect(state.activeView).toBe("orchestrator");
+    expect(state.activeSpaceId).toBe("space-a");
+    expect(state.activeSessionId).toBe("session-a");
+    expect(state.lastOpenedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+});

@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
-import { SpaceGitLifecycleService } from "./space-git-service.ts";
-import { createSpaceGitRequest } from "./types.ts";
+import { test } from "vitest";
+import type { GitCli } from "./git-cli";
+import { SpaceGitLifecycleService } from "./space-git-service";
+import { createSpaceGitRequest } from "./types";
 
-function createFakeGit(overrides = {}) {
+function createFakeGit(overrides = {}): GitCli {
   return {
     async isRepository() {
       return true;
@@ -24,7 +25,7 @@ function createFakeGit(overrides = {}) {
       return "kata-space/feature-space1";
     },
     ...overrides
-  };
+  } as unknown as GitCli;
 }
 
 function createRequest() {

@@ -8,9 +8,13 @@ import {
 } from "./git/types";
 import { toSpaceGitUiState } from "./git/space-git-ui-state";
 import { SpecNotePanel } from "./notes/spec-note-panel";
+import { buildDelegatedTaskTimeline } from "./shared/orchestrator-delegation";
 import {
   AppState,
   NavigationView,
+  OrchestratorRunRecord,
+  OrchestratorSpecDraft,
+  OrchestratorRunStatus,
   SessionRecord,
   SpaceRecord,
   createInitialAppState,
@@ -24,6 +28,7 @@ import {
   validateCreateSpaceInput
 } from "./space/validation";
 import "./styles.css";
+import { resolveRunFailure } from "./shared/orchestrator-failure";
 
 const appRoot = document.getElementById("app");
 
@@ -75,6 +80,35 @@ function createSessionLabel(existingCount: number): string {
   return `Session ${existingCount + 1}`;
 }
 
+function createOrchestratorRunId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `run-${crypto.randomUUID()}`;
+  }
+
+  return `run-${Date.now()}`;
+}
+
+function appendRunStatus(run: OrchestratorRunRecord, status: OrchestratorRunStatus): OrchestratorRunRecord {
+  const timeline = run.statusTimeline.includes(status) ? run.statusTimeline : [...run.statusTimeline, status];
+  return {
+    ...run,
+    status,
+    statusTimeline: timeline
+  };
+}
+
+function createSpecDraft(run: OrchestratorRunRecord, generatedAt: string): OrchestratorSpecDraft {
+  const prompt = run.prompt.trim();
+  const summary = prompt.length > 0 ? prompt : "Describe the project outcome.";
+  const defaultTask = suggestSpaceNameFromPrompt(prompt).replace(/-/g, " ").trim() || "define implementation milestones";
+
+  return {
+    runId: run.id,
+    generatedAt,
+    content: `## Goal\n${summary}\n\n## Tasks\n- [ ] ${defaultTask}\n\n## Acceptance Criteria\n1. Define measurable completion criteria.\n\n## Verification Plan\n1. Run targeted tests.\n2. Run desktop typecheck.`
+  };
+}
+
 type CreateSpaceDraft = {
   name: string;
   path: string;
@@ -113,7 +147,7 @@ function toSpaceMetadata(space: SpaceRecord): SpaceMetadata {
   };
 }
 
-function App(): JSX.Element {
+function App(): React.JSX.Element {
   const [state, setState] = useState<AppState>(() => createInitialAppState());
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -301,6 +335,18 @@ function App(): JSX.Element {
     () => state.sessions.find((session) => session.id === state.activeSessionId),
     [state.activeSessionId, state.sessions]
   );
+  const runsForActiveSession = useMemo(
+    () =>
+      state.orchestratorRuns.filter(
+        (run) => run.spaceId === state.activeSpaceId && run.sessionId === state.activeSessionId
+      ),
+    [state.activeSessionId, state.activeSpaceId, state.orchestratorRuns]
+  );
+  const latestRunForActiveSession = useMemo(
+    () => runsForActiveSession[runsForActiveSession.length - 1],
+    [runsForActiveSession]
+  );
+  const latestDraftForActiveSession = latestRunForActiveSession?.draft;
 
   const sessionsForActiveSpace = useMemo(
     () => state.sessions.filter((session) => session.spaceId === state.activeSpaceId),
@@ -373,6 +419,101 @@ function App(): JSX.Element {
       };
     });
   }, [spacePrompt]);
+
+  const onRunOrchestrator = useCallback(async () => {
+    const prompt = spacePrompt.trim();
+    if (!activeSpace || !activeSession || prompt.length === 0) {
+      return;
+    }
+
+    const startedAt = new Date().toISOString();
+    const runId = createOrchestratorRunId();
+    const queuedRun: OrchestratorRunRecord = {
+      id: runId,
+      spaceId: activeSpace.id,
+      sessionId: activeSession.id,
+      prompt,
+      status: "queued",
+      statusTimeline: ["queued"],
+      createdAt: startedAt,
+      updatedAt: startedAt
+    };
+
+    const queuedState: AppState = {
+      ...state,
+      orchestratorRuns: [...state.orchestratorRuns, queuedRun],
+      lastOpenedAt: startedAt
+    };
+    await persistState(queuedState);
+
+    const runningAt = new Date().toISOString();
+    const runningRun = appendRunStatus(queuedRun, "running");
+    const runningState: AppState = {
+      ...queuedState,
+      orchestratorRuns: queuedState.orchestratorRuns.map((run) =>
+        run.id === runId ? { ...runningRun, updatedAt: runningAt } : run
+      ),
+      lastOpenedAt: runningAt
+    };
+    await persistState(runningState);
+
+    const endedAt = new Date().toISOString();
+    const runFailureMessage = resolveRunFailure(prompt);
+    const delegationOutcome = runFailureMessage
+      ? { tasks: undefined, failureMessage: runFailureMessage }
+      : buildDelegatedTaskTimeline(runId, prompt, endedAt);
+    const failureMessage = delegationOutcome.failureMessage;
+    const endedStatus: OrchestratorRunStatus = failureMessage ? "failed" : "completed";
+    const endedRun = appendRunStatus(runningRun, endedStatus);
+    const draft = failureMessage ? undefined : createSpecDraft(endedRun, endedAt);
+    const endedState: AppState = {
+      ...runningState,
+      orchestratorRuns: runningState.orchestratorRuns.map((run) =>
+        run.id === runId
+          ? {
+              ...endedRun,
+              updatedAt: endedAt,
+              completedAt: endedAt,
+              errorMessage: failureMessage ?? undefined,
+              draft,
+              draftAppliedAt: undefined,
+              draftApplyError: undefined,
+              delegatedTasks: delegationOutcome.tasks
+            }
+          : run
+      ),
+      lastOpenedAt: endedAt
+    };
+    await persistState(endedState);
+  }, [activeSession, activeSpace, persistState, spacePrompt, state]);
+
+  const onSpecDraftApplied = useCallback(
+    async (runId: string, status: "applied" | "failed", message?: string) => {
+      const run = state.orchestratorRuns.find((entry) => entry.id === runId);
+      if (!run) {
+        return;
+      }
+
+      const nextUpdatedAt = new Date().toISOString();
+      const nextState: AppState = {
+        ...state,
+        orchestratorRuns: state.orchestratorRuns.map((entry) =>
+          entry.id === runId
+            ? {
+                ...entry,
+                updatedAt: nextUpdatedAt,
+                draftAppliedAt: status === "applied" ? nextUpdatedAt : entry.draftAppliedAt,
+                draftApplyError: status === "failed" ? message ?? "Failed to apply draft." : undefined
+              }
+            : entry
+        ),
+        lastOpenedAt: nextUpdatedAt
+      };
+
+      await persistState(nextState);
+    },
+    [persistState, state]
+  );
 
   const onCancelCreateSpaceForm = useCallback(() => {
     setIsCreateSpaceOpen(false);
@@ -722,6 +863,16 @@ function App(): JSX.Element {
                 <button type="button" className="pill-button" onClick={onOpenCreateSpaceForm}>
                   Create Space
                 </button>
+                <button
+                  type="button"
+                  className="pill-button"
+                  disabled={!activeSpace || !activeSession || !spacePrompt.trim() || isSaving}
+                  onClick={() => {
+                    void onRunOrchestrator();
+                  }}
+                >
+                  Run Orchestrator
+                </button>
               </div>
 
               {isCreateSpaceOpen ? (
@@ -824,8 +975,54 @@ function App(): JSX.Element {
             </div>
             <div className="info-card">
               <h3>Status</h3>
-              <p>Agent execution is intentionally out of scope for shell bootstrap.</p>
+              <p>
+                {latestRunForActiveSession
+                  ? `Run ${latestRunForActiveSession.id} is ${latestRunForActiveSession.status}.`
+                  : "No orchestrator runs yet."}
+              </p>
+              {latestRunForActiveSession ? (
+                <>
+                  <p>Prompt: {latestRunForActiveSession.prompt}</p>
+                  <p>Lifecycle: {latestRunForActiveSession.statusTimeline.join(" -> ")}</p>
+                  {latestRunForActiveSession.delegatedTasks ? (
+                    <div>
+                      <p>Delegated tasks</p>
+                      <ul>
+                        {latestRunForActiveSession.delegatedTasks.map((task) => (
+                          <li key={task.id}>
+                            {task.type} ({task.specialist}): {task.status} [{task.statusTimeline.join(" -> ")}]
+                            {task.errorMessage ? (
+                              <>
+                                {" "}
+                                - <span className="field-error">{task.errorMessage}</span>
+                              </>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {latestRunForActiveSession.draft ? (
+                    <p>Draft: ready for run {latestRunForActiveSession.draft.runId}</p>
+                  ) : null}
+                  {latestRunForActiveSession.draftAppliedAt ? (
+                    <p>Draft applied at {new Date(latestRunForActiveSession.draftAppliedAt).toLocaleString()}</p>
+                  ) : null}
+                  {latestRunForActiveSession.errorMessage ? (
+                    <p className="field-error">{latestRunForActiveSession.errorMessage}</p>
+                  ) : null}
+                  {latestRunForActiveSession.draftApplyError ? (
+                    <p className="field-error">{latestRunForActiveSession.draftApplyError}</p>
+                  ) : null}
+                </>
+              ) : null}
             </div>
+            {latestRunForActiveSession ? (
+              <div className="info-card">
+                <h3>Latest Run ID</h3>
+                <p>{latestRunForActiveSession.id}</p>
+              </div>
+            ) : null}
           </div>
         </section>
 
@@ -898,7 +1095,11 @@ function App(): JSX.Element {
                 </div>
               </>
             ) : (
-              <SpecNotePanel storage={window.localStorage} />
+              <SpecNotePanel
+                storage={window.localStorage}
+                draftArtifact={latestDraftForActiveSession}
+                onApplyDraftResult={onSpecDraftApplied}
+              />
             )}
           </div>
         </section>
