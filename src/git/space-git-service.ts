@@ -1,6 +1,12 @@
 import { access } from "node:fs/promises";
 import { GitCli, type GitCommandRunner } from "./git-cli";
 import {
+  isStagedFileChange,
+  isUnstagedFileChange,
+  parseGitStatusPorcelain,
+  summarizeStagedChanges
+} from "./changes";
+import {
   ERROR_CODES,
   SpaceGitLifecycleError,
   isSpaceGitLifecycleError
@@ -8,6 +14,11 @@ import {
 import { toSpaceGitUiState } from "./space-git-ui-state";
 import {
   createSpaceGitStatus,
+  type SpaceGitChangesRequest,
+  type SpaceGitChangesSnapshot,
+  type SpaceGitFileDiffRequest,
+  type SpaceGitFileDiffResult,
+  type SpaceGitFileRequest,
   type SpaceGitLifecycleRequest,
   type SpaceGitLifecycleStatus
 } from "./types";
@@ -110,6 +121,46 @@ export class SpaceGitLifecycleService {
     return this.statusBySpace.get(spaceId) ?? null;
   }
 
+  async getChanges(
+    request: SpaceGitChangesRequest
+  ): Promise<SpaceGitChangesSnapshot> {
+    await this.assertRepositoryAvailable(request.repoPath);
+    return this.readChangesSnapshot(request.repoPath);
+  }
+
+  async getFileDiff(
+    request: SpaceGitFileDiffRequest
+  ): Promise<SpaceGitFileDiffResult> {
+    await this.assertRepositoryAvailable(request.repoPath);
+
+    const stagedDiff = request.includeStaged
+      ? await this.git.readFileDiff(request.repoPath, request.filePath, "staged")
+      : null;
+    const unstagedDiff = request.includeUnstaged
+      ? await this.git.readFileDiff(request.repoPath, request.filePath, "unstaged")
+      : null;
+
+    return {
+      repoPath: request.repoPath,
+      filePath: request.filePath,
+      stagedDiff: stagedDiff && stagedDiff.length > 0 ? stagedDiff : null,
+      unstagedDiff: unstagedDiff && unstagedDiff.length > 0 ? unstagedDiff : null,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async stageFile(request: SpaceGitFileRequest): Promise<SpaceGitChangesSnapshot> {
+    await this.assertRepositoryAvailable(request.repoPath);
+    await this.git.stageFile(request.repoPath, request.filePath);
+    return this.readChangesSnapshot(request.repoPath);
+  }
+
+  async unstageFile(request: SpaceGitFileRequest): Promise<SpaceGitChangesSnapshot> {
+    await this.assertRepositoryAvailable(request.repoPath);
+    await this.git.unstageFile(request.repoPath, request.filePath);
+    return this.readChangesSnapshot(request.repoPath);
+  }
+
   listStatuses(): SpaceGitLifecycleStatus[] {
     return Array.from(this.statusBySpace.values());
   }
@@ -119,6 +170,20 @@ export class SpaceGitLifecycleService {
   }
 
   private async assertRepositoryReady(repoPath: string): Promise<void> {
+    await this.assertRepositoryAvailable(repoPath);
+
+    const isDirty = await this.git.isDirty(repoPath);
+    if (isDirty) {
+      throw new SpaceGitLifecycleError({
+        code: ERROR_CODES.REPOSITORY_DIRTY,
+        message: "Repository has uncommitted changes.",
+        remediation:
+          "Commit or stash changes in the repository before creating or switching a space worktree."
+      });
+    }
+  }
+
+  private async assertRepositoryAvailable(repoPath: string): Promise<void> {
     const repoPathExists = await this.pathExistsFn(repoPath);
     if (!repoPathExists) {
       throw new SpaceGitLifecycleError({
@@ -136,16 +201,6 @@ export class SpaceGitLifecycleService {
         message: `Path "${repoPath}" is not a git repository.`,
         remediation:
           "Run `git init` in that folder or select a different repository path."
-      });
-    }
-
-    const isDirty = await this.git.isDirty(repoPath);
-    if (isDirty) {
-      throw new SpaceGitLifecycleError({
-        code: ERROR_CODES.REPOSITORY_DIRTY,
-        message: "Repository has uncommitted changes.",
-        remediation:
-          "Commit or stash changes in the repository before creating or switching a space worktree."
       });
     }
   }
@@ -192,6 +247,26 @@ export class SpaceGitLifecycleService {
 
     this.setStatus(request.spaceId, failureStatus);
     return failureStatus;
+  }
+
+  private async readChangesSnapshot(repoPath: string): Promise<SpaceGitChangesSnapshot> {
+    const rawStatus = await this.git.readStatusPorcelain(repoPath);
+    const files = parseGitStatusPorcelain(rawStatus);
+    const stagedNumstat = await this.git.readStagedNumstat(repoPath);
+    const stagedSummary = summarizeStagedChanges(files, stagedNumstat);
+
+    const stagedFileCount = files.filter(isStagedFileChange).length;
+    const unstagedFileCount = files.filter(isUnstagedFileChange).length;
+
+    return {
+      repoPath,
+      files,
+      stagedSummary,
+      stagedFileCount,
+      unstagedFileCount,
+      hasStagedChanges: stagedFileCount > 0,
+      updatedAt: new Date().toISOString()
+    };
   }
 
   private setStatus(spaceId: string, status: SpaceGitLifecycleStatus): void {
