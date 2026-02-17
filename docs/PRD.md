@@ -1,9 +1,9 @@
 # Kata Cloud: Product Requirements Document
 
 **Codename:** kata-cloud
-**Version:** 0.2 (Revised)
-**Date:** 2026-02-12
-**Author:** Generated from competitive analysis, codebase exploration, and SDK research
+**Version:** 0.3
+**Date:** 2026-02-17
+**Author:** Generated from competitive analysis, codebase exploration, SDK research, and MVP implementation progress
 
 ---
 
@@ -11,13 +11,15 @@
 
 Kata Cloud is an agent-first software development platform where developers orchestrate AI agent teams rather than write code directly. It delivers opinionated, spec-driven development workflows, git worktree-based parallelism, and agent team coordination.
 
-Kata Cloud runs locally via Claude Max / Codex subscriptions, API keys or in the cloud via SaaS subscription. It eliminates the friction between "tell the AI what to build" and "ship a pull request" by treating specifications as executable prompts and agents as the primary workforce.
+Kata Cloud is a desktop-first application supporting multiple model providers (Anthropic and OpenAI). A CLI interface and cloud/web deployment follow in later phases. Kata eliminates the friction between "tell the AI what to build" and "ship a pull request" by treating specifications as executable prompts and agents as the primary workforce.
 
 ### Core Thesis
 
 The agentic coding market has split into two camps. Vibe coding platforms (Lovable, Bolt.new, v0) prioritize speed to prototype. Spec-driven platforms prioritize maintainability, auditability, and team coordination. Lovable hit $100M ARR in eight months by owning the vibe-coding side. Kata Cloud owns the spec-driven side for professional engineering teams.
 
 First-generation agentic IDEs started as code editors and added agent capabilities incrementally. They optimize for the developer-writes-code workflow and treat agents as assistants. Kata Cloud inverts this: the developer is an orchestrator who defines specifications, reviews agent output, and approves pull requests. The agents do the implementation.
+
+The differentiator is spec-driven orchestration. Regardless of which model provider executes the work, Kata enforces a structured workflow where a self-maintaining spec drives agent coordination, parallel execution, and traceable output. The spec is the source of truth because it maintains itself as agents work.
 
 Every Kata Cloud workflow produces an atomic pull request as its deliverable. The PR is the unit of work. Most competitors treat PR creation as an afterthought or skip it entirely. Kata treats it as the core output.
 
@@ -29,7 +31,7 @@ Every Kata Cloud workflow produces an atomic pull request as its deliverable. Th
 
 Enterprise spend on AI coding tools reached $4 billion in 2025, up from $550 million in 2024. The market is projected to reach $47.3 billion by 2034. Over $10 billion in venture funding deployed into agentic coding companies in the 18 months ending February 2026. MIT named generative coding a Top 10 Breakthrough Technology of 2026.
 
-Anthropic commands 54% of coding market share versus OpenAI's 21%. Claude is the dominant model for code generation, which gives Kata Cloud a structural advantage as a Claude-native platform.
+Anthropic commands 54% of coding market share versus OpenAI's 21%. Kata Cloud supports both providers, routing tasks to the model best suited for each operation.
 
 ### 2.2 The Spec-Driven vs. Vibe-Coding Bifurcation
 
@@ -81,13 +83,13 @@ These tools impose structure on AI-generated code through specifications, plans,
 
 **GitHub Spec Kit**: Open-source, agent-agnostic. Templates, CLI tool (Specify), four-phase gated workflow (Specify, Plan, Tasks, Implement). Works with Copilot, Claude Code, Gemini CLI, Cursor, and 10+ agents via Markdown. Relevant as an open standard Kata should interoperate with.
 
-**Multi-agent orchestration frameworks** (CrewAI, Microsoft AutoGen/AG2, LangGraph, MetaGPT, OpenAI Agents SDK, Google ADK, Roo Code, Shakudo AgentFlow) provide the coordination primitives that Kata's Agent Team Orchestrator competes with. Kata differentiates by being opinionated and workflow-specific rather than general-purpose. LangGraph offers finer-grained control; CrewAI offers YAML-driven simplicity; MetaGPT simulates entire software companies. Kata's bet is that coding-specific workflow enforcement beats general-purpose agent frameworks for the software development use case.
+**Multi-agent orchestration frameworks** (CrewAI, Microsoft AutoGen/AG2, LangGraph, MetaGPT, OpenAI Agents SDK, Google ADK, Roo Code, Shakudo AgentFlow) provide the coordination primitives that Kata's Orchestrator competes with. Kata differentiates by being opinionated and workflow-specific rather than general-purpose. LangGraph offers finer-grained control; CrewAI offers YAML-driven simplicity; MetaGPT simulates entire software companies. Kata's bet is that coding-specific workflow enforcement beats general-purpose agent frameworks for the software development use case.
 
 #### Tier 4: Terminal-Native Agents
 
 Terminal-native coding agents proliferated from roughly three options in early 2025 to 15+ by early 2026. The terminal has become a primary surface for agentic coding.
 
-**Claude Code** (Anthropic): Strongest terminal agent for deep reasoning, debugging, and architectural changes. Priced via Claude API tokens. The foundation model Kata Cloud builds on.
+**Claude Code** (Anthropic): Strongest terminal agent for deep reasoning, debugging, and architectural changes. Priced via Claude API tokens.
 
 **Codex CLI** (OpenAI): Rebuilt in Rust. macOS desktop app (February 2026). Local-first execution with configurable permissions. GPT-5.2-Codex model. Included with ChatGPT Plus/Pro.
 
@@ -103,7 +105,7 @@ Terminal-native coding agents proliferated from roughly three options in early 2
 
 **Warp (Oz)**: Terminal-native, event-driven cloud agents. Triggers from crashes, Slack, cron, CI. $20/mo + credits. Strongest observability (session transcripts, team dashboards).
 
-Kata Cloud's CLI should be a first-class surface on par with these tools, leveraging the workflow engine that none of them provide.
+Kata Cloud's CLI (planned for a future phase) will be a first-class surface leveraging the workflow engine that none of these tools provide.
 
 #### Tier 5: Infrastructure and Model Plays
 
@@ -181,27 +183,27 @@ Adjacent market tools that review, test, and validate AI-generated code.
 
 | Gap                           | Status Quo                                                                                                       | Kata Cloud Approach                                                                                                                                                 |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Spec-driven orchestration     | Tessl and Kiro compete here; Augment Intent is closest to Kata                                                   | Specs are executable prompts with traceability IDs, requirement mapping, and verification loops. Enforced methodology goes further than Augment's flexible approach |
-| Structured agent teams        | Most products run single agents; Cursor runs multiples without coordination; Factory uses pre-specialized Droids | Claude Agent SDK Agent Teams with lead/teammate roles, task dependency chains, wave-based execution. Dynamic team composition per phase                             |
+| Spec-driven orchestration     | Tessl and Kiro compete here; Augment Intent is closest to Kata                                                   | A single self-maintaining Spec drives agent coordination, parallel execution, and traceable output. Enforced methodology goes further than Augment's flexible approach |
+| Structured agent teams        | Most products run single agents; Cursor runs multiples without coordination; Factory uses pre-specialized Droids | Coordination Agent with Specialist Agents (Investigate, Implement, Verify, Critique, Debug, Code Review), task dependency chains, parallel execution              |
 | Opinionated workflows         | Every product is a general-purpose tool; none enforce development methodology                                    | Kata enforces: spec, milestone, phase, plan, execute, verify, release                                                                                               |
 | PR-centric output             | GitHub Copilot's coding agent creates PRs from issues; most others treat PRs as afterthought                     | Every workflow produces an atomic PR. The PR is the deliverable                                                                                                     |
 | Integrated project management | Slack and Linear integrations exist but function as notification channels                                        | Linear issues drive agent work; GitHub PRs close issues; milestones map to releases                                                                                 |
-| Claude Max local execution    | 1Code does this; others require separate API subscriptions                                                       | First-class Claude Max support with automatic model routing per task type                                                                                           |
-| Self-hosted cloud option      | Tabnine offers air-gapped; Qodo offers VPC/on-prem; most others are cloud-only                                   | Container-based deployment using Claude Agent SDK Docker/gVisor patterns. VPC and on-prem options for enterprise                                                    |
+| Multi-model provider support  | Most tools lock to one provider or offer model-agnostic access without routing intelligence                      | Anthropic (Opus 4.5, Sonnet 4.5, Haiku) and OpenAI (GPT 5.2, Codex) with automatic model routing per task type                                                    |
+| Self-hosted cloud option      | Tabnine offers air-gapped; Qodo offers VPC/on-prem; most others are cloud-only                                   | Container-based deployment for cloud mode (future phase). VPC and on-prem options for enterprise                                                                    |
 
 ### 2.6 Positioning
 
-Kata Cloud occupies the opinionated orchestration layer: more structured than Augment Intent, more agent-native than Cursor, more workflow-driven than Codex, and built on the Claude Agent SDK rather than being model-agnostic.
+Kata Cloud occupies the opinionated orchestration layer: more structured than Augment Intent, more agent-native than Cursor, more workflow-driven than Codex, and model-flexible with support for both Anthropic and OpenAI providers.
 
 The primary competitive threats, ranked by severity:
 
 1. **Tessl**: Direct spec-driven competitor with $125M and Snyk-founder credibility. Tessl's Spec Registry (10K+ pre-built specs) and Framework directly compete with Kata's spec-driven workflow. Differentiator: Kata enforces an end-to-end methodology (spec through merged PR); Tessl provides spec tooling that works with any agent.
 
-2. **Augment Intent**: Closest workflow competitor with Coordinator + specialist agents, worktree isolation. Differentiator: Kata uses Claude Agent SDK Agent Teams (vs. Augment's proprietary coordination), enforces methodology (vs. Augment's flexibility), supports dual local/cloud execution (vs. Augment desktop-only).
+2. **Augment Intent**: Closest workflow competitor with Coordinator + specialist agents, worktree isolation. Differentiator: Kata enforces methodology (vs. Augment's flexibility) and supports dual local/cloud execution (vs. Augment desktop-only) with multi-model routing.
 
 3. **GitHub Copilot**: 20M+ users, 90% Fortune 100. The coding agent already creates PRs from issues. Distribution advantage is massive. Differentiator: Copilot is a general-purpose assistant; Kata enforces a structured workflow that produces higher-quality output on complex multi-phase projects.
 
-4. **Factory AI**: Enterprise agent performance leader (#1 Terminal-Bench). Droid model is architecturally similar to Kata's agent teams. Differentiator: Factory's Droids are pre-specialized; Kata's teams are dynamically composed. Factory is enterprise-focused; Kata serves individual developers through Claude Max local mode.
+4. **Factory AI**: Enterprise agent performance leader (#1 Terminal-Bench). Droid model is architecturally similar to Kata's agent teams. Differentiator: Factory's Droids are pre-specialized; Kata's teams are dynamically composed. Factory is enterprise-focused; Kata serves individual developers through local desktop mode.
 
 5. **Open-source tools** (OpenHands, OpenCode, Aider): Strong community momentum, free. Differentiator: Kata delivers workflow opinionation, hosted orchestration state, team coordination, and integrated project management that open-source tools lack. Raw agentic coding is not defensible; workflow value is.
 
@@ -213,7 +215,7 @@ The pricing defense rests on three arguments:
 
 1. **Kata charges for workflow orchestration, not model access.** Free/cheap tools give you an agent. Kata gives you a structured development process that produces reviewable, traceable, mergeable output. The value unit is "spec to merged PR," not "tokens consumed."
 
-2. **Local mode is free.** Developers with Claude Max ($100-200/mo) can use Kata Cloud desktop for $0. This neutralizes pricing pressure from free tools and creates a funnel to paid cloud features.
+2. **Local mode is free.** Developers with existing model provider subscriptions or API keys can use Kata Cloud desktop for $0. This neutralizes pricing pressure from free tools and creates a funnel to paid cloud features.
 
 3. **Agent-hours billing aligns cost with value.** Users pay for wall-clock execution time, not tokens. A phase that produces a merged PR in 30 minutes costs the same regardless of how many tokens the agents consumed.
 
@@ -223,11 +225,11 @@ The risk: if GitHub Copilot or Codex adds spec-driven workflow features, the pri
 
 Model Context Protocol (MCP) has become the universal connector for agentic tools. Apple adopted MCP in Xcode 26.3 (February 2026), marking mainstream IDE ecosystem entrance. GitHub Spec Kit, Cline, TestSprite, and dozens of other tools use MCP for tool integration.
 
-Kata Cloud should implement MCP compatibility at three levels:
+Kata Cloud implements MCP compatibility at multiple levels:
 
-1. **MCP server**: Expose Kata's workflow engine as an MCP server so other tools (Claude Code, Cursor, Copilot) can invoke Kata workflows.
-2. **MCP client**: Consume external MCP servers for custom tools, following the pattern already established in Kata Agents.
-3. **MCP tool marketplace**: Allow third-party MCP servers to plug into Kata workflows, extending the platform without building every integration in-house.
+1. **MCP client** (implemented): Consume external MCP servers for custom tools, extending what agents can access without leaving the app.
+2. **MCP server** (future): Expose Kata's workflow engine as an MCP server so other tools (Claude Code, Cursor, Copilot) can invoke Kata workflows.
+3. **MCP tool marketplace** (future): Allow third-party MCP servers to plug into Kata workflows, extending the platform without building every integration in-house.
 
 This turns Kata from a closed platform into an orchestration layer that works with the broader ecosystem.
 
@@ -242,7 +244,7 @@ This turns Kata from a closed platform into an orchestration layer that works wi
 
 **Key capabilities to carry forward:**
 
-Spec-driven workflow: Project, Milestone, Phase, Plan, Execute, Verify, Release. Requirements traceability with IDs (AUTH-01, CONTENT-02) traced from requirements to phases to commits. Wave-based parallel execution with plans grouped by dependency. Orchestrator/agent split where orchestrators stay lean (~15% context) and agents get fresh 200k windows. Plan-as-prompt pattern where PLAN.md files are both documentation and executable instructions. Model profiles (quality/balanced/budget) routing different task types to Opus/Sonnet/Haiku. GitHub integration mapping milestones, issues, PRs, and releases to Kata artifacts. Template customization with per-project overrides. PR review suite with 6 parallel review agents (code, tests, comments, failures, types, simplicity).
+Spec-driven workflow: Project, Milestone, Phase, Plan, Execute, Verify, Release. Requirements traceability with IDs (AUTH-01, CONTENT-02) traced from requirements to phases to commits. Wave-based parallel execution with plans grouped by dependency. Orchestrator/agent split where orchestrators stay lean (~15% context) and agents get fresh 200k windows. Plan-as-prompt pattern where PLAN.md files are both documentation and executable instructions. Model profiles (quality/balanced/budget) routing different task types to appropriate models. GitHub integration mapping milestones, issues, PRs, and releases to Kata artifacts. Template customization with per-project overrides. PR review suite with 6 parallel review agents (code, tests, comments, failures, types, simplicity).
 
 **Architecture insight:** The orchestrator's skill-based design demonstrates that spec-driven workflows decompose into ~32 discrete operations. Kata Cloud preserves this granularity while providing a unified UI.
 
@@ -261,27 +263,31 @@ Multi-session management with inbox/archive views, status workflow (Todo, In Pro
 
 ## 4. Technical Foundation
 
-### 4.1 Claude Agent SDK
+### 4.1 Model Provider Strategy
 
-Kata Cloud builds on the Claude Agent SDK (TypeScript), which provides:
+Kata Cloud supports multiple model providers, routing tasks to the model best suited for each operation:
 
-**Core Primitives:** `query()` for streaming agent execution with typed message events. Built-in tools: Read, Write, Edit, Bash, Glob, Grep. Custom tools via MCP servers (in-process or external). Permission modes: default, acceptEdits, bypassPermissions. Session management with resume capability. Hooks system: PreToolUse, PostToolUse, Stop, SubagentStart/Stop, SessionStart/End.
+**Anthropic:** Opus 4.5 for complex architecture and planning. Sonnet 4.5 for rapid iteration and implementation. Haiku for fast, lightweight tasks (verification, linting, summaries).
 
-**Agent Teams (February 2026, Research Preview):** Team Lead + Teammates architecture. Each teammate gets independent context window. SendMessage for direct messages and broadcasts. TaskUpdate for task lifecycle and dependency management. File-based coordination (task files on disk). Teammates share project context (CLAUDE.md, MCP, skills) but not conversation history.
+**OpenAI:** GPT 5.2 for deep code analysis and code review. Codex models for implementation tasks.
 
-**Deployment:** Container-first: Docker with security hardening, gVisor, Firecracker. Network isolation via Unix socket + validating proxy. Domain allowlists, credential injection, traffic logging.
+The orchestration layer is provider-agnostic: the Coordination Agent and Specialist Agents operate through a unified interface that abstracts model selection. Model routing profiles (quality/balanced/budget) assign providers and models per task type.
 
-**How this compares to multi-agent frameworks:** LangGraph provides graph-based state machines with finer-grained control over branching. CrewAI offers YAML-driven role definitions. MetaGPT simulates an entire software company with SOPs. OpenAI Agents SDK provides lightweight Python primitives. Google ADK enables hierarchical agent compositions. Kata chooses Claude Agent SDK Agent Teams because: (a) the Teams capability provides coordinated multi-agent messaging with shared project context, (b) built-in coding tools match exactly what coding agents need, (c) the hooks system enables safety controls without LLM overhead, and (d) Anthropic's deployment guidance aligns with cloud mode requirements. The trade-off: general-purpose orchestration frameworks support any model; Kata is Claude-locked.
+**Claude Agent SDK as orchestration primitive:** The Claude Agent SDK provides coordination capabilities used for agent team management: `query()` for streaming agent execution, built-in coding tools (Read, Write, Edit, Bash, Glob, Grep), MCP server integration, permission modes, session management with resume, and hooks system (PreToolUse, PostToolUse, Stop, SubagentStart/Stop). Agent Teams (research preview) provides coordinated multi-agent messaging with shared project context. These SDK capabilities serve as one implementation path for orchestration, while model execution itself spans providers.
 
-### 4.2 Proposed Architecture
+**How this compares to multi-agent frameworks:** LangGraph provides graph-based state machines with finer-grained control over branching. CrewAI offers YAML-driven role definitions. MetaGPT simulates an entire software company with SOPs. OpenAI Agents SDK provides lightweight Python primitives. Google ADK enables hierarchical agent compositions. Kata uses Claude Agent SDK for orchestration because: (a) the Teams capability provides coordinated multi-agent messaging with shared project context, (b) built-in coding tools match exactly what coding agents need, (c) the hooks system enables safety controls without LLM overhead, and (d) Anthropic's deployment guidance aligns with future cloud mode requirements. The MCP layer provides extensibility for incorporating other models and tools without framework lock-in.
+
+### 4.2 Architecture
 
 ```
 +-----------------------------------------------------------------+
 |                        Kata Cloud                                |
 |                                                                  |
+|  Surface Priority:                                               |
 |  +--------------+  +--------------+  +-----------------------+  |
-|  |  Desktop App |  |   Web App    |  |   CLI                 |  |
-|  |  (Electron)  |  |  (React)     |  |   (kata-cloud)        |  |
+|  |  Desktop App |  |   CLI        |  |   Web App             |  |
+|  |  (Electron)  |  |  (future)    |  |   (future)            |  |
+|  |  [PRIMARY]   |  |  [PHASE 2]   |  |   [PHASE 3]           |  |
 |  +------+-------+  +------+-------+  +-----------+-----------+  |
 |         |                  |                       |              |
 |         +------------------+-----------------------+              |
@@ -294,74 +300,79 @@ Kata Cloud builds on the Claude Agent SDK (TypeScript), which provides:
 |         +------------------+----------------------+               |
 |         |                  |                       |              |
 |  +------+------+  +-------+-------+  +-----------+----------+   |
-|  |  Workflow   |  |  Agent Team   |  |  Integration         |   |
-|  |  Engine     |  |  Orchestrator |  |  Layer               |   |
-|  |             |  |               |  |                      |   |
-|  | - Specs     |  | - SDK Teams   |  | - GitHub API         |   |
-|  | - Milestones|  | - Worktrees   |  | - Linear API         |   |
-|  | - Phases    |  | - Task mgmt   |  | - MCP servers        |   |
-|  | - Plans     |  | - Messaging   |  | - Channel adapters   |   |
-|  | - Verify    |  | - Context     |  | - OAuth              |   |
+|  |  Workflow   |  |  Orchestrator |  |  Integration         |   |
+|  |  Engine     |  |               |  |  Layer               |   |
+|  |             |  |  - Coord.     |  |                      |   |
+|  | - Spec      |  |    Agent      |  | - GitHub API         |   |
+|  | - Milestones|  | - Specialist  |  | - Linear API         |   |
+|  | - Phases    |  |   Agents      |  | - MCP servers        |   |
+|  | - Plans     |  | - Worktrees   |  | - Channel adapters   |   |
+|  | - Verify    |  | - Task mgmt   |  | - OAuth              |   |
 |  +-------------+  +---------------+  +----------------------+   |
 |                            |                                      |
 |              +-------------+-------------+                        |
 |              |                           |                        |
 |     +--------+--------+   +-------------+---------+              |
-|     |  Claude Agent   |   |  MCP Layer            |              |
-|     |  SDK            |   |  (server + client)    |              |
-|     +-----------------+   +-----------------------+              |
+|     |  Model Provider |   |  MCP Layer            |              |
+|     |  Runtime        |   |  (client + server)    |              |
+|     |  (Anthropic +   |   +-----------------------+              |
+|     |   OpenAI)       |                                          |
+|     +-----------------+                                          |
 |                                                                  |
 |  Execution Modes:                                                |
 |  +-----------------+  +--------------------+                     |
 |  |  Local Mode     |  |  Cloud Mode        |                    |
-|  |  (Claude Max)   |  |  (SaaS/Self-host)  |                    |
+|  |  (API keys /    |  |  (SaaS/Self-host)  |                    |
+|  |   subscriptions)|  |  [future]          |                    |
 |  +-----------------+  +--------------------+                     |
 +-----------------------------------------------------------------+
 ```
 
 ### 4.3 Component Breakdown
 
-**Desktop App (from Kata Agents foundation):** Electron + React + Tailwind. Multi-session management with inbox/archive. Integrated git client with one-click PR creation. Agent team visualization (live status of lead + teammates). Permission mode cycling. Session status workflow.
+**Desktop App (primary surface, implemented):** Electron + React 19 + Vite. Space management with metadata, tags, and git integration. Orchestrator panel with run lifecycle and Spec draft generation. Spec panel with autosave, comment threads, and task block parsing. Changes tab with diff inspection, selective staging, and GitHub PR creation. In-app browser preview for localhost development (in progress). Code editor with syntax highlighting and diff viewer. Notes system with markdown, tags, and full-text search. Resumable sessions with persistent state.
 
-**Web App:** React SPA sharing components with desktop app. Cloud-only execution (no local agent processes). Team collaboration: shared workspaces, session visibility. Mobile-responsive for on-the-go agent management.
+**CLI (future, Phase 2):** `kata-cloud` command for headless operation. Compatible with CI/CD pipelines. All workflow operations available programmatically. Competes directly with Claude Code, Codex CLI, and Gemini CLI as a terminal-native agent with structured workflow capabilities that those tools lack.
 
-**CLI (first-class surface):** `kata-cloud` command for headless operation. Compatible with CI/CD pipelines. All workflow operations available programmatically. Competes directly with Claude Code, Codex CLI, and Gemini CLI as a terminal-native agent with structured workflow capabilities that those tools lack.
+**Web App (future, Phase 3):** React SPA sharing components with desktop app. Cloud-only execution (no local agent processes). Team collaboration: shared workspaces, session visibility. Mobile-responsive for on-the-go agent management.
 
-**Kata Core API:** TypeScript library shared across all surfaces. Workflow engine: spec parsing, milestone management, phase lifecycle. Agent team orchestration via Claude Agent SDK. Integration layer: GitHub, Linear, MCP.
+**Kata Core API:** TypeScript library shared across all surfaces. Workflow engine: spec parsing, milestone management, phase lifecycle. Agent orchestration via Coordination Agent and Specialist Agents. Integration layer: GitHub, Linear, MCP.
 
-**MCP Layer:** Kata as MCP server (exposes workflow engine to external tools). Kata as MCP client (consumes external tool servers). Tool discovery and registration. Tool annotations (readOnlyHint, destructiveHint).
+**MCP Layer:** Kata as MCP client (consumes external tool servers, implemented). Kata as MCP server (exposes workflow engine to external tools, future). Tool discovery and registration. Tool annotations (readOnlyHint, destructiveHint).
 
-**Workflow Engine (from Kata Orchestrator patterns):** Spec-driven lifecycle: Project, Milestone, Phase, Plan, Execute, Verify, Release. Requirements traceability with IDs. Wave-based parallel execution. Plan-as-prompt pattern. Template customization. Model routing profiles.
+**Workflow Engine (from Kata Orchestrator patterns):** Spec-driven lifecycle: the full vision encompasses Project, Milestone, Phase, Plan, Execute, Verify, Release. The MVP implements: Space creation, Spec drafting, task delegation, parallel execution, and PR output. Requirements traceability with IDs. Wave-based parallel execution. Plan-as-prompt pattern. Template customization. Model routing profiles.
 
-**Agent Team Orchestrator:** Wraps Claude Agent SDK Agent Teams. Manages worktree creation/cleanup per agent. Routes tasks to teammates based on dependency graph. Collects results and synthesizes summaries. Handles agent failure/retry.
+**Orchestrator:** Coordination Agent that analyzes the codebase, drafts the Spec, and generates tasks. 6 Specialist Agent personas (Investigate, Implement, Verify, Critique, Debug, Code Review). Manages worktree creation/cleanup per agent. Routes tasks to specialists based on dependency graph. Collects results and synthesizes summaries. Handles agent failure/retry.
 
-**Integration Layer:** GitHub (repos, branches, PRs, issues, releases, actions). Linear (issues, projects, cycles, labels). MCP (custom tool servers). Channel adapters (Slack, email from Kata Agents).
+**Context Engine (in progress):** Pluggable adapter interface for providing deep codebase understanding to all agents. Initial providers include filesystem-based context. Future providers: semantic search, cross-repo intelligence.
+
+**Integration Layer:** GitHub (repos, branches, PRs, issues, releases, actions). Linear (issues, projects, cycles, labels, future). MCP (custom tool servers). Channel adapters (Slack, email from Kata Agents, future).
 
 ---
 
 ## 5. User Personas
 
-### 5.1 Solo Developer (Local Mode)
+### 5.1 Solo Developer (Desktop, MVP Target)
 
-**Profile:** Individual developer using Claude Max subscription. Wants to move faster on side projects or professional work without paying for a separate SaaS.
+**Profile:** Individual developer using API keys or model provider subscriptions. Wants to move faster on side projects or professional work without paying for a separate SaaS.
 
-**Workflow:** Opens Kata Cloud desktop app. Points it at a repo. Creates a project spec through guided conversation. Kicks off a milestone. Reviews PRs as agents complete phases. Merges and ships.
+**Workflow:** Opens Kata Cloud desktop app. Points it at a repo. Creates a Space from a prompt. The Orchestrator analyzes the codebase, drafts a Spec, and generates tasks. Specialist agents execute in parallel. Reviews changes in the Changes tab. Creates a PR and merges.
 
-**Key needs:** Zero additional cost beyond Claude Max. Fast setup (< 5 minutes to first agent run). Works offline. Simple git workflow (agents create branches, user merges).
+**Key needs:** Zero additional cost beyond existing model provider access. Fast setup (< 5 minutes to first agent run). Works offline. Simple git workflow (agents create branches, user merges).
 
 **Competitive alternative:** Claude Code or Codex CLI (free with subscription, but no workflow structure). 1Code (open-source, worktree isolation, but no spec-driven workflow).
 
-### 5.2 Tech Lead (Cloud Mode)
+### 5.2 Tech Lead (Desktop + CLI, Next Phase)
 
 **Profile:** Leads a team of 3-8 engineers. Uses Kata Cloud to parallelize feature development across multiple agent teams while the human team handles architecture decisions, code review, and customer-facing work.
 
-**Workflow:** Creates milestones from Linear epics. Dispatches phases to agent teams. Reviews PRs with the built-in review suite. Tracks progress across multiple concurrent agent teams. Monitors cost and throughput via dashboard.
+**Workflow:** Creates milestones from Linear epics. Dispatches phases to agent teams. Reviews PRs with the built-in review suite. Tracks progress across multiple concurrent agent teams. Monitors cost and throughput via dashboard. Uses CLI for scripted/automated workflows.
 
-**Key needs:** Multiple concurrent agent teams. Cost visibility and controls. Team workspace sharing. GitHub PR integration with CI checks. Linear issue lifecycle management.
+**Key needs:** Multiple concurrent agent teams. Cost visibility and controls. Team workspace sharing. GitHub PR integration with CI checks. Linear issue lifecycle management. CLI for CI/CD integration.
 
 **Competitive alternative:** Augment Intent (spec-driven, worktree isolation, but desktop-only). Factory AI (enterprise agents, but pre-specialized Droids rather than dynamic teams). Cursor Cloud (multiple agents, but no workflow enforcement).
 
-### 5.3 Platform Engineer (Self-Hosted Cloud)
+### 5.3 Platform Engineer (Cloud/Self-Hosted, Future Phase)
 
 **Profile:** Responsible for developer tooling at a mid-size company. Needs to run agent infrastructure on company cloud with data residency requirements.
 
@@ -375,7 +386,51 @@ Kata Cloud builds on the Claude Agent SDK (TypeScript), which provides:
 
 ## 6. Core Workflows
 
-### 6.1 Project Initialization
+### 6.0 MVP Workflow (Current)
+
+This is the workflow implemented in the current desktop MVP. It represents the core loop that all future workflow expansions build on.
+
+```
+User                          Kata Cloud
+  |                               |
+  |-- Prompt (describe work) --->|
+  |                               |-- Create Space (isolated branch/worktree)
+  |                               |-- Orchestrator analyzes codebase
+  |                               |-- Orchestrator drafts Spec
+  |                               |-- Orchestrator generates tasks
+  |                               |
+  |<-- Spec draft ready ----------|
+  |-- (optional: edit Spec) ---->|
+  |-- Apply draft to Spec ------>|
+  |                               |
+  |                               |-- Specialist agents execute tasks
+  |                               |   (Investigate, Implement, Verify,
+  |                               |    Critique, Debug, Code Review)
+  |                               |   Running in parallel where possible
+  |                               |
+  |<-- Work complete ------------|
+  |                               |
+  |-- Review in Changes tab ---->|
+  |   (inspect diffs, stage)     |
+  |-- Create PR ----------------->|
+  |                               |-- Auto-generate PR description
+  |                               |-- Push and open GitHub PR
+  |<-- PR created ---------------|
+  |                               |
+  |-- Merge PR ----------------->|
+```
+
+Key characteristics of the MVP workflow:
+- Space creation isolates work in a dedicated git branch and worktree
+- The Spec is a self-maintaining document that updates as agents work
+- The user can pause the Orchestrator at any time to manually edit the Spec
+- 6 Specialist Agent personas handle different aspects of implementation
+- The Changes tab provides full diff inspection with selective staging
+- PR creation with auto-generated descriptions completes the cycle
+
+### 6.1 Project Initialization (Future: Expanded Workflow)
+
+The MVP workflow evolves into a full lifecycle for larger projects. Sections 6.1-6.5 describe this expanded vision.
 
 ```
 User                          Kata Cloud
@@ -471,7 +526,7 @@ User                          Kata Cloud
 
 Every Kata Cloud workflow produces pull requests as its primary output. This is a deliberate differentiator. Most competing tools produce code changes that the user must manually commit, push, and PR. GitHub Copilot's coding agent creates PRs from issues but without structured specs or verification.
 
-Kata's PR output includes: agent-created branches in isolated worktrees; atomic commits in conventional format tied to plan tasks; auto-generated PR descriptions from plan objectives and execution summaries; 6-agent parallel review suite before submission; one-click merge in dependency order; Linear issue closure on merge.
+Kata's PR output includes: agent-created branches in isolated worktrees; atomic commits in conventional format tied to plan tasks; auto-generated PR descriptions from plan objectives and execution summaries; 6-agent parallel review suite before submission (future); one-click merge in dependency order; Linear issue closure on merge (future).
 
 ---
 
@@ -479,33 +534,37 @@ Kata's PR output includes: agent-created branches in isolated worktrees; atomic 
 
 ### 7.1 P0: Core Platform (MVP)
 
-**CORE-01: Project Management.** Create projects from existing repositories. Guided project initialization with codebase analysis. PROJECT.md generation and maintenance. Config management (mode, depth, model profiles, integrations).
+**CORE-01: Space Management.** Create Spaces from prompts with isolated git branches and worktrees. Space metadata with descriptions, tags, and custom properties. Activity logging. File organization with change detection. **Status: ✅ Implemented.**
 
-**CORE-02: Spec-Driven Workflow Engine.** Milestone creation with requirements gathering. Requirements traceability (ID assignment, phase mapping, completion tracking). Phase lifecycle (pending, active, completed). Plan generation with wave-based dependency analysis. Plan-as-prompt execution pattern. Verification loops with gap closure.
+**CORE-02: Spec-Driven Workflow Engine / Orchestrator.** Orchestrator run lifecycle with prompt-triggered execution. Spec draft synthesis from orchestrator runs. Specialist task delegation and execution timeline. Self-maintaining Spec that updates as agents work. The full vision (milestones, requirements traceability with ID assignment, phase lifecycle, wave-based dependency analysis, verification loops) is the long-term target. **Status: ✅ Implemented (MVP scope).**
 
-**CORE-03: Agent Team Orchestration.** Claude Agent SDK Agent Teams integration. Team lead + teammate spawning. Task creation, assignment, and dependency management. SendMessage coordination between agents. Wave-based parallel execution. Agent failure detection and retry. Cost tracking per agent session.
+**CORE-03: Agent Orchestration.** Coordination Agent that analyzes codebase, drafts Spec, generates tasks. 6 Specialist Agent personas (Investigate, Implement, Verify, Critique, Debug, Code Review). Task creation, assignment, and status tracking. Parallel execution. **Status: ✅ Implemented (MVP scope).**
 
-**CORE-04: Git Worktree Management.** Automatic worktree creation per plan/agent. Branch naming convention enforcement. Worktree cleanup after merge. Conflict detection between concurrent worktrees. Support for monorepos and submodules.
+**CORE-04: Git Worktree Management.** Automatic worktree creation per Space. Branch naming and lifecycle management. Worktree cleanup after merge. Support for monorepos and submodules. **Status: ✅ Implemented.**
 
-**CORE-05: GitHub Integration.** Repository operations (clone, branch, push). PR creation with auto-generated descriptions. PR review integration (request reviews, check status). Issue creation and lifecycle management. Milestone creation and tracking. Release creation with changelog generation. GitHub Actions status monitoring.
+**CORE-05: GitHub Integration.** Repository operations (clone, branch, push). PR creation with auto-generated descriptions from completed work. PR workflow integrated into Changes tab. **Status: ✅ Implemented (PR creation).**
 
-**CORE-06: Linear Integration.** Issue creation from phases. Cycle management mapped to milestones. Status sync (phase status to issue status). Label management. Project and team configuration.
+**CORE-06: Linear Integration.** Issue creation from phases. Cycle management mapped to milestones. Status sync. Label management. **Status: Future.**
 
-**CORE-07: Integrated Git Client.** Visual diff viewer. Staging area management. One-click PR creation. Branch management. Merge queue with dependency ordering. Commit history visualization.
+**CORE-07: Integrated Git Client (Changes Tab).** Visual diff viewer. Staging area management. One-click PR creation. Branch management. **Status: ✅ Implemented.**
 
-**CORE-08: Permission System.** Explore (read-only), Ask (approval), Execute (auto-approve) modes. Per-project permission configuration. Dangerous command blocking. Customizable allowlists/blocklists.
+**CORE-08: Permission System.** Explore (read-only), Ask (approval), Execute (auto-approve) modes. Per-project permission configuration. Dangerous command blocking. Customizable allowlists/blocklists. **Status: Future.**
 
-**CORE-09: Model Routing.** Quality/balanced/budget profiles. Per-task-type model assignment (research to Opus, execution to Sonnet, verification to Haiku). Claude Max subscription support. API key support for cloud mode.
+**CORE-09: Model Routing.** Multi-model provider support: Anthropic (Opus 4.5, Sonnet 4.5, Haiku) and OpenAI (GPT 5.2, Codex). Quality/balanced/budget profiles. Per-task-type model assignment. API key and subscription authentication for both providers. **Status: 🔄 In progress (provider runtime task).**
 
-**CORE-10: CLI Interface (First-Class).** All workflow operations available via `kata-cloud` command. Headless operation mode. JSON output for scripting. CI/CD pipeline integration. Competes as a terminal-native agent with workflow structure.
+**CORE-10: CLI Interface.** All workflow operations available via `kata-cloud` command. Headless operation mode. JSON output for scripting. CI/CD pipeline integration. **Status: Future (Phase 2).**
 
-**CORE-11: MCP Compatibility.** Kata as MCP server (expose workflow engine to external tools). Kata as MCP client (consume external tool servers). Tool discovery and registration.
+**CORE-11: MCP Compatibility.** Kata as MCP client (consume external tool servers). **Status: ✅ Implemented (client-side).** Kata as MCP server (expose workflow engine, future). Tool discovery and registration.
+
+**CORE-12: Context Engine.** Pluggable adapter interface for codebase context. Filesystem provider for initial context. Deep understanding shared across all agents. **Status: 🔄 In progress.**
+
+**CORE-13: In-App Browser Preview.** Built-in browser for previewing localhost development targets without leaving the app. **Status: 🔄 In progress.**
 
 ### 7.2 P1: Desktop and Web Apps
 
-**APP-01: Desktop Application.** Electron + React (evolving from Kata Agents). Multi-session management with inbox/archive. Agent team visualization dashboard. Real-time execution progress. Permission mode cycling. Session status workflow. Keyboard shortcuts. Native notifications.
+**APP-01: Desktop Application.** Electron + React 19 + Vite. Space management. Orchestrator with run lifecycle. Spec panel with autosave and task parsing. Changes tab with diff inspection and PR creation. Agent visualization. Code editor. Notes system. Resumable sessions. **Status: ✅ Primary surface, implemented.**
 
-**APP-02: Web Application.** React SPA (shared component library with desktop). Cloud execution backend. Team workspace management. Responsive design for tablet/mobile monitoring.
+**APP-02: Web Application.** React SPA (shared component library with desktop). Cloud execution backend. Team workspace management. Responsive design for tablet/mobile monitoring. **Status: Future (Phase 3).**
 
 ### 7.3 P2: Advanced Features
 
@@ -533,28 +592,34 @@ Kata's PR output includes: agent-created branches in isolated worktrees; atomic 
 
 ## 8. Execution Model
 
-### 8.1 Local Mode (Claude Max)
+### 8.1 Local Mode (Desktop, Primary)
 
 ```
 User's Machine
 +-- Kata Cloud Desktop App
 |   +-- Electron main process
-|   +-- React renderer
-|   +-- Agent subprocesses (Bun)
-|       +-- Agent Team Lead (Claude Agent SDK)
-|       +-- Teammate 1 (worktree-01)
-|       +-- Teammate 2 (worktree-02)
-|       +-- Teammate N (worktree-N)
+|   +-- React 19 renderer (Vite)
+|   +-- Orchestrator
+|       +-- Coordination Agent
+|       +-- Specialist Agent 1 (worktree-01)
+|       +-- Specialist Agent 2 (worktree-02)
+|       +-- Specialist Agent N (worktree-N)
 +-- Git worktrees (local filesystem)
-+-- Claude Max subscription (direct API)
++-- Model provider authentication
+    +-- Anthropic API key or Claude Max subscription
+    +-- OpenAI API key or ChatGPT subscription
 ```
 
-**Authentication:** Claude Max OAuth token (same as Claude Code)
-**Cost:** Included in Claude Max subscription ($100/mo or $200/mo)
-**Limits:** Claude Max rate limits apply
+**Authentication:** API keys for Anthropic and OpenAI, or subscription-based access (Claude Max, ChatGPT Plus/Pro)
+**Cost:** Included in existing model provider subscriptions/API usage
+**Limits:** Provider rate limits apply
 **Data:** All data stays local
 
-### 8.2 Cloud Mode (SaaS)
+### 8.2 CLI Mode (Future, Phase 2)
+
+Same local execution model as desktop, accessed via `kata-cloud` command. Headless operation for CI/CD pipelines. JSON output for scripting. All workflow operations available programmatically.
+
+### 8.3 Cloud Mode (Future, Phase 3)
 
 ```
 Kata Cloud Infrastructure
@@ -566,8 +631,8 @@ Kata Cloud Infrastructure
 |   +-- Agent team dispatch
 +-- Agent Execution Cluster
 |   +-- Container per agent team
-|   |   +-- Team Lead container
-|   |   +-- Teammate containers (1-N)
+|   |   +-- Coordination Agent container
+|   |   +-- Specialist containers (1-N)
 |   |   +-- Shared volume (worktrees)
 |   +-- gVisor sandboxing
 |   +-- Network proxy (allowlists)
@@ -586,9 +651,9 @@ Kata Cloud Infrastructure
 **Limits:** Plan-based concurrent agent teams, storage, API calls
 **Data:** Cloud-hosted with optional self-hosted deployment
 
-### 8.3 Self-Hosted Mode
+### 8.4 Self-Hosted Mode (Future, Phase 3)
 
-Same architecture as Cloud Mode deployed on customer infrastructure. Requires: container runtime (Docker/Kubernetes), PostgreSQL, S3-compatible object storage, Claude API key (Teams/Enterprise plan), network egress to Claude API and GitHub/Linear.
+Same architecture as Cloud Mode deployed on customer infrastructure. Requires: container runtime (Docker/Kubernetes), PostgreSQL, S3-compatible object storage, model provider API keys, network egress to model provider APIs and GitHub/Linear.
 
 Deployment options: standard cloud (SaaS managed), VPC (customer's cloud, Kata-managed), on-premises (fully customer-managed), air-gapped (stretch goal for regulated industries).
 
@@ -596,13 +661,15 @@ Deployment options: standard cloud (SaaS managed), VPC (customer's cloud, Kata-m
 
 ## 9. Pricing Model
 
-### Local Mode (Claude Max)
+> **Note:** Pricing is preliminary and subject to change. The desktop MVP is free during development.
 
-| Tier | Price | Includes                                                                                          |
-| ---- | ----- | ------------------------------------------------------------------------------------------------- |
-| Free | $0    | Uses your Claude Max subscription. Desktop app + CLI. 1 concurrent agent team. No cloud features. |
+### Local Mode (Desktop)
 
-### Cloud Mode (SaaS)
+| Tier | Price | Includes                                                                                                           |
+| ---- | ----- | ------------------------------------------------------------------------------------------------------------------ |
+| Free | $0    | Uses your own model provider API keys/subscriptions. Desktop app. 1 concurrent agent team. No cloud features. |
+
+### Cloud Mode (Future)
 
 | Tier       | Price       | Includes                                                                                         |
 | ---------- | ----------- | ------------------------------------------------------------------------------------------------ |
@@ -611,9 +678,9 @@ Deployment options: standard cloud (SaaS managed), VPC (customer's cloud, Kata-m
 | Team       | $49/user/mo | Up to 20 users, 10 concurrent agent teams, 1000 agent-hours/mo, shared workspaces, audit logging |
 | Enterprise | Custom      | SSO/SAML, self-hosted/VPC/on-prem, SLAs, dedicated support, custom integrations, compliance      |
 
-**Agent-hours** = wall-clock time an agent team is executing. Includes all teammates in the team.
+**Agent-hours** = wall-clock time an agent team is executing. Includes all specialists in the team.
 
-**Claude API costs** are pass-through at Anthropic's published rates (no markup). Users can bring their own API key or use Kata Cloud's pooled key.
+**Model API costs** are pass-through at provider published rates (no markup). Users can bring their own API keys or use Kata Cloud's pooled key.
 
 ### Pricing Context
 
@@ -625,11 +692,13 @@ Key competitive prices: Devin at $20/mo minimum (autonomous agent, no workflow s
 
 ## 10. Technical Decisions
 
-### 10.1 Why Claude Agent SDK (Not Model-Agnostic)
+### 10.1 Multi-Model Provider Strategy
 
-Agent Teams capability is unique to Claude Agent SDK; no other framework provides coordinated multi-agent teams with messaging and shared project context. Built-in tools (Read, Write, Edit, Bash, Glob, Grep) match exactly what coding agents need. Hooks system enables safety controls without LLM overhead. Session resume enables long-running workflows across interruptions. MCP support provides extensibility without framework lock-in on the tool side. Anthropic's deployment guidance (Docker, gVisor, Firecracker) aligns with cloud mode requirements. Anthropic commands 54% coding market share, validating the model quality bet.
+Kata supports both Anthropic and OpenAI because different models excel at different task types. Anthropic models (Opus 4.5, Sonnet 4.5) lead for deep reasoning, architecture, and implementation. OpenAI models (GPT 5.2) provide strong code analysis and review capabilities. Haiku handles fast, lightweight operations. Model routing profiles assign providers automatically based on task requirements.
 
-**Trade-off:** Locked to Claude models. This is an intentional bet that Claude remains the best coding model. The MCP layer provides escape hatch for integrating other model capabilities as tools. If Poolside or Magic.dev produce superior coding models, MCP allows incorporating them without re-architecting.
+The Claude Agent SDK provides orchestration primitives (agent coordination, messaging, shared project context, coding tools, hooks) that no other framework matches for the coding-specific use case. Kata uses the SDK for orchestration infrastructure while executing model calls across providers.
+
+**Trade-off:** Orchestration depends on Claude Agent SDK capabilities, but model execution is provider-flexible. If the SDK's Teams capability does not reach GA, Kata falls back to the subagent pattern already proven in the SDK. The MCP layer provides additional extensibility for incorporating new models and tools.
 
 ### 10.2 Why Worktrees (Not Branches)
 
@@ -641,11 +710,11 @@ Kata Orchestrator's 32 skills prove the workflow works for real projects. Opinio
 
 ### 10.4 Why Electron Desktop + React Web (Not Pure Web)
 
-Local mode requires native filesystem access for worktrees. Claude Max authentication flows use local tokens. Desktop app enables offline capability. Subprocess management requires main process control. Shared React component library minimizes duplication. Kata Agents provides a mature Electron codebase to evolve from.
+Local mode requires native filesystem access for worktrees. Model provider authentication flows use local tokens. Desktop app enables offline capability. Subprocess management requires main process control. Shared React component library minimizes duplication. Kata Agents provides a mature Electron codebase to evolve from.
 
-### 10.5 Why CLI as First-Class (Not Afterthought)
+### 10.5 Why CLI as First-Class (Future Phase)
 
-The terminal has become the primary surface for agentic coding. Claude Code, Codex CLI, Gemini CLI, OpenCode, and Amp all bet on terminal-first. Kata's CLI competes in this tier with a structural advantage: workflow enforcement that terminal agents lack. CI/CD integration requires headless operation. Power users prefer terminal workflows. The CLI and desktop app share the same Kata Core API.
+The terminal has become the primary surface for agentic coding. Claude Code, Codex CLI, Gemini CLI, OpenCode, and Amp all bet on terminal-first. Kata's CLI will compete in this tier with a structural advantage: workflow enforcement that terminal agents lack. CI/CD integration requires headless operation. Power users prefer terminal workflows. The CLI and desktop app share the same Kata Core API. The CLI ships after the desktop MVP is stable, as a Phase 2 deliverable.
 
 ---
 
@@ -653,13 +722,13 @@ The terminal has become the primary surface for agentic coding. Claude Code, Cod
 
 ### Product Metrics
 
-| Metric                          | Target (6 months)   | Target (12 months) |
-| ------------------------------- | ------------------- | ------------------ |
-| Monthly active users            | 500                 | 5,000              |
-| PRs created by agents           | 10,000              | 100,000            |
-| Avg phases per milestone        | 5-8                 | 5-8                |
-| Phase verification pass rate    | > 70% first pass    | > 85% first pass   |
-| Avg time from spec to merged PR | < 2 hours per phase | < 1 hour per phase |
+| Metric                          | MVP Milestone       | Target (6 months)   | Target (12 months) |
+| ------------------------------- | ------------------- | ------------------- | ------------------ |
+| Monthly active users            | 10                  | 500                 | 5,000              |
+| PRs created by agents           | 50                  | 10,000              | 100,000            |
+| Avg phases per milestone        | N/A (MVP)           | 5-8                 | 5-8                |
+| Phase verification pass rate    | N/A (MVP)           | > 70% first pass    | > 85% first pass   |
+| Avg time from spec to merged PR | < 4 hours per Space | < 2 hours per phase | < 1 hour per phase |
 
 ### Business Metrics
 
@@ -685,59 +754,89 @@ The terminal has become the primary surface for agentic coding. Claude Code, Cod
 
 | Risk                                                                       | Impact                                                          | Likelihood | Mitigation                                                                                                                                         |
 | -------------------------------------------------------------------------- | --------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude Agent SDK Agent Teams remains research preview                      | Cannot ship core multi-agent feature                            | Medium     | Build abstraction layer; fall back to subagent pattern if Teams not GA                                                                             |
-| Claude Max rate limits too restrictive for parallel agents                 | Local mode unusable for large projects                          | Medium     | Queue-based execution; prioritize critical-path agents                                                                                             |
-| Tessl ships a complete end-to-end workflow ($125M war chest, Snyk founder) | Direct competitive threat to spec-driven positioning            | High       | Differentiate on methodology enforcement and Claude-native experience; ship faster; build switching cost through Linear/GitHub depth               |
+| Multi-model provider coordination complexity                               | Inconsistent agent behavior across providers; routing bugs      | Medium     | Unified abstraction layer; comprehensive provider-specific testing; gradual rollout starting with Anthropic-primary                                 |
+| Anthropic and OpenAI rate limits too restrictive for parallel agents        | Local mode unusable for large projects                          | Medium     | Queue-based execution; prioritize critical-path agents; spread work across providers                                                               |
+| Tessl ships a complete end-to-end workflow ($125M war chest, Snyk founder) | Direct competitive threat to spec-driven positioning            | High       | Differentiate on methodology enforcement and multi-model routing; ship faster; build switching cost through Linear/GitHub depth                    |
 | GitHub Copilot adds spec-driven workflow features                          | Pricing premium collapses; distribution advantage overwhelming  | High       | Focus on depth of workflow value, not breadth; GitHub Spec Kit interop as hedge; target workflows Copilot's general-purpose approach cannot match  |
 | Devin/Cognition expands from autonomous agent to structured workflows      | $10.2B valuation and $73M ARR fund rapid feature development    | Medium     | Kata's bet is that orchestration-first beats autonomy-first for team-based development; different user persona                                     |
 | Factory AI's Droid model proves superior to dynamic agent teams            | Enterprise customers prefer pre-specialized agents              | Medium     | Kata's dynamic composition enables custom workflows Factory's fixed Droids cannot; monitor Factory's enterprise adoption                           |
-| Open-source tools (OpenHands, OpenCode, Aider) erode willingness to pay    | Free local mode neutralized; cloud differentiation insufficient | Medium     | Build workflow value and team features that open-source cannot replicate; contribute to open-source ecosystem via MCP                              |
+| Open-source tools (OpenHands, OpenCode, Aider) erode willingness to pay   | Free local mode neutralized; cloud differentiation insufficient | Medium     | Build workflow value and team features that open-source cannot replicate; contribute to open-source ecosystem via MCP                              |
 | Google Antigravity's free tier compresses market                           | Pricing pressure on cloud mode                                  | High       | Free local mode as competitive anchor; focus on workflow value over model access                                                                   |
 | Pricing pressure from Devin at $20/mo, Gemini CLI free, Amazon Q free tier | Cannot sustain $29-79/mo cloud pricing                          | High       | Justify pricing through spec-to-PR workflow value, not model access; local mode free tier; consider usage-based pricing if flat rate unsustainable |
 | Worktree management complexity at scale (> 10 concurrent)                  | Performance and reliability issues                              | Medium     | Limit concurrent worktrees; implement cleanup policies; test at scale early                                                                        |
 | MCP ecosystem evolves in a direction incompatible with Kata's architecture | Integration strategy fails                                      | Low        | MCP is an open standard with broad adoption (Apple, GitHub, Anthropic); risk of incompatibility is low                                             |
+| Model provider API changes break orchestration abstractions                | Agent execution fails until adapter layer is updated            | Medium     | Version-pinned provider SDKs; adapter pattern isolates provider-specific logic; automated integration tests per provider                           |
 
 ---
 
 ## 13. Development Roadmap
 
-### Phase 1: Foundation (Months 1-2)
+### Phase 1: Foundation (Largely Complete)
 
-**Objective:** Core workflow engine running locally with CLI interface.
+**Objective:** Core desktop MVP with spec-driven workflow.
 
-Fork Kata Agents as desktop app base. Extract Kata Orchestrator workflow engine into shared TypeScript library. Implement Agent Teams integration with Claude Agent SDK. Build worktree manager. GitHub API integration (repos, branches, PRs). Linear API integration (issues, cycles). CLI interface for all workflow operations (first-class, not afterthought). Local mode with Claude Max authentication. MCP client support for custom tool servers.
+**Completed:**
+- Desktop shell with Electron + React 19 + Vite
+- Space creation and metadata management with isolated git branches/worktrees
+- Spec panel with autosave, comment threads, and task block parsing
+- Orchestrator run lifecycle with Spec draft synthesis and specialist task delegation
+- Changes tab with diff inspection and selective staging
+- GitHub PR creation workflow integrated into Changes tab
+- Quality gates: linting, coverage enforcement (80/70/80/80), CI on PRs, Dependabot
+- MCP client support
 
-### Phase 2: Desktop App + CLI Polish (Months 3-4)
+**Remaining (in progress):**
+- In-app browser preview for localhost development
+- Context Engine adapter with initial filesystem provider
+- Model provider runtime with Anthropic + OpenAI authentication
 
-**Objective:** Visual desktop app with agent team visualization. CLI competitive with Claude Code/Codex CLI.
+### Phase 2: Expanded Workflow + CLI
 
-Evolve Kata Agents UI for workflow-centric experience. Agent team dashboard (live status, progress, cost). Integrated git client with one-click PR. Spec editor with requirements management. Phase execution visualization (waves, agent progress). PR review integration. Notification system. CLI interactive mode with rich output.
+**Objective:** Full spec-driven lifecycle and CLI interface.
 
-### Phase 3: Cloud Mode (Months 5-6)
+- Expanded workflow: milestones, phases, wave-based parallel execution, verification loops
+- CLI interface (`kata-cloud` command) for headless operation and CI/CD integration
+- Run-history persistence and visualization polish
+- PR review suite (6 parallel review agents)
+- Cost analytics per agent session and per Space
 
-**Objective:** SaaS deployment with web app.
+### Phase 3: Cloud Mode + Web App
 
-Cloud execution infrastructure (containers, sandboxing). API server for project/session management. Web app (React SPA). User authentication and workspace management. Billing and subscription management. MCP server support (expose Kata workflows to external tools). Self-hosted deployment documentation.
+**Objective:** SaaS deployment with web application.
 
-### Phase 4: Scale and Enterprise (Months 7-8)
+- Cloud execution infrastructure (containers, sandboxing)
+- API server for project/session management
+- Web app (React SPA, shared components with desktop)
+- User authentication and workspace management
+- Billing and subscription management
+- MCP server support (expose Kata workflows to external tools)
+- Self-hosted deployment documentation
 
-**Objective:** Enterprise readiness and advanced features.
+### Phase 4: Enterprise + Advanced Integrations
 
-PR review suite (6 parallel agents). Channel integrations (Slack, email). Plugin system. Cost analytics dashboard. Template marketplace. SSO/SAML. Audit logging. VPC and on-prem deployment options. SOC 2 readiness work.
+**Objective:** Enterprise readiness and ecosystem expansion.
+
+- SSO/SAML authentication
+- Audit logging and compliance export
+- VPC and on-prem deployment options
+- Linear integration (issues, cycles, status sync)
+- Channel integrations (Slack, email)
+- Plugin system
+- Template marketplace
 
 ---
 
 ## 14. Open Questions
 
-1. **Agent Teams GA timeline**: When will Claude Agent SDK Agent Teams exit research preview? Should we build a fallback orchestration layer?
+1. **Worktree limits**: What is the practical limit for concurrent git worktrees on a single repo? At what point does filesystem or git performance degrade?
 
-2. **Worktree limits**: What is the practical limit for concurrent git worktrees on a single repo? At what point does filesystem or git performance degrade?
+2. **Model provider concurrency**: How many concurrent agent sessions can each provider support under subscription tiers? Are there documented rate limits that affect parallel agent execution?
 
-3. **Claude Max concurrency**: How many concurrent agent sessions can a Claude Max subscription support? Is there a documented rate limit?
+3. **Multi-model coordination**: How should the orchestration layer handle provider-specific failures or rate limits? Should agents automatically fall back to a different provider or queue for retry?
 
-4. **Linear vs. GitHub Issues**: Should Kata Cloud support both, or pick one as the canonical project management integration? Linear is richer but GitHub Issues is more universal.
+4. **Provider parity**: How much effort should go into ensuring feature parity across Anthropic and OpenAI models? Should certain specialist roles be locked to specific providers?
 
-5. **Mobile support**: Should the web app be mobile-optimized from day one? The primary use case is desktop.
+5. **Linear vs. GitHub Issues**: Should Kata Cloud support both, or pick one as the canonical project management integration? Linear is richer but GitHub Issues is more universal.
 
 6. **Plugin ecosystem timing**: When should third-party plugin support ship? Too early fragments the experience; too late and the platform feels closed.
 
@@ -755,20 +854,23 @@ PR review suite (6 parallel agents). Channel integrations (Slack, email). Plugin
 
 ## Appendix A: Glossary
 
-| Term          | Definition                                                                                           |
-| ------------- | ---------------------------------------------------------------------------------------------------- |
-| Project       | A repository + its Kata Cloud configuration and history                                              |
-| Milestone     | A versioned release target (e.g., v1.0) with requirements and roadmap                                |
-| Phase         | A logical unit of work within a milestone (e.g., "authentication", "dashboard")                      |
-| Plan          | An atomic, executable specification for 2-3 tasks within a phase                                     |
-| Wave          | A group of plans with no interdependencies, executed in parallel                                     |
-| Agent Team    | A Claude Agent SDK team: one lead + N teammates coordinating on a phase                              |
-| Worktree      | A git worktree providing an isolated filesystem for an agent to work in                              |
-| Spec          | A specification document (PROJECT.md, REQUIREMENTS.md, PLAN.md) that doubles as an executable prompt |
-| Verification  | Post-execution check confirming deliverables meet requirements                                       |
-| Model Profile | A configuration mapping task types to Claude models (quality/balanced/budget)                        |
-| MCP           | Model Context Protocol, the universal connector for agentic tool integration                         |
-| Droid         | Factory AI's term for pre-specialized autonomous agents (used for competitive reference)             |
+| Term               | Definition                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Space              | An isolated development environment with its own git branch, worktree, and agent context, created from a prompt |
+| Project            | A repository + its Kata Cloud configuration and history                                                      |
+| Milestone          | A versioned release target (e.g., v1.0) with requirements and roadmap                                       |
+| Phase              | A logical unit of work within a milestone (e.g., "authentication", "dashboard")                              |
+| Plan               | An atomic, executable specification for 2-3 tasks within a phase                                             |
+| Wave               | A group of plans with no interdependencies, executed in parallel                                             |
+| Coordination Agent | The orchestrator agent that analyzes the codebase, drafts the Spec, and generates/assigns tasks              |
+| Specialist Agent   | One of 6 agent personas (Investigate, Implement, Verify, Critique, Debug, Code Review) that execute specific task types |
+| Worktree           | A git worktree providing an isolated filesystem for an agent to work in                                      |
+| Spec               | A single self-maintaining document that serves as the project's source of truth: goals, requirements, tasks, decisions, and progress. Updates as agents work. |
+| Context Engine     | Pluggable adapter interface providing deep codebase understanding to all agents                               |
+| Verification       | Post-execution check confirming deliverables meet requirements                                               |
+| Model Profile      | A configuration mapping task types to model providers and models (quality/balanced/budget across Anthropic and OpenAI) |
+| MCP                | Model Context Protocol, the universal connector for agentic tool integration                                 |
+| Droid              | Factory AI's term for pre-specialized autonomous agents (used for competitive reference)                     |
 
 ## Appendix B: Competitive Reference Links
 
