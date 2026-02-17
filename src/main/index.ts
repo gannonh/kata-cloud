@@ -144,8 +144,23 @@ function registerStateHandlers(
   );
   ipcMain.handle(
     IPC_CHANNELS.retrieveContext,
-    async (_event, request: ContextRetrievalRequest) =>
-      contextAdapter.retrieve(request, request.providerId)
+    async (_event, request: ContextRetrievalRequest) => {
+      const requestRootPath =
+        typeof request.rootPath === "string" ? request.rootPath.trim() : "";
+      const knownRootPaths = new Set(
+        store.getState().spaces.map((space) => space.rootPath.trim())
+      );
+      if (requestRootPath.length === 0 || !knownRootPaths.has(requestRootPath)) {
+        console.warn("Rejected context retrieval for unknown root path.", {
+          rootPath: requestRootPath,
+          spaceId: request.spaceId,
+          sessionId: request.sessionId
+        });
+        throw new Error("Context retrieval root path is not associated with a known space.");
+      }
+
+      return contextAdapter.retrieve({ ...request, rootPath: requestRootPath }, request.providerId);
+    }
   );
 }
 

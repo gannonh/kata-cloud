@@ -1,4 +1,5 @@
 import { readdir, readFile, stat } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import type { ContextProvider, ContextQuery, ContextSnippet } from "../types";
 
@@ -23,6 +24,17 @@ function createSnippetContent(content: string, matchIndex: number): string {
   const start = Math.max(0, matchIndex - 100);
   const end = Math.min(content.length, matchIndex + 220);
   return content.slice(start, end).replace(/\s+/g, " ").trim();
+}
+
+function expandTilde(inputPath: string): string {
+  const trimmedPath = inputPath.trim();
+  if (trimmedPath === "~") {
+    return os.homedir();
+  }
+  if (trimmedPath.startsWith("~/")) {
+    return path.join(os.homedir(), trimmedPath.slice(2));
+  }
+  return trimmedPath;
 }
 
 async function collectFiles(rootPath: string): Promise<string[]> {
@@ -55,6 +67,7 @@ async function collectFiles(rootPath: string): Promise<string[]> {
         continue;
       }
 
+      // Symlinks are intentionally ignored to avoid path escape and loop risks.
       if (entry.isFile()) {
         collected.push(fullPath);
       }
@@ -73,7 +86,7 @@ export class FilesystemContextProvider implements ContextProvider {
       return [];
     }
 
-    const files = await collectFiles(query.rootPath);
+    const files = await collectFiles(expandTilde(query.rootPath));
     const snippets: ContextSnippet[] = [];
     const maxResults = query.limit ?? DEFAULT_LIMIT;
 

@@ -863,7 +863,6 @@ function App(): React.JSX.Element {
     };
     await persistState(runningState);
 
-    const endedAt = new Date().toISOString();
     const contextProviderId = resolveContextProviderId(
       activeSpace.contextProvider,
       activeSession.contextProvider
@@ -879,10 +878,12 @@ function App(): React.JSX.Element {
           providerId: contextProviderId,
           limit: 3
         });
-      } catch {
+      } catch (error) {
+        console.error("Failed to retrieve context snippets.", error);
         contextSnippets = [];
       }
     }
+    const endedAt = new Date().toISOString();
 
     const runFailureMessage = resolveRunFailure(prompt);
     const delegationOutcome = runFailureMessage
@@ -901,7 +902,7 @@ function App(): React.JSX.Element {
               updatedAt: endedAt,
               completedAt: endedAt,
               errorMessage: failureMessage ?? undefined,
-              contextSnippets,
+              contextSnippets: failureMessage ? undefined : contextSnippets,
               draft,
               draftAppliedAt: undefined,
               draftApplyError: undefined,
