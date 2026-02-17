@@ -76,6 +76,11 @@ function toViewLabel(view: NavigationView): string {
   }
 }
 
+function toDisplayTimestamp(timestamp: string): string {
+  const parsed = new Date(timestamp);
+  return Number.isNaN(parsed.getTime()) ? timestamp : parsed.toLocaleString();
+}
+
 function createSessionLabel(existingCount: number): string {
   return `Session ${existingCount + 1}`;
 }
@@ -342,9 +347,26 @@ function App(): React.JSX.Element {
       ),
     [state.activeSessionId, state.activeSpaceId, state.orchestratorRuns]
   );
-  const latestRunForActiveSession = useMemo(
-    () => runsForActiveSession[runsForActiveSession.length - 1],
+  const runHistoryForActiveSession = useMemo(
+    () =>
+      [...runsForActiveSession].sort((left, right) => {
+        const createdAtDelta = right.createdAt.localeCompare(left.createdAt);
+        if (createdAtDelta !== 0) {
+          return createdAtDelta;
+        }
+
+        const updatedAtDelta = right.updatedAt.localeCompare(left.updatedAt);
+        if (updatedAtDelta !== 0) {
+          return updatedAtDelta;
+        }
+
+        return right.id.localeCompare(left.id);
+      }),
     [runsForActiveSession]
+  );
+  const latestRunForActiveSession = useMemo(
+    () => runHistoryForActiveSession[0],
+    [runHistoryForActiveSession]
   );
   const latestDraftForActiveSession = latestRunForActiveSession?.draft;
 
@@ -1016,6 +1038,50 @@ function App(): React.JSX.Element {
                   ) : null}
                 </>
               ) : null}
+            </div>
+            <div className="info-card">
+              <h3>Run History</h3>
+              {runHistoryForActiveSession.length > 0 ? (
+                <ol className="run-history-list">
+                  {runHistoryForActiveSession.map((run) => (
+                    <li key={run.id} className="run-history-item">
+                      <p>
+                        <strong>{run.id}</strong> ({run.status})
+                      </p>
+                      <p>Prompt: {run.prompt}</p>
+                      <p>Lifecycle: {run.statusTimeline.join(" -> ")}</p>
+                      <p>Started: {toDisplayTimestamp(run.createdAt)}</p>
+                      {run.completedAt ? <p>Completed: {toDisplayTimestamp(run.completedAt)}</p> : null}
+                      {run.delegatedTasks && run.delegatedTasks.length > 0 ? (
+                        <div>
+                          <p>Delegated tasks</p>
+                          <ul className="run-history-task-list">
+                            {run.delegatedTasks.map((task) => (
+                              <li key={task.id}>
+                                {`${task.type} (${task.specialist}): ${task.status} [${task.statusTimeline.join(" -> ")}]`}
+                                {task.errorMessage ? (
+                                  <>
+                                    {" "}
+                                    - <span className="field-error">{task.errorMessage}</span>
+                                  </>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                      {run.draft ? <p>Draft: ready for run {run.draft.runId}</p> : null}
+                      {run.draftAppliedAt ? (
+                        <p>Draft applied at {toDisplayTimestamp(run.draftAppliedAt)}</p>
+                      ) : null}
+                      {run.errorMessage ? <p className="field-error">{run.errorMessage}</p> : null}
+                      {run.draftApplyError ? <p className="field-error">{run.draftApplyError}</p> : null}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p>No run history for this session yet.</p>
+              )}
             </div>
             {latestRunForActiveSession ? (
               <div className="info-card">

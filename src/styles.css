@@ -292,6 +292,38 @@ body {
   line-height: 1.38;
 }
 
+.run-history-list {
+  margin: 0.55rem 0 0;
+  padding-left: 1.05rem;
+  display: grid;
+  gap: 0.62rem;
+}
+
+.run-history-item {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: rgba(20, 25, 35, 0.82);
+  padding: 0.55rem 0.6rem;
+}
+
+.run-history-item p {
+  margin: 0.26rem 0 0;
+}
+
+.run-history-item p:first-child {
+  margin-top: 0;
+  color: var(--text);
+}
+
+.run-history-task-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  display: grid;
+  gap: 0.22rem;
+}
+
 .spec-panel {
   display: flex;
   flex-direction: column;
