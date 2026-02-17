@@ -134,6 +134,32 @@ describe("shared state helpers", () => {
           ]
         },
         {
+          id: "run-5",
+          spaceId: "space-1",
+          sessionId: "session-1",
+          prompt: "Investigate orchestrator failure mode",
+          status: "failed",
+          statusTimeline: ["queued", "running", "failed"],
+          createdAt: "2026-02-16T00:05:00.000Z",
+          updatedAt: "2026-02-16T00:06:00.000Z",
+          completedAt: "2026-02-16T00:06:00.000Z",
+          errorMessage: "Synthetic failure for testing",
+          delegatedTasks: [
+            {
+              id: "run-5-verify",
+              runId: "run-5",
+              type: "verify",
+              specialist: "verifier",
+              status: "failed",
+              statusTimeline: ["queued", "delegating", "delegated", "running", "failed"],
+              createdAt: "2026-02-16T00:05:00.000Z",
+              updatedAt: "2026-02-16T00:06:00.000Z",
+              completedAt: "2026-02-16T00:06:00.000Z",
+              errorMessage: "Verifier failure details"
+            }
+          ]
+        },
+        {
           id: "run-2",
           spaceId: "missing-space",
           sessionId: "session-1",
@@ -184,12 +210,15 @@ describe("shared state helpers", () => {
     expect(state.lastOpenedAt).toBe("2026-02-16T00:00:00.000Z");
     expect(state.spaces).toHaveLength(1);
     expect(state.sessions).toHaveLength(1);
-    expect(state.orchestratorRuns).toHaveLength(1);
+    expect(state.orchestratorRuns).toHaveLength(2);
     expect(state.spaces[0]?.id).toBe("space-1");
     expect(state.sessions[0]?.id).toBe("session-1");
     expect(state.orchestratorRuns[0]?.id).toBe("run-1");
     expect(state.orchestratorRuns[0]?.delegatedTasks).toHaveLength(1);
     expect(state.orchestratorRuns[0]?.delegatedTasks?.[0]?.specialist).toBe("implementor");
+    expect(state.orchestratorRuns[1]?.id).toBe("run-5");
+    expect(state.orchestratorRuns[1]?.status).toBe("failed");
+    expect(state.orchestratorRuns[1]?.delegatedTasks?.[0]?.status).toBe("failed");
   });
 
   it("falls back when active ids and view are invalid", () => {
