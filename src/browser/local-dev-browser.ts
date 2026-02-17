@@ -1,4 +1,4 @@
-export const DEFAULT_LOCAL_PREVIEW_URL = "http://localhost:5173";
+export const DEFAULT_LOCAL_PREVIEW_URL = "http://localhost:5173/";
 
 export interface BrowserNavigationState {
   entries: string[];
@@ -8,8 +8,9 @@ export interface BrowserNavigationState {
 export function createInitialBrowserNavigationState(
   initialUrl = DEFAULT_LOCAL_PREVIEW_URL
 ): BrowserNavigationState {
+  const normalizedInitialUrl = normalizeLocalPreviewUrl(initialUrl);
   return {
-    entries: [initialUrl],
+    entries: [normalizedInitialUrl],
     index: 0
   };
 }

@@ -641,7 +641,7 @@ body {
   margin: 0;
   color: var(--muted);
   font-size: 0.77rem;
-  font-family: "IBM Plex Mono", "SF Mono", "Consolas", monospace;
+  font-family: "IBM Plex Mono", "SF Mono", Consolas, monospace;
 }
 
 .browser-frame {

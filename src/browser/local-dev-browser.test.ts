@@ -28,4 +28,13 @@ describe("local dev browser helpers", () => {
     expect(stepBrowserHistory(withThird, "back").index).toBe(1);
     expect(stepBrowserHistory(stepBrowserHistory(withThird, "back"), "forward").index).toBe(2);
   });
+
+  it("keeps canonical default URL as a single history entry", () => {
+    const initial = createInitialBrowserNavigationState("http://localhost:5173");
+    const afterNavigate = navigateBrowserHistory(initial, "http://localhost:5173/");
+
+    expect(afterNavigate).toBe(initial);
+    expect(afterNavigate.entries).toEqual(["http://localhost:5173/"]);
+    expect(afterNavigate.index).toBe(0);
+  });
 });
