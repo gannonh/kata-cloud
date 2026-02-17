@@ -1,1 +1,18 @@
-/.DS_Store
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# Dependencies and build outputs
+node_modules
+dist
+
+# Package/runtime caches
+.pnpm-store/
+**/.pnpm-store/
+.electron-cache/
+**/.electron-cache/
+.cache/
+
+# Test/build artifacts
+coverage/
+*.tsbuildinfo
