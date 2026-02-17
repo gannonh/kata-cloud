@@ -19,6 +19,7 @@ describe("shared state helpers", () => {
     expect(state.sessions).toHaveLength(1);
     expect(state.orchestratorRuns).toHaveLength(0);
     expect(state.spaces[0]?.createdAt).toBe(now);
+    expect(state.spaces[0]?.contextProvider).toBe("filesystem");
     expect(state.sessions[0]?.createdAt).toBe(now);
   });
 
@@ -41,6 +42,7 @@ describe("shared state helpers", () => {
       rootPath: "/tmp/space-1",
       description: "desc",
       tags: ["one", "two"],
+      contextProvider: "mcp",
       repoUrl: "https://github.com/example/repo",
       gitStatus: {
         spaceId: "space-1",
@@ -119,6 +121,16 @@ describe("shared state helpers", () => {
           createdAt: "2026-02-16T00:00:00.000Z",
           updatedAt: "2026-02-16T00:00:00.000Z",
           completedAt: "2026-02-16T00:00:00.000Z",
+          contextSnippets: [
+            {
+              id: "filesystem:/tmp/space-1/src/main.tsx",
+              provider: "filesystem",
+              path: "/tmp/space-1/src/main.tsx",
+              source: "filesystem",
+              content: "draft a rollout plan",
+              score: 1
+            }
+          ],
           delegatedTasks: [
             {
               id: "run-1-implement",
@@ -212,6 +224,7 @@ describe("shared state helpers", () => {
     expect(state.sessions).toHaveLength(1);
     expect(state.orchestratorRuns).toHaveLength(2);
     expect(state.spaces[0]?.id).toBe("space-1");
+    expect(state.spaces[0]?.contextProvider).toBe("mcp");
     expect(state.sessions[0]?.id).toBe("session-1");
     expect(state.orchestratorRuns[0]?.id).toBe("run-1");
     expect(state.orchestratorRuns[0]?.delegatedTasks).toHaveLength(1);

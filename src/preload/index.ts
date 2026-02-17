@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 import { AppState } from "../shared/state";
 import { IPC_CHANNELS, ShellApi } from "../shared/shell-api";
+import type { ContextRetrievalRequest } from "../context/types";
 import type {
   GitHubSessionRequest,
   SpaceGitChangesRequest,
@@ -45,6 +46,8 @@ const shellApi: ShellApi = {
     ipcRenderer.invoke(IPC_CHANNELS.generatePullRequestDraft, request),
   createPullRequest: async (request: SpaceGitCreatePullRequestRequest) =>
     ipcRenderer.invoke(IPC_CHANNELS.createPullRequest, request),
+  retrieveContext: async (request: ContextRetrievalRequest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.retrieveContext, request),
   openExternalUrl: async (url: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.openExternalUrl, url)
 };

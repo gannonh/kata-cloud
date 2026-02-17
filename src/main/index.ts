@@ -14,6 +14,10 @@ import type {
   SpaceGitLifecycleRequest,
   SpaceGitPullRequestDraftRequest
 } from "../git/types";
+import { createContextAdapter } from "../context/context-adapter";
+import { FilesystemContextProvider } from "../context/providers/filesystem-context-provider";
+import { McpCompatibleStubContextProvider } from "../context/providers/mcp-context-provider";
+import type { ContextRetrievalRequest } from "../context/types";
 
 let stateStore: PersistedStateStore | undefined;
 
@@ -64,6 +68,11 @@ function registerStateHandlers(
   gitLifecycleService: SpaceGitLifecycleService,
   pullRequestWorkflowService: PullRequestWorkflowService
 ): void {
+  const contextAdapter = createContextAdapter({
+    providers: [new FilesystemContextProvider(), new McpCompatibleStubContextProvider()],
+    defaultProvider: "filesystem"
+  });
+
   ipcMain.handle(IPC_CHANNELS.getState, async () => store.getState());
   ipcMain.handle(IPC_CHANNELS.saveState, async (_event, nextState: unknown) => store.save(nextState));
   ipcMain.handle(
@@ -131,6 +140,26 @@ function registerStateHandlers(
       }
 
       await shell.openExternal(parsedUrl.toString());
+    }
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.retrieveContext,
+    async (_event, request: ContextRetrievalRequest) => {
+      const requestRootPath =
+        typeof request.rootPath === "string" ? request.rootPath.trim() : "";
+      const knownRootPaths = new Set(
+        store.getState().spaces.map((space) => space.rootPath.trim())
+      );
+      if (requestRootPath.length === 0 || !knownRootPaths.has(requestRootPath)) {
+        console.warn("Rejected context retrieval for unknown root path.", {
+          rootPath: requestRootPath,
+          spaceId: request.spaceId,
+          sessionId: request.sessionId
+        });
+        throw new Error("Context retrieval root path is not associated with a known space.");
+      }
+
+      return contextAdapter.retrieve({ ...request, rootPath: requestRootPath }, request.providerId);
     }
   );
 }
