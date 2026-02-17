@@ -1,6 +1,7 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents working with this repository.
+`CLAUDE.md` is a symlink to this file for compatibility.
 
 # Repository Guidelines
 
@@ -28,6 +29,7 @@ The app uses Electron's security best practices:
 - `pnpm run web:dev`: run renderer only (Vite dev server on port 5173).
 - `pnpm run build`: compile main process and bundle renderer assets.
 - `pnpm run desktop:typecheck`: strict TS type checks for main + renderer configs.
+- `pnpm run repo:guardrails`: run repository hygiene guardrails.
 - `pnpm run lint`: lint all files with ESLint (flat config in `eslint.config.mjs`).
 - `pnpm test`: run Vitest once.
 - `pnpm run test:watch`: run Vitest in watch mode.
@@ -71,6 +73,6 @@ Location: `notes/`
 ### Product Management & Design (PRD, Research, High-level Requirements)
 
 Location: `docs/`
-= Product Overview: `docs/kata-cloud-overview.md` - high-level product vision, key features, and user personas.
+- Product Overview: `docs/kata-cloud-ovweview.md` - high-level product vision, key features, and user personas.
 - PRD: `docs/PRD.md` - high-level product requirements, user stories, and acceptance criteria.
 - Research: `docs/research.md` - user research findings, competitive analysis, and design
