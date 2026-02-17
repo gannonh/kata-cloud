@@ -1,31 +1,11 @@
 # AGENTS.md
 
-This file provides guidance to coding agents working with this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 `CLAUDE.md` is a symlink to this file for compatibility.
-
-# Repository Guidelines
-
-## Project Structure & Module Organization
-`kata-cloud` is a pnpm workspace centered on a desktop app shell plus renderer features.
-
-- `src/main`, `src/preload`, `src/shared`: Electron main-process, preload bridge, and shared state/contracts.
-- `src/main.tsx`, `src/styles.css`, and feature folders (`src/space`, `src/notes`, `src/features/spec-panel`, `src/git`): renderer UI and domain logic.
-- Tests are mostly colocated as `*.test.ts` / `*.test.tsx`; Node-only cases use `*.node.test.ts`.
-- `packages/task-parser/src` contains the reusable parser package (ESM), with tests in `packages/task-parser/test`.
-- `scripts/` holds local dev helpers; `dist/` is generated build output.
-
-## Electron Architecture
-The app uses Electron's security best practices:
-- Main process (CommonJS) handles IPC, file system, and git operations via `src/main/index.ts`.
-- Preload script exposes a typed `kataShell` API to the renderer via `contextBridge` (`src/preload/index.ts`).
-- Renderer (ESNext/bundler) uses React 19 and communicates exclusively through `kataShell` API (never directly with Electron APIs).
-- State is managed through a persistent store in main process and broadcast to all windows via IPC (`IPC_CHANNELS.stateChanged`).
 
 ## Build, Test, and Development Commands
 - `pnpm install`: install dependencies.
 - `pnpm run dev`: build Electron main, start Vite, then launch Electron (orchestrated by `scripts/dev-desktop.mjs`).
-  - Sets `KATA_CLOUD_RENDERER_URL` env var for main process to locate the dev server.
-  - Waits for Vite to be ready before launching Electron.
 - `pnpm run web:dev`: run renderer only (Vite dev server on port 5173).
 - `pnpm run build`: compile main process and bundle renderer assets.
 - `pnpm run desktop:typecheck`: strict TS type checks for main + renderer configs.
@@ -35,44 +15,111 @@ The app uses Electron's security best practices:
 - `pnpm run test:watch`: run Vitest in watch mode.
 - `pnpm test -- <pattern>`: run tests matching a file pattern (e.g., `pnpm test -- state`).
 - `pnpm test -- -t "test name pattern"`: run tests matching a test name.
-
-## Coding Style & Naming Conventions
-- Language stack: TypeScript/TSX (plus small ESM JS utilities under `packages/task-parser` and `scripts`).
-- Follow existing formatting patterns: 2-space indentation, semicolons, and double quotes.
-- Naming: `PascalCase` for React components/types, `camelCase` for functions/variables, `kebab-case` for filenames (example: `create-space-flow.tsx`).
-- Keep modules focused and colocate tests with the feature they validate.
-
-## Testing Guidelines
-- Test framework: Vitest with `jsdom` (`vitest.config.ts`) and Testing Library setup in `src/test/setup.ts`.
-- Prefer behavior-driven test names and user-visible assertions for UI flows.
-- When changing shared logic (for example `src/git/*` or `packages/task-parser/*`), add/adjust tests in both impacted areas.
-- Coverage thresholds: 80% statements/functions/lines, 70% branches (enforced by vitest.config.ts).
-- Main process and preload code (`src/main/**`, `src/preload/**`) are excluded from coverage.
 - Before opening a PR, run: `pnpm test && pnpm run desktop:typecheck`.
 
-## Commit & Pull Request Guidelines
-- Current history includes both conventional and ad-hoc messages; prefer concise imperative commits with optional prefixes (`feat:`, `fix:`, `chore:`).
-- Avoid generic summaries like `Agent changes`.
-- PRs should include a short purpose statement, linked issue (if available), validation steps run, and screenshots for UI updates.
-- Keep PRs scoped; list follow-up work explicitly when deferring.
+## Architecture Overview
+
+`kata-cloud` is a pnpm workspace centered on an Electron desktop app with a React 19 renderer.
+
+### Electron Process Boundaries
+- **Main process** (CommonJS, `src/main/index.ts`): IPC handlers, file system, git operations, persisted state. Outputs to `dist/`.
+- **Preload** (`src/preload/index.ts`): Exposes typed `kataShell` API via `contextBridge`. Security: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`.
+- **Renderer** (ESNext/Bundler, `src/main.tsx`): React 19 app. Communicates exclusively through `window.kataShell` — never imports Electron APIs directly.
+
+### IPC & State Flow
+IPC channels follow the `kata-cloud/<domain>:<action>` naming convention, defined in `src/shared/shell-api.ts`.
+
+State flow:
+1. Main process `PersistedStateStore` reads/writes `~/.config/kata-cloud/kata-cloud-state.json`
+2. On change, broadcasts via `IPC_CHANNELS.stateChanged` to all windows
+3. Renderer subscribes via `kataShell.subscribeState(listener)` and holds in React state
+4. Renderer writes via `kataShell.saveState()` IPC call
+5. Fallback: renderer stores to `localStorage` if shell is unavailable (web-only mode)
+
+`AppState` (defined in `src/shared/state.ts`) is the central data contract:
+- `spaces: SpaceRecord[]` — workspace definitions
+- `sessions: SessionRecord[]` — work contexts per space
+- `orchestratorRuns: OrchestratorRunRecord[]` — AI delegation history
+- `activeView`, `activeSpaceId`, `activeSessionId` — UI navigation state
+
+All incoming state is validated through `normalizeAppState()` with strict guard functions.
+
+### kataShell API Surface
+The preload bridge (`src/preload/index.ts`) exposes these async methods to the renderer:
+- **State**: `getState()`, `saveState()`, `subscribeState()`
+- **Git lifecycle**: `initializeSpaceGit()`, `switchSpaceGit()`, `getSpaceChanges()`, `getSpaceFileDiff()`, `stageSpaceFile()`, `unstageSpaceFile()`
+- **GitHub workflow**: `createGitHubSession()`, `clearGitHubSession()`, `generatePullRequestDraft()`, `createPullRequest()`
+- **System**: `openExternalUrl()`
+
+### Feature Module Pattern
+Each domain feature follows a consistent structure:
+- `types.ts`: Domain types, request/response interfaces, type guards
+- `validation.ts`: Input validation and normalization
+- `store.ts`: State management helpers
+- `*.test.ts`: Colocated tests (use `*.node.test.ts` suffix for Node-only tests)
+
+Feature directories: `src/space/`, `src/git/`, `src/notes/`, `src/features/spec-panel/`.
+
+### Git Domain (`src/git/`)
+The git feature is the most complex domain. Key files:
+- `git-cli.ts`: Shell command wrapper for git operations
+- `space-git-service.ts`: High-level service (initialize, switch, stage)
+- `changes.ts`: Parses `git status --porcelain` output
+- `space-git-ui-state.ts`: Transforms `SpaceGitLifecycleStatus` (phases: initializing, switching, ready, error) to UI state
+- `pr-workflow.ts`: GitHub API integration for pull requests
+
+### Renderer Entry Point
+`src/main.tsx` (~1770 lines) is a monolithic React component managing views (Explorer, Orchestrator, Spec, Changes), space/session CRUD, git operations, PR workflow, and orchestrator runs.
+
+### Packages
+`packages/task-parser/` is a standalone ESM package that parses task blocks from markdown. Used by the orchestrator to extract and track delegated tasks from spec drafts.
+
+## Project Structure
+- `src/main/`, `src/preload/`, `src/shared/`: Electron main-process, preload bridge, shared state/contracts.
+- `src/main.tsx` and feature folders (`src/space/`, `src/notes/`, `src/features/spec-panel/`, `src/git/`): renderer UI and domain logic.
+- `packages/task-parser/src/`: reusable parser package (ESM), tests in `packages/task-parser/test/`.
+- `scripts/`: local dev helpers; `dist/`: generated build output.
+
+## Coding Style & Naming Conventions
+- TypeScript/TSX throughout (plus small ESM JS utilities under `packages/task-parser` and `scripts`).
+- 2-space indentation, semicolons, double quotes.
+- `PascalCase` for React components/types, `camelCase` for functions/variables, `kebab-case` for filenames (e.g., `create-space-flow.tsx`).
+- Colocate tests with the feature they validate.
+
+## Testing Guidelines
+- Vitest with `jsdom` environment and Testing Library (`src/test/setup.ts`).
+- Prefer behavior-driven test names and user-visible assertions for UI flows.
+- When changing shared logic (`src/git/*` or `packages/task-parser/*`), add/adjust tests in both impacted areas.
+- Coverage thresholds: 80% statements/functions/lines, 70% branches (enforced by `vitest.config.ts`).
+- Main process and preload code (`src/main/**`, `src/preload/**`) are excluded from coverage.
 
 ## TypeScript Configuration
-- Main process: `tsconfig.main.json` - CommonJS, Node/Electron types, outputs to `dist/`.
-- Renderer: `tsconfig.renderer.json` - ESNext/Bundler, DOM + Vite types, noEmit (Vite handles bundling).
+- `tsconfig.main.json`: CommonJS, Node/Electron types, outputs to `dist/`.
+- `tsconfig.renderer.json`: ESNext/Bundler, DOM + Vite types, noEmit (Vite handles bundling).
 - Both extend `tsconfig.base.json` for shared strict settings.
+
+## Commit & Pull Request Guidelines
+- Concise imperative commits with optional prefixes (`feat:`, `fix:`, `chore:`).
+- PRs: short purpose statement, linked issue (if available), validation steps run, screenshots for UI updates.
+- Keep PRs scoped; list follow-up work explicitly when deferring.
+
+## Key Files for Orientation
+Start here when joining the project:
+- `src/shared/state.ts` — AppState contract and normalization
+- `src/shared/shell-api.ts` — IPC channel definitions and ShellApi interface
+- `src/preload/index.ts` — kataShell bridge implementation
+- `src/main/index.ts` — main process entry, IPC handler registration
+- `src/main.tsx` — renderer app root
 
 ## Project Management & Task Tracking
 
 ### Specification & Task Tracking
-
 Location: `notes/`
-- Tasks are tracked as markdown files in `notes/` with a structured format (see `notes/spec.md` for template).
-- Each task includes: title, scope, inputs, definition of done, verification steps, and an external completion record.
-- Task files are linked from the `spec` note for easy reference during development and handoff.
+- Tasks tracked as markdown files with structured format (see `notes/spec.md` for template).
+- Each task includes: title, scope, inputs, definition of done, verification steps, and completion record.
 
-### Product Management & Design (PRD, Research, High-level Requirements)
-
+### Product Management & Design
 Location: `docs/`
-- Product Overview: `docs/kata-cloud-ovweview.md` - high-level product vision, key features, and user personas.
-- PRD: `docs/PRD.md` - high-level product requirements, user stories, and acceptance criteria.
-- Research: `docs/research.md` - user research findings, competitive analysis, and design
+- Product overview: `docs/kata-cloud-ovweview.md`
+- PRD: `docs/PRD.md`
+- Research: `docs/research.md`
