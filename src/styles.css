@@ -8,6 +8,7 @@
   --text: #dbe2ee;
   --muted: #9aaccc;
   --green: #60d394;
+  --amber: #f2c66d;
 }
 
 *,
@@ -292,6 +293,120 @@ body {
   line-height: 1.38;
 }
 
+.changes-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(320px, 1.4fr);
+  gap: 0.75rem;
+}
+
+.changes-files,
+.changes-diff {
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: rgba(15, 18, 24, 0.62);
+  padding: 0.75rem;
+  min-height: 0;
+}
+
+.changes-files header h3,
+.changes-diff header h3 {
+  margin: 0;
+  font-size: 0.83rem;
+}
+
+.changes-files header p,
+.changes-diff header p {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.changes-file-list {
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.changes-file {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 0.52rem;
+  background: rgba(20, 25, 35, 0.82);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.changes-file.is-selected {
+  border-color: var(--panel-focus);
+}
+
+.changes-file__select {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.79rem;
+}
+
+.changes-file__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.changes-pill {
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  color: var(--muted);
+}
+
+.changes-pill.is-staged {
+  border-color: rgba(96, 211, 148, 0.55);
+  color: #a6f0c4;
+}
+
+.changes-pill.is-unstaged {
+  border-color: rgba(242, 198, 109, 0.5);
+  color: #f8dea4;
+}
+
+.changes-diff {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.changes-diff__panel {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: rgba(20, 25, 35, 0.82);
+  padding: 0.55rem;
+}
+
+.changes-diff__panel h4 {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.changes-diff__panel pre {
+  margin: 0.5rem 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  max-height: 380px;
+  overflow: auto;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-family: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+}
+
 .spec-panel {
   display: flex;
   flex-direction: column;
@@ -468,6 +583,10 @@ body {
   }
 
   .panel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .changes-layout {
     grid-template-columns: 1fr;
   }
 }
