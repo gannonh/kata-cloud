@@ -12,6 +12,7 @@ export type GitCommandResult = {
 };
 
 export type GitCommandRunner = (args: string[]) => Promise<GitCommandResult>;
+export type GitDiffMode = "staged" | "unstaged";
 
 export async function runGitCommand(args: string[]): Promise<GitCommandResult> {
   return new Promise((resolve, reject) => {
@@ -63,6 +64,11 @@ export class GitCli {
   }
 
   async isDirty(repoPath: string): Promise<boolean> {
+    const status = await this.readStatusPorcelain(repoPath);
+    return status.trim().length > 0;
+  }
+
+  async readStatusPorcelain(repoPath: string): Promise<string> {
     const result = await this.commandRunner([
       "-C",
       repoPath,
@@ -72,11 +78,29 @@ export class GitCli {
 
     this.assertSuccess(
       result,
-      "Could not read repository state.",
+      "Could not read repository status.",
       "Check repository permissions and git configuration."
     );
 
-    return result.stdout.trim().length > 0;
+    return result.stdout;
+  }
+
+  async readStagedNumstat(repoPath: string): Promise<string> {
+    const result = await this.commandRunner([
+      "-C",
+      repoPath,
+      "diff",
+      "--cached",
+      "--numstat"
+    ]);
+
+    this.assertSuccess(
+      result,
+      "Could not read staged diff summary.",
+      "Check repository permissions and git configuration."
+    );
+
+    return result.stdout;
   }
 
   async branchExists(repoPath: string, branchName: string): Promise<boolean> {
@@ -177,6 +201,136 @@ export class GitCli {
     );
 
     return result.stdout.trim();
+  }
+
+  async readFileDiff(
+    repoPath: string,
+    filePath: string,
+    mode: GitDiffMode
+  ): Promise<string> {
+    if (mode === "staged") {
+      const stagedResult = await this.commandRunner([
+        "-C",
+        repoPath,
+        "diff",
+        "--cached",
+        "--",
+        filePath
+      ]);
+
+      this.assertSuccess(
+        stagedResult,
+        `Could not read staged diff for "${filePath}".`,
+        "Check repository permissions and retry."
+      );
+
+      return stagedResult.stdout.trimEnd();
+    }
+
+    const unstagedResult = await this.commandRunner([
+      "-C",
+      repoPath,
+      "diff",
+      "--",
+      filePath
+    ]);
+
+    this.assertSuccess(
+      unstagedResult,
+      `Could not read unstaged diff for "${filePath}".`,
+      "Check repository permissions and retry."
+    );
+
+    if (unstagedResult.stdout.trim().length > 0) {
+      return unstagedResult.stdout.trimEnd();
+    }
+
+    const untrackedResult = await this.commandRunner([
+      "-C",
+      repoPath,
+      "ls-files",
+      "--others",
+      "--exclude-standard",
+      "--",
+      filePath
+    ]);
+
+    this.assertSuccess(
+      untrackedResult,
+      `Could not verify untracked status for "${filePath}".`,
+      "Check repository permissions and retry."
+    );
+
+    if (untrackedResult.stdout.trim().length === 0) {
+      return "";
+    }
+
+    const nullDevice = process.platform === "win32" ? "NUL" : "/dev/null";
+    const untrackedDiff = await this.commandRunner([
+      "-C",
+      repoPath,
+      "diff",
+      "--no-index",
+      "--",
+      nullDevice,
+      filePath
+    ]);
+
+    if (untrackedDiff.exitCode === 0 || untrackedDiff.exitCode === 1) {
+      return untrackedDiff.stdout.trimEnd();
+    }
+
+    this.assertSuccess(
+      untrackedDiff,
+      `Could not read untracked diff for "${filePath}".`,
+      "Check repository permissions and retry."
+    );
+
+    return "";
+  }
+
+  async stageFile(repoPath: string, filePath: string): Promise<void> {
+    const result = await this.commandRunner(["-C", repoPath, "add", "--", filePath]);
+
+    this.assertSuccess(
+      result,
+      `Could not stage "${filePath}".`,
+      "Resolve file conflicts or permissions issues, then retry."
+    );
+  }
+
+  async unstageFile(repoPath: string, filePath: string): Promise<void> {
+    const restoreResult = await this.commandRunner([
+      "-C",
+      repoPath,
+      "restore",
+      "--staged",
+      "--",
+      filePath
+    ]);
+
+    if (restoreResult.exitCode === 0) {
+      return;
+    }
+
+    const resetResult = await this.commandRunner([
+      "-C",
+      repoPath,
+      "reset",
+      "-q",
+      "--",
+      filePath
+    ]);
+
+    if (resetResult.exitCode === 0) {
+      return;
+    }
+
+    this.assertSuccess(
+      restoreResult,
+      `Could not unstage "${filePath}".`,
+      "Resolve file conflicts or permissions issues, then retry."
+    );
   }
 
   private assertSuccess(
