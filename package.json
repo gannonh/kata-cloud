@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "commonjs",
+  "packageManager": "pnpm@10.6.2",
   "scripts": {
     "dev": "node scripts/dev-desktop.mjs",
     "web:dev": "vite",
