@@ -59,38 +59,18 @@ The app uses Electron's security best practices:
 - Renderer: `tsconfig.renderer.json` - ESNext/Bundler, DOM + Vite types, noEmit (Vite handles bundling).
 - Both extend `tsconfig.base.json` for shared strict settings.
 
-## Push Reliability Workflow (Incident Canonical)
-Use this workflow for any agent push while the Git stability incident is open.
+## Project Management & Task Tracking
 
-### Normal Path
-1. Confirm branch and commit:
-   - `git branch --show-current`
-   - `git rev-parse HEAD`
-2. Push branch:
-   - `git push -u origin HEAD`
-3. Verify remote ref:
-   - `git ls-remote --heads origin \"$(git branch --show-current)\"`
+### Specification & Task Tracking
 
-### Fallback Trigger (Objective)
-Immediately switch to fresh-clone fallback when push output includes any of:
-- `bad record mac`
-- `inflate returned`
-- `unexpected disconnect while reading sideband packet`
-- `fatal: the remote end hung up unexpectedly`
+Location: `notes/`
+- Tasks are tracked as markdown files in `notes/` with a structured format (see `notes/spec.md` for template).
+- Each task includes: title, scope, inputs, definition of done, verification steps, and an external completion record.
+- Task files are linked from the `spec` note for easy reference during development and handoff.
 
-### Fresh-Clone Fallback Path
-1. Clone to a clean temp path:
-   - `TMP_DIR=$(mktemp -d /tmp/kata-cloud-fresh-clone-XXXXXX)`
-   - `git clone https://github.com/gannonh/kata-cloud.git \"$TMP_DIR/repo\"`
-2. Enter clone and confirm commit:
-   - `cd \"$TMP_DIR/repo\"`
-   - `git rev-parse HEAD`
-3. Push to destination branch:
-   - `git push -u origin HEAD:refs/heads/<target-branch>`
-4. Verify remote ref:
-   - `git ls-remote --heads origin \"<target-branch>\"`
+### Product Management & Design (PRD, Research, High-level Requirements)
 
-### Rehearsal Rule
-Before declaring incident mitigation complete, run one rehearsal:
-- Attempt normal-path push to a disposable branch.
-- If trigger strings appear, execute fresh-clone fallback and verify remote ref exists.
+Location: `docs/`
+= Product Overview: `docs/kata-cloud-overview.md` - high-level product vision, key features, and user personas.
+- PRD: `docs/PRD.md` - high-level product requirements, user stories, and acceptance criteria.
+- Research: `docs/research.md` - user research findings, competitive analysis, and design
