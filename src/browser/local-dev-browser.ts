@@ -24,7 +24,7 @@ export function normalizeLocalPreviewUrl(rawInput: string): string {
   const parsed = new URL(withProtocol);
   const host = parsed.hostname.toLowerCase();
 
-  if (host !== "localhost" && host !== "127.0.0.1" && host !== "::1") {
+  if (host !== "localhost" && host !== "127.0.0.1" && host !== "[::1]") {
     throw new Error("Use localhost, 127.0.0.1, or ::1.");
   }
 

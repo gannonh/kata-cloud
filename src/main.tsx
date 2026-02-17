@@ -1944,6 +1944,7 @@ function App(): React.JSX.Element {
                     className="browser-frame"
                     src={currentBrowserUrl}
                     title="Local development preview"
+                    sandbox="allow-scripts allow-same-origin allow-forms"
                   />
                 </div>
               </>

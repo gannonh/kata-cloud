@@ -12,6 +12,7 @@ describe("local dev browser helpers", () => {
     expect(normalizeLocalPreviewUrl("http://127.0.0.1:8080/test")).toBe(
       "http://127.0.0.1:8080/test"
     );
+    expect(normalizeLocalPreviewUrl("http://[::1]:3000/")).toBe("http://[::1]:3000/");
   });
 
   it("rejects non-localhost urls", () => {
