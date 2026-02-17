@@ -56,12 +56,25 @@ describe("GitCli", () => {
     await expect(cli.isRepository("/repo")).resolves.toBe(false);
   });
 
-  it("reads status and staged numstat", async () => {
-    const command = createRunner(ok("MM src/app.ts\n"), ok("3\t1\tsrc/app.ts\n"));
+  it("reads status, staged numstat, and staged diff", async () => {
+    const command = createRunner(
+      ok("MM src/app.ts\n"),
+      ok("3\t1\tsrc/app.ts\n"),
+      ok("diff --git a/src/app.ts b/src/app.ts\n")
+    );
     const cli = new GitCli(command.runner);
 
     await expect(cli.readStatusPorcelain("/repo")).resolves.toBe("MM src/app.ts\n");
     await expect(cli.readStagedNumstat("/repo")).resolves.toBe("3\t1\tsrc/app.ts\n");
+    await expect(cli.readStagedDiff("/repo")).resolves.toBe("diff --git a/src/app.ts b/src/app.ts");
+  });
+
+  it("reads a configured remote URL", async () => {
+    const command = createRunner(ok("git@github.com:example/kata-cloud.git\n"));
+    const cli = new GitCli(command.runner);
+
+    await expect(cli.readRemoteUrl("/repo")).resolves.toBe("git@github.com:example/kata-cloud.git");
+    expect(command.calls).toEqual([["-C", "/repo", "remote", "get-url", "origin"]]);
   });
 
   it("handles branch existence and branch creation", async () => {

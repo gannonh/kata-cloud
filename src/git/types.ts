@@ -28,6 +28,48 @@ export interface SpaceGitFileDiffRequest extends SpaceGitFileRequest {
   includeUnstaged: boolean;
 }
 
+export interface GitHubSessionRequest {
+  token: string;
+}
+
+export interface GitHubSessionInfo {
+  sessionId: string;
+  login: string;
+  createdAt: string;
+}
+
+export interface SpaceGitPullRequestDraftRequest extends SpaceGitChangesRequest {
+  repoUrl: string;
+  specContext: string;
+  baseBranch?: string;
+}
+
+export interface SpaceGitPullRequestDraftResult {
+  title: string;
+  body: string;
+  headBranch: string;
+  baseBranch: string;
+  stagedFileCount: number;
+  updatedAt: string;
+}
+
+export interface SpaceGitCreatePullRequestRequest extends SpaceGitChangesRequest {
+  repoUrl: string;
+  sessionId: string;
+  title: string;
+  body: string;
+  baseBranch: string;
+}
+
+export interface SpaceGitCreatePullRequestResult {
+  url: string;
+  number: number;
+  title: string;
+  headBranch: string;
+  baseBranch: string;
+  updatedAt: string;
+}
+
 export interface SpaceGitChangeFile {
   path: string;
   previousPath: string | null;
@@ -79,6 +121,16 @@ export interface SpaceGitLifecycle {
   ) => Promise<SpaceGitFileDiffResult>;
   stageFile: (request: SpaceGitFileRequest) => Promise<SpaceGitChangesSnapshot>;
   unstageFile: (request: SpaceGitFileRequest) => Promise<SpaceGitChangesSnapshot>;
+  createGitHubSession: (
+    request: GitHubSessionRequest
+  ) => Promise<GitHubSessionInfo>;
+  clearGitHubSession: (sessionId: string) => Promise<void>;
+  generatePullRequestDraft: (
+    request: SpaceGitPullRequestDraftRequest
+  ) => Promise<SpaceGitPullRequestDraftResult>;
+  createPullRequest: (
+    request: SpaceGitCreatePullRequestRequest
+  ) => Promise<SpaceGitCreatePullRequestResult>;
 }
 
 export function createSpaceGitStatus(

@@ -103,6 +103,23 @@ export class GitCli {
     return result.stdout;
   }
 
+  async readStagedDiff(repoPath: string): Promise<string> {
+    const result = await this.commandRunner([
+      "-C",
+      repoPath,
+      "diff",
+      "--cached"
+    ]);
+
+    this.assertSuccess(
+      result,
+      "Could not read staged diff.",
+      "Check repository permissions and git configuration."
+    );
+
+    return result.stdout.trimEnd();
+  }
+
   async branchExists(repoPath: string, branchName: string): Promise<boolean> {
     const result = await this.commandRunner([
       "-C",
@@ -198,6 +215,24 @@ export class GitCli {
       result,
       "Could not read current worktree branch.",
       "Open the worktree in git and resolve any repository configuration issues."
+    );
+
+    return result.stdout.trim();
+  }
+
+  async readRemoteUrl(repoPath: string, remoteName = "origin"): Promise<string> {
+    const result = await this.commandRunner([
+      "-C",
+      repoPath,
+      "remote",
+      "get-url",
+      remoteName
+    ]);
+
+    this.assertSuccess(
+      result,
+      `Could not read remote URL for "${remoteName}".`,
+      "Ensure the remote exists and the repository is configured correctly."
     );
 
     return result.stdout.trim();

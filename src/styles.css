@@ -293,6 +293,39 @@ body {
   line-height: 1.38;
 }
 
+.pull-request-card {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.pull-request-card h3,
+.pull-request-card p {
+  margin: 0;
+}
+
+.pull-request-card label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+}
+
+.pull-request-card input,
+.pull-request-card textarea {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: rgba(15, 18, 24, 0.6);
+  color: var(--text);
+  font: inherit;
+  padding: 0.46rem 0.58rem;
+}
+
+.pull-request-card textarea {
+  resize: vertical;
+  min-height: 180px;
+  font-family: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+  font-size: 0.77rem;
+}
+
 .changes-layout {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) minmax(320px, 1.4fr);

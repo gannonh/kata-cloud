@@ -3,11 +3,14 @@ import { createRoot } from "react-dom/client";
 import {
   createSpaceGitRequest,
   createSpaceGitStatus,
+  type GitHubSessionInfo,
   type SpaceGitChangeFile,
   type SpaceGitChangesSnapshot,
+  type SpaceGitCreatePullRequestResult,
   type SpaceGitFileDiffResult,
   type SpaceGitLifecycleRequest,
-  type SpaceGitLifecycleStatus
+  type SpaceGitLifecycleStatus,
+  type SpaceGitPullRequestDraftResult
 } from "./git/types";
 import {
   isStagedFileChange,
@@ -16,6 +19,7 @@ import {
 } from "./git/changes";
 import { toSpaceGitUiState } from "./git/space-git-ui-state";
 import { SpecNotePanel } from "./notes/spec-note-panel";
+import { loadSpecNote } from "./notes/store";
 import { buildDelegatedTaskTimeline } from "./shared/orchestrator-delegation";
 import {
   AppState,
@@ -202,6 +206,17 @@ function App(): React.JSX.Element {
   const [selectedFileDiff, setSelectedFileDiff] = useState<SpaceGitFileDiffResult | null>(null);
   const [isLoadingFileDiff, setIsLoadingFileDiff] = useState(false);
   const [activeFileActionKey, setActiveFileActionKey] = useState<string | null>(null);
+  const [githubTokenInput, setGitHubTokenInput] = useState("");
+  const [githubSession, setGitHubSession] = useState<GitHubSessionInfo | null>(null);
+  const [isConnectingGitHub, setIsConnectingGitHub] = useState(false);
+  const [isGeneratingPullRequestDraft, setIsGeneratingPullRequestDraft] = useState(false);
+  const [isCreatingPullRequest, setIsCreatingPullRequest] = useState(false);
+  const [pullRequestBaseBranch, setPullRequestBaseBranch] = useState("main");
+  const [pullRequestTitle, setPullRequestTitle] = useState("");
+  const [pullRequestBody, setPullRequestBody] = useState("");
+  const [pullRequestDraft, setPullRequestDraft] = useState<SpaceGitPullRequestDraftResult | null>(null);
+  const [createdPullRequest, setCreatedPullRequest] = useState<SpaceGitCreatePullRequestResult | null>(null);
+  const [pullRequestStatusMessage, setPullRequestStatusMessage] = useState<string | null>(null);
   const changesSnapshotRequestIdRef = useRef(0);
 
   useEffect(() => {
@@ -406,6 +421,15 @@ function App(): React.JSX.Element {
     [state.activeSpaceId, state.sessions]
   );
 
+  useEffect(() => {
+    setPullRequestDraft(null);
+    setCreatedPullRequest(null);
+    setPullRequestStatusMessage(null);
+    setPullRequestTitle("");
+    setPullRequestBody("");
+    setPullRequestBaseBranch("main");
+  }, [activeSpace?.id]);
+
   const applyChangesSnapshot = useCallback((snapshot: SpaceGitChangesSnapshot) => {
     setChangesSnapshot(snapshot);
     setSelectedChangePath((currentPath) => {
@@ -560,6 +584,151 @@ function App(): React.JSX.Element {
     },
     [activeChangesRepoPath, applyChangesSnapshot]
   );
+
+  const onConnectGitHub = useCallback(async () => {
+    if (!window.kataShell) {
+      setPullRequestStatusMessage(
+        "GitHub auth is unavailable in this runtime. Open the desktop shell and retry."
+      );
+      return;
+    }
+
+    setIsConnectingGitHub(true);
+    setPullRequestStatusMessage(null);
+
+    try {
+      const session = await window.kataShell.createGitHubSession({
+        token: githubTokenInput
+      });
+      setGitHubSession(session);
+      setGitHubTokenInput("");
+      setPullRequestStatusMessage(`Connected to GitHub as ${session.login}.`);
+    } catch (error) {
+      setPullRequestStatusMessage(`GitHub connection failed: ${toErrorMessage(error)}`);
+    } finally {
+      setIsConnectingGitHub(false);
+    }
+  }, [githubTokenInput]);
+
+  const onDisconnectGitHub = useCallback(async () => {
+    try {
+      if (window.kataShell && githubSession) {
+        await window.kataShell.clearGitHubSession(githubSession.sessionId);
+      }
+    } finally {
+      setGitHubSession(null);
+      setPullRequestStatusMessage("Disconnected GitHub session.");
+    }
+  }, [githubSession]);
+
+  const onGeneratePullRequestDraft = useCallback(async () => {
+    if (!window.kataShell) {
+      setPullRequestStatusMessage(
+        "Pull request workflow is unavailable in this runtime. Open the desktop shell and retry."
+      );
+      return;
+    }
+
+    if (!activeChangesRepoPath || !activeSpace?.repoUrl) {
+      setPullRequestStatusMessage(
+        "A linked GitHub repository is required before generating a pull request draft."
+      );
+      return;
+    }
+
+    if (!changesSnapshot?.hasStagedChanges) {
+      setPullRequestStatusMessage("Stage at least one file before generating a pull request draft.");
+      return;
+    }
+
+    setIsGeneratingPullRequestDraft(true);
+    setPullRequestStatusMessage(null);
+    setCreatedPullRequest(null);
+
+    try {
+      const specContext = loadSpecNote(window.localStorage).content;
+      const draft = await window.kataShell.generatePullRequestDraft({
+        repoPath: activeChangesRepoPath,
+        repoUrl: activeSpace.repoUrl,
+        specContext,
+        baseBranch: pullRequestBaseBranch
+      });
+      setPullRequestDraft(draft);
+      setPullRequestTitle(draft.title);
+      setPullRequestBody(draft.body);
+      setPullRequestBaseBranch(draft.baseBranch);
+      setPullRequestStatusMessage(
+        `Generated PR suggestion from ${draft.stagedFileCount} staged file(s).`
+      );
+    } catch (error) {
+      setPullRequestStatusMessage(`Unable to generate PR suggestion: ${toErrorMessage(error)}`);
+    } finally {
+      setIsGeneratingPullRequestDraft(false);
+    }
+  }, [activeChangesRepoPath, activeSpace?.repoUrl, changesSnapshot?.hasStagedChanges, pullRequestBaseBranch]);
+
+  const onCreatePullRequest = useCallback(async () => {
+    if (!window.kataShell) {
+      setPullRequestStatusMessage(
+        "Pull request workflow is unavailable in this runtime. Open the desktop shell and retry."
+      );
+      return;
+    }
+
+    if (!activeChangesRepoPath || !activeSpace?.repoUrl) {
+      setPullRequestStatusMessage(
+        "A linked GitHub repository is required before creating a pull request."
+      );
+      return;
+    }
+
+    if (!githubSession) {
+      setPullRequestStatusMessage("Connect GitHub before creating a pull request.");
+      return;
+    }
+
+    setIsCreatingPullRequest(true);
+    setPullRequestStatusMessage(null);
+
+    try {
+      const result = await window.kataShell.createPullRequest({
+        repoPath: activeChangesRepoPath,
+        repoUrl: activeSpace.repoUrl,
+        sessionId: githubSession.sessionId,
+        title: pullRequestTitle,
+        body: pullRequestBody,
+        baseBranch: pullRequestBaseBranch
+      });
+      setCreatedPullRequest(result);
+      setPullRequestStatusMessage(
+        `Created PR #${result.number}: ${result.url}`
+      );
+    } catch (error) {
+      setPullRequestStatusMessage(`Unable to create pull request: ${toErrorMessage(error)}`);
+    } finally {
+      setIsCreatingPullRequest(false);
+    }
+  }, [
+    activeChangesRepoPath,
+    activeSpace?.repoUrl,
+    githubSession,
+    pullRequestBaseBranch,
+    pullRequestBody,
+    pullRequestTitle
+  ]);
+
+  const onOpenCreatedPullRequest = useCallback(async () => {
+    if (!createdPullRequest) {
+      return;
+    }
+
+    if (window.kataShell) {
+      await window.kataShell.openExternalUrl(createdPullRequest.url);
+      return;
+    }
+
+    window.open(createdPullRequest.url, "_blank", "noopener,noreferrer");
+  }, [createdPullRequest]);
 
   const onViewSelect = useCallback(
     (view: NavigationView) => {
@@ -1340,6 +1509,137 @@ function App(): React.JSX.Element {
                         <p>{isLoadingChanges ? "Loading changes..." : "No changes loaded."}</p>
                       )}
                       {changesError ? <p className="field-error">{changesError}</p> : null}
+                    </div>
+                    <div className="info-card pull-request-card">
+                      <h3>Pull Request</h3>
+                      <p>Generate a suggested title/body from staged diff + spec context, then submit to GitHub.</p>
+                      <p>Review generated diff snippets for sensitive content before submitting.</p>
+                      <p>Repository: {activeSpace.repoUrl}</p>
+                      <p>
+                        GitHub session:{" "}
+                        {githubSession ? `connected as ${githubSession.login}` : "not connected"}
+                      </p>
+                      {!githubSession ? (
+                        <label htmlFor="github-token-input">
+                          GitHub Token
+                          <input
+                            id="github-token-input"
+                            type="password"
+                            value={githubTokenInput}
+                            onChange={(event) => setGitHubTokenInput(event.target.value)}
+                            placeholder="ghp_..."
+                          />
+                        </label>
+                      ) : null}
+                      <label htmlFor="pr-base-branch-input">
+                        Base Branch
+                        <input
+                          id="pr-base-branch-input"
+                          value={pullRequestBaseBranch}
+                          onChange={(event) => setPullRequestBaseBranch(event.target.value)}
+                          placeholder="main"
+                        />
+                      </label>
+                      <label htmlFor="pr-title-input">
+                        PR Title
+                        <input
+                          id="pr-title-input"
+                          value={pullRequestTitle}
+                          onChange={(event) => setPullRequestTitle(event.target.value)}
+                          placeholder="feat: ..."
+                        />
+                      </label>
+                      <label htmlFor="pr-body-input">
+                        PR Body
+                        <textarea
+                          id="pr-body-input"
+                          value={pullRequestBody}
+                          onChange={(event) => setPullRequestBody(event.target.value)}
+                          rows={12}
+                        />
+                      </label>
+                      <div className="space-create__actions">
+                        {githubSession ? (
+                          <button
+                            type="button"
+                            className="pill-button"
+                            disabled={isConnectingGitHub}
+                            onClick={() => {
+                              void onDisconnectGitHub();
+                            }}
+                          >
+                            Disconnect GitHub
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="pill-button"
+                            disabled={isConnectingGitHub || !githubTokenInput.trim()}
+                            onClick={() => {
+                              void onConnectGitHub();
+                            }}
+                          >
+                            {isConnectingGitHub ? "Connecting..." : "Connect GitHub"}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="pill-button"
+                          disabled={isGeneratingPullRequestDraft || !changesSnapshot?.hasStagedChanges}
+                          onClick={() => {
+                            void onGeneratePullRequestDraft();
+                          }}
+                        >
+                          {isGeneratingPullRequestDraft ? "Generating..." : "Generate PR Suggestion"}
+                        </button>
+                        <button
+                          type="button"
+                          className="pill-button"
+                          disabled={
+                            isCreatingPullRequest ||
+                            !githubSession ||
+                            !pullRequestTitle.trim() ||
+                            !pullRequestBaseBranch.trim()
+                          }
+                          onClick={() => {
+                            void onCreatePullRequest();
+                          }}
+                        >
+                          {isCreatingPullRequest ? "Creating PR..." : "Create Pull Request"}
+                        </button>
+                        {createdPullRequest ? (
+                          <button
+                            type="button"
+                            className="pill-button"
+                            onClick={() => {
+                              void onOpenCreatedPullRequest();
+                            }}
+                          >
+                            Open PR
+                          </button>
+                        ) : null}
+                      </div>
+                      {pullRequestDraft ? (
+                        <p>
+                          Draft generated for {pullRequestDraft.headBranch} → {pullRequestDraft.baseBranch}.
+                        </p>
+                      ) : null}
+                      {createdPullRequest ? (
+                        <p>
+                          Created PR #{createdPullRequest.number}: {createdPullRequest.url}
+                        </p>
+                      ) : null}
+                      {pullRequestStatusMessage ? (
+                        <p
+                          className={
+                            /failed|unable|error/i.test(pullRequestStatusMessage)
+                              ? "field-error"
+                              : undefined
+                          }
+                        >
+                          {pullRequestStatusMessage}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="changes-layout">
                       <section className="changes-files">
