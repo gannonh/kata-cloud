@@ -419,6 +419,10 @@ function App(): React.JSX.Element {
     () => getRunHistoryForActiveSession(runsForActiveSession),
     [runsForActiveSession]
   );
+  const priorRunHistoryForActiveSession = useMemo(
+    () => runHistoryForActiveSession.filter((run) => run.id !== latestRunForActiveSession?.id),
+    [latestRunForActiveSession?.id, runHistoryForActiveSession]
+  );
   const latestDraftForActiveSession = latestRunForActiveSession?.draft;
 
   const sessionsForActiveSpace = useMemo(
@@ -1405,11 +1409,11 @@ function App(): React.JSX.Element {
                 <p>{latestRunForActiveSession.id}</p>
               </div>
             ) : null}
-            {runHistoryForActiveSession.length > 0 ? (
+            {priorRunHistoryForActiveSession.length > 0 ? (
               <div className="info-card">
                 <h3>Run History</h3>
                 <ul>
-                  {runHistoryForActiveSession.map((run) => (
+                  {priorRunHistoryForActiveSession.map((run) => (
                     <li key={run.id}>
                       <p>
                         <strong>{run.id}</strong> - {run.status}
