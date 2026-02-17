@@ -1,5 +1,10 @@
 import type { AppState } from "./state";
 import type {
+  SpaceGitChangesRequest,
+  SpaceGitChangesSnapshot,
+  SpaceGitFileDiffRequest,
+  SpaceGitFileDiffResult,
+  SpaceGitFileRequest,
   SpaceGitLifecycleRequest,
   SpaceGitLifecycleStatus
 } from "../git/types";
@@ -9,7 +14,11 @@ export const IPC_CHANNELS = {
   saveState: "kata-cloud/state:save",
   stateChanged: "kata-cloud/state:changed",
   initializeSpaceGit: "kata-cloud/space-git:initialize",
-  switchSpaceGit: "kata-cloud/space-git:switch"
+  switchSpaceGit: "kata-cloud/space-git:switch",
+  getSpaceChanges: "kata-cloud/space-git:changes",
+  getSpaceFileDiff: "kata-cloud/space-git:file-diff",
+  stageSpaceFile: "kata-cloud/space-git:file-stage",
+  unstageSpaceFile: "kata-cloud/space-git:file-unstage"
 } as const;
 
 export interface ShellApi {
@@ -22,4 +31,12 @@ export interface ShellApi {
   switchSpaceGit: (
     request: SpaceGitLifecycleRequest
   ) => Promise<SpaceGitLifecycleStatus>;
+  getSpaceChanges: (
+    request: SpaceGitChangesRequest
+  ) => Promise<SpaceGitChangesSnapshot>;
+  getSpaceFileDiff: (
+    request: SpaceGitFileDiffRequest
+  ) => Promise<SpaceGitFileDiffResult>;
+  stageSpaceFile: (request: SpaceGitFileRequest) => Promise<SpaceGitChangesSnapshot>;
+  unstageSpaceFile: (request: SpaceGitFileRequest) => Promise<SpaceGitChangesSnapshot>;
 }

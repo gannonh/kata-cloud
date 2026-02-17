@@ -1,4 +1,5 @@
 export type SpaceGitLifecyclePhase = "initializing" | "switching" | "ready" | "error";
+export type SpaceGitFileStatusCode = "M" | "A" | "D" | "R" | "C" | "U" | "?";
 
 export interface SpaceGitLifecycleRequest {
   spaceId: string;
@@ -14,6 +15,55 @@ export interface SpaceGitLifecycleStatus extends SpaceGitLifecycleRequest {
   updatedAt: string;
 }
 
+export interface SpaceGitChangesRequest {
+  repoPath: string;
+}
+
+export interface SpaceGitFileRequest extends SpaceGitChangesRequest {
+  filePath: string;
+}
+
+export interface SpaceGitFileDiffRequest extends SpaceGitFileRequest {
+  includeStaged: boolean;
+  includeUnstaged: boolean;
+}
+
+export interface SpaceGitChangeFile {
+  path: string;
+  previousPath: string | null;
+  statusCode: string;
+  stagedStatus: SpaceGitFileStatusCode | null;
+  unstagedStatus: SpaceGitFileStatusCode | null;
+  isConflicted: boolean;
+}
+
+export interface SpaceGitStagedSummary {
+  fileCount: number;
+  added: number;
+  modified: number;
+  deleted: number;
+  renamed: number;
+  copied: number;
+  conflicted: number;
+  insertions: number;
+  deletions: number;
+}
+
+export interface SpaceGitChangesSnapshot extends SpaceGitChangesRequest {
+  files: SpaceGitChangeFile[];
+  stagedSummary: SpaceGitStagedSummary;
+  stagedFileCount: number;
+  unstagedFileCount: number;
+  hasStagedChanges: boolean;
+  updatedAt: string;
+}
+
+export interface SpaceGitFileDiffResult extends SpaceGitFileRequest {
+  stagedDiff: string | null;
+  unstagedDiff: string | null;
+  updatedAt: string;
+}
+
 export interface SpaceGitLifecycle {
   initializeSpace: (
     request: SpaceGitLifecycleRequest
@@ -21,6 +71,14 @@ export interface SpaceGitLifecycle {
   switchSpace: (
     request: SpaceGitLifecycleRequest
   ) => Promise<SpaceGitLifecycleStatus>;
+  getChanges: (
+    request: SpaceGitChangesRequest
+  ) => Promise<SpaceGitChangesSnapshot>;
+  getFileDiff: (
+    request: SpaceGitFileDiffRequest
+  ) => Promise<SpaceGitFileDiffResult>;
+  stageFile: (request: SpaceGitFileRequest) => Promise<SpaceGitChangesSnapshot>;
+  unstageFile: (request: SpaceGitFileRequest) => Promise<SpaceGitChangesSnapshot>;
 }
 
 export function createSpaceGitStatus(
