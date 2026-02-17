@@ -110,11 +110,8 @@ export class SpaceGitLifecycleService {
     return this.statusBySpace.get(spaceId) ?? null;
   }
 
-  listStatuses(): Array<{ spaceId: string } & SpaceGitLifecycleStatus> {
-    return Array.from(this.statusBySpace.entries()).map(([spaceId, status]) => ({
-      spaceId,
-      ...status
-    }));
+  listStatuses(): SpaceGitLifecycleStatus[] {
+    return Array.from(this.statusBySpace.values());
   }
 
   getUiStatus(spaceId: string) {

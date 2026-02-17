@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import {
   createSpaceGitRequest,
   createSpaceGitStatus,
   isSpaceGitLifecycleStatus
-} from "./types.ts";
+} from "./types";
 
 test("createSpaceGitRequest builds deterministic branch/worktree names", () => {
   const request = createSpaceGitRequest({
