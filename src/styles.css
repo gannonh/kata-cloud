@@ -602,6 +602,56 @@ body {
   margin-bottom: 0.6rem;
 }
 
+.browser-controls {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.browser-controls__url {
+  display: grid;
+  gap: 0.28rem;
+  font-size: 0.8rem;
+}
+
+.browser-controls__url input {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: rgba(15, 18, 24, 0.6);
+  color: var(--text);
+  font: inherit;
+  padding: 0.46rem 0.58rem;
+}
+
+.browser-controls__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.browser-frame-shell {
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: rgba(15, 18, 24, 0.62);
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.browser-frame-shell__url {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.77rem;
+  font-family: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+}
+
+.browser-frame {
+  width: 100%;
+  min-height: 420px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: #0f1116;
+}
+
 .loading-screen {
   min-height: 100vh;
   display: grid;
