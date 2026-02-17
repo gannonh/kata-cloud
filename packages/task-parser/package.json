@@ -1,0 +1,8 @@
+{
+  "name": "@kata/task-parser",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  }
+}
