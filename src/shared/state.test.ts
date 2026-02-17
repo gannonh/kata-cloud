@@ -283,4 +283,12 @@ describe("shared state helpers", () => {
     expect(state.activeSessionId).toBe("session-a");
     expect(state.lastOpenedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
+
+  it("keeps browser as a valid active view", () => {
+    const state = normalizeAppState({
+      activeView: "browser"
+    });
+
+    expect(state.activeView).toBe("browser");
+  });
 });

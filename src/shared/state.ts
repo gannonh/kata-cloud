@@ -6,7 +6,7 @@ import type { ContextProviderId, ContextSnippet } from "../context/types";
 
 export const APP_STATE_VERSION = 1;
 
-export type NavigationView = "explorer" | "orchestrator" | "spec" | "changes";
+export type NavigationView = "explorer" | "orchestrator" | "spec" | "changes" | "browser";
 export type OrchestratorRunStatus = "queued" | "running" | "completed" | "failed";
 export type OrchestratorTaskType = "implement" | "verify" | "debug";
 export type OrchestratorTaskStatus =
@@ -100,7 +100,13 @@ function isStringArray(value: unknown): value is string[] {
 }
 
 function isNavigationView(value: unknown): value is NavigationView {
-  return value === "explorer" || value === "orchestrator" || value === "spec" || value === "changes";
+  return (
+    value === "explorer" ||
+    value === "orchestrator" ||
+    value === "spec" ||
+    value === "changes" ||
+    value === "browser"
+  );
 }
 
 function isOrchestratorRunStatus(value: unknown): value is OrchestratorRunStatus {

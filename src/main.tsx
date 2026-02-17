@@ -26,6 +26,13 @@ import {
   getRunsForActiveSession
 } from "./shared/orchestrator-run-history";
 import {
+  createInitialBrowserNavigationState,
+  DEFAULT_LOCAL_PREVIEW_URL,
+  navigateBrowserHistory,
+  normalizeLocalPreviewUrl,
+  stepBrowserHistory
+} from "./browser/local-dev-browser";
+import {
   AppState,
   NavigationView,
   OrchestratorRunRecord,
@@ -58,7 +65,7 @@ if (!appRoot) {
 
 const LOCAL_FALLBACK_KEY = "kata-cloud.local-state.v1";
 
-const viewOrder: NavigationView[] = ["explorer", "orchestrator", "spec", "changes"];
+const viewOrder: NavigationView[] = ["explorer", "orchestrator", "spec", "changes", "browser"];
 
 function readLocalFallbackState(): AppState {
   try {
@@ -91,6 +98,8 @@ function toViewLabel(view: NavigationView): string {
       return "Spec";
     case "changes":
       return "Changes";
+    case "browser":
+      return "Browser";
     default:
       return view;
   }
@@ -241,6 +250,10 @@ function App(): React.JSX.Element {
   const [createdPullRequest, setCreatedPullRequest] = useState<SpaceGitCreatePullRequestResult | null>(null);
   const [pullRequestStatusMessage, setPullRequestStatusMessage] = useState<string | null>(null);
   const changesSnapshotRequestIdRef = useRef(0);
+  const [browserNavigation, setBrowserNavigation] = useState(() => createInitialBrowserNavigationState());
+  const [browserInput, setBrowserInput] = useState(DEFAULT_LOCAL_PREVIEW_URL);
+  const [browserRefreshKey, setBrowserRefreshKey] = useState(0);
+  const [browserError, setBrowserError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -448,6 +461,12 @@ function App(): React.JSX.Element {
     () => state.sessions.filter((session) => session.spaceId === state.activeSpaceId),
     [state.activeSpaceId, state.sessions]
   );
+  const currentBrowserUrl = useMemo(
+    () => browserNavigation.entries[browserNavigation.index] ?? DEFAULT_LOCAL_PREVIEW_URL,
+    [browserNavigation]
+  );
+  const canGoBack = browserNavigation.index > 0;
+  const canGoForward = browserNavigation.index < browserNavigation.entries.length - 1;
 
   useEffect(() => {
     setPullRequestDraft(null);
@@ -1014,6 +1033,39 @@ function App(): React.JSX.Element {
     [persistState, spaceDraft, spacePrompt, state]
   );
 
+  const onNavigateBrowser = useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      try {
+        const normalizedUrl = normalizeLocalPreviewUrl(browserInput);
+        setBrowserNavigation((currentState) => navigateBrowserHistory(currentState, normalizedUrl));
+        setBrowserInput(normalizedUrl);
+        setBrowserError(null);
+      } catch (error) {
+        setBrowserError(error instanceof Error ? error.message : "Invalid localhost URL.");
+      }
+    },
+    [browserInput]
+  );
+
+  const onStepBrowserHistory = useCallback((direction: "back" | "forward") => {
+    setBrowserNavigation((currentState) => {
+      const nextState = stepBrowserHistory(currentState, direction);
+      const nextUrl = nextState.entries[nextState.index];
+      if (nextUrl) {
+        setBrowserInput(nextUrl);
+      }
+      return nextState;
+    });
+    setBrowserError(null);
+  }, []);
+
+  const onRefreshBrowser = useCallback(() => {
+    setBrowserRefreshKey((current) => current + 1);
+    setBrowserError(null);
+  }, []);
+
   const onOpenEditSpaceForm = useCallback((space: SpaceRecord) => {
     setEditingSpaceId(space.id);
     setEditSpaceErrors({});
@@ -1494,15 +1546,25 @@ function App(): React.JSX.Element {
 
         <section
           className={
-            state.activeView === "spec" || state.activeView === "changes" ? "panel panel-focused" : "panel"
+            state.activeView === "spec" || state.activeView === "changes" || state.activeView === "browser"
+              ? "panel panel-focused"
+              : "panel"
           }
         >
           <header className="panel-header">
-            <h2>{state.activeView === "changes" ? "Changes" : "Spec"}</h2>
+            <h2>
+              {state.activeView === "changes"
+                ? "Changes"
+                : state.activeView === "browser"
+                  ? "Browser"
+                  : "Spec"}
+            </h2>
             <p>
               {state.activeView === "changes"
                 ? "Diff and staging entrypoint"
-                : "Project source of truth and collaboration"}
+                : state.activeView === "browser"
+                  ? "Preview local development targets"
+                  : "Project source of truth and collaboration"}
             </p>
           </header>
           <div className="panel-body">
@@ -1836,6 +1898,54 @@ function App(): React.JSX.Element {
                     </div>
                   </>
                 ) : null}
+              </>
+            ) : state.activeView === "browser" ? (
+              <>
+                <form className="browser-controls" onSubmit={onNavigateBrowser}>
+                  <label className="browser-controls__url" htmlFor="browser-url-input">
+                    Local URL
+                    <input
+                      id="browser-url-input"
+                      value={browserInput}
+                      onChange={(event) => setBrowserInput(event.target.value)}
+                      placeholder="http://localhost:3000"
+                    />
+                  </label>
+                  <div className="browser-controls__actions">
+                    <button
+                      type="button"
+                      className="pill-button"
+                      onClick={() => onStepBrowserHistory("back")}
+                      disabled={!canGoBack}
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      className="pill-button"
+                      onClick={() => onStepBrowserHistory("forward")}
+                      disabled={!canGoForward}
+                    >
+                      Forward
+                    </button>
+                    <button type="button" className="pill-button" onClick={onRefreshBrowser}>
+                      Refresh
+                    </button>
+                    <button type="submit" className="pill-button">
+                      Go
+                    </button>
+                  </div>
+                </form>
+                {browserError ? <p className="field-error">{browserError}</p> : null}
+                <div className="browser-frame-shell">
+                  <p className="browser-frame-shell__url">{currentBrowserUrl}</p>
+                  <iframe
+                    key={`${currentBrowserUrl}-${browserRefreshKey}`}
+                    className="browser-frame"
+                    src={currentBrowserUrl}
+                    title="Local development preview"
+                  />
+                </div>
               </>
             ) : (
               <SpecNotePanel
