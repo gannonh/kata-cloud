@@ -1,12 +1,18 @@
 import type { AppState } from "./state";
 import type {
+  GitHubSessionInfo,
+  GitHubSessionRequest,
   SpaceGitChangesRequest,
   SpaceGitChangesSnapshot,
+  SpaceGitCreatePullRequestRequest,
+  SpaceGitCreatePullRequestResult,
   SpaceGitFileDiffRequest,
   SpaceGitFileDiffResult,
   SpaceGitFileRequest,
   SpaceGitLifecycleRequest,
-  SpaceGitLifecycleStatus
+  SpaceGitLifecycleStatus,
+  SpaceGitPullRequestDraftRequest,
+  SpaceGitPullRequestDraftResult
 } from "../git/types";
 
 export const IPC_CHANNELS = {
@@ -18,7 +24,12 @@ export const IPC_CHANNELS = {
   getSpaceChanges: "kata-cloud/space-git:changes",
   getSpaceFileDiff: "kata-cloud/space-git:file-diff",
   stageSpaceFile: "kata-cloud/space-git:file-stage",
-  unstageSpaceFile: "kata-cloud/space-git:file-unstage"
+  unstageSpaceFile: "kata-cloud/space-git:file-unstage",
+  createGitHubSession: "kata-cloud/github:session-create",
+  clearGitHubSession: "kata-cloud/github:session-clear",
+  generatePullRequestDraft: "kata-cloud/github:pr-draft",
+  createPullRequest: "kata-cloud/github:pr-create",
+  openExternalUrl: "kata-cloud/system:open-external-url"
 } as const;
 
 export interface ShellApi {
@@ -39,4 +50,15 @@ export interface ShellApi {
   ) => Promise<SpaceGitFileDiffResult>;
   stageSpaceFile: (request: SpaceGitFileRequest) => Promise<SpaceGitChangesSnapshot>;
   unstageSpaceFile: (request: SpaceGitFileRequest) => Promise<SpaceGitChangesSnapshot>;
+  createGitHubSession: (
+    request: GitHubSessionRequest
+  ) => Promise<GitHubSessionInfo>;
+  clearGitHubSession: (sessionId: string) => Promise<void>;
+  generatePullRequestDraft: (
+    request: SpaceGitPullRequestDraftRequest
+  ) => Promise<SpaceGitPullRequestDraftResult>;
+  createPullRequest: (
+    request: SpaceGitCreatePullRequestRequest
+  ) => Promise<SpaceGitCreatePullRequestResult>;
+  openExternalUrl: (url: string) => Promise<void>;
 }

@@ -1,14 +1,18 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
 import { AppState } from "../shared/state";
 import { IPC_CHANNELS } from "../shared/shell-api";
 import { PersistedStateStore } from "./persisted-state-store";
 import { SpaceGitLifecycleService } from "../git/space-git-service";
+import { PullRequestWorkflowService } from "../git/pr-workflow";
 import type {
+  GitHubSessionRequest,
   SpaceGitChangesRequest,
+  SpaceGitCreatePullRequestRequest,
   SpaceGitFileDiffRequest,
   SpaceGitFileRequest,
-  SpaceGitLifecycleRequest
+  SpaceGitLifecycleRequest,
+  SpaceGitPullRequestDraftRequest
 } from "../git/types";
 
 let stateStore: PersistedStateStore | undefined;
@@ -57,7 +61,8 @@ function createMainWindow(): BrowserWindow {
 
 function registerStateHandlers(
   store: PersistedStateStore,
-  gitLifecycleService: SpaceGitLifecycleService
+  gitLifecycleService: SpaceGitLifecycleService,
+  pullRequestWorkflowService: PullRequestWorkflowService
 ): void {
   ipcMain.handle(IPC_CHANNELS.getState, async () => store.getState());
   ipcMain.handle(IPC_CHANNELS.saveState, async (_event, nextState: unknown) => store.save(nextState));
@@ -91,6 +96,32 @@ function registerStateHandlers(
     async (_event, request: SpaceGitFileRequest) =>
       gitLifecycleService.unstageFile(request)
   );
+  ipcMain.handle(
+    IPC_CHANNELS.createGitHubSession,
+    async (_event, request: GitHubSessionRequest) =>
+      pullRequestWorkflowService.createGitHubSession(request)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.clearGitHubSession,
+    async (_event, sessionId: string) =>
+      pullRequestWorkflowService.clearGitHubSession(sessionId)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.generatePullRequestDraft,
+    async (_event, request: SpaceGitPullRequestDraftRequest) =>
+      pullRequestWorkflowService.generatePullRequestDraft(request)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.createPullRequest,
+    async (_event, request: SpaceGitCreatePullRequestRequest) =>
+      pullRequestWorkflowService.createPullRequest(request)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.openExternalUrl,
+    async (_event, url: string) => {
+      await shell.openExternal(url);
+    }
+  );
 }
 
 async function bootstrap(): Promise<void> {
@@ -100,9 +131,10 @@ async function bootstrap(): Promise<void> {
     broadcastState(nextState);
   });
   const gitLifecycleService = new SpaceGitLifecycleService();
+  const pullRequestWorkflowService = new PullRequestWorkflowService();
   await stateStore.initialize();
 
-  registerStateHandlers(stateStore, gitLifecycleService);
+  registerStateHandlers(stateStore, gitLifecycleService, pullRequestWorkflowService);
   createMainWindow();
 
   app.on("activate", () => {

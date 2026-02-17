@@ -2,10 +2,13 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 import { AppState } from "../shared/state";
 import { IPC_CHANNELS, ShellApi } from "../shared/shell-api";
 import type {
+  GitHubSessionRequest,
   SpaceGitChangesRequest,
+  SpaceGitCreatePullRequestRequest,
   SpaceGitFileDiffRequest,
   SpaceGitFileRequest,
-  SpaceGitLifecycleRequest
+  SpaceGitLifecycleRequest,
+  SpaceGitPullRequestDraftRequest
 } from "../git/types";
 
 const shellApi: ShellApi = {
@@ -33,7 +36,17 @@ const shellApi: ShellApi = {
   stageSpaceFile: async (request: SpaceGitFileRequest) =>
     ipcRenderer.invoke(IPC_CHANNELS.stageSpaceFile, request),
   unstageSpaceFile: async (request: SpaceGitFileRequest) =>
-    ipcRenderer.invoke(IPC_CHANNELS.unstageSpaceFile, request)
+    ipcRenderer.invoke(IPC_CHANNELS.unstageSpaceFile, request),
+  createGitHubSession: async (request: GitHubSessionRequest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.createGitHubSession, request),
+  clearGitHubSession: async (sessionId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.clearGitHubSession, sessionId),
+  generatePullRequestDraft: async (request: SpaceGitPullRequestDraftRequest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.generatePullRequestDraft, request),
+  createPullRequest: async (request: SpaceGitCreatePullRequestRequest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.createPullRequest, request),
+  openExternalUrl: async (url: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.openExternalUrl, url)
 };
 
 contextBridge.exposeInMainWorld("kataShell", shellApi);
