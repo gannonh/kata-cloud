@@ -22,6 +22,10 @@ import { SpecNotePanel } from "./notes/spec-note-panel";
 import { loadSpecNote } from "./notes/store";
 import { buildDelegatedTaskTimeline } from "./shared/orchestrator-delegation";
 import {
+  getRunHistoryForActiveSession,
+  getRunsForActiveSession
+} from "./shared/orchestrator-run-history";
+import {
   AppState,
   NavigationView,
   OrchestratorRunRecord,
@@ -404,14 +408,15 @@ function App(): React.JSX.Element {
     [state.activeSessionId, state.sessions]
   );
   const runsForActiveSession = useMemo(
-    () =>
-      state.orchestratorRuns.filter(
-        (run) => run.spaceId === state.activeSpaceId && run.sessionId === state.activeSessionId
-      ),
+    () => getRunsForActiveSession(state.orchestratorRuns, state.activeSpaceId, state.activeSessionId),
     [state.activeSessionId, state.activeSpaceId, state.orchestratorRuns]
   );
   const latestRunForActiveSession = useMemo(
     () => runsForActiveSession[runsForActiveSession.length - 1],
+    [runsForActiveSession]
+  );
+  const runHistoryForActiveSession = useMemo(
+    () => getRunHistoryForActiveSession(runsForActiveSession),
     [runsForActiveSession]
   );
   const latestDraftForActiveSession = latestRunForActiveSession?.draft;
@@ -1398,6 +1403,42 @@ function App(): React.JSX.Element {
               <div className="info-card">
                 <h3>Latest Run ID</h3>
                 <p>{latestRunForActiveSession.id}</p>
+              </div>
+            ) : null}
+            {runHistoryForActiveSession.length > 0 ? (
+              <div className="info-card">
+                <h3>Run History</h3>
+                <ul>
+                  {runHistoryForActiveSession.map((run) => (
+                    <li key={run.id}>
+                      <p>
+                        <strong>{run.id}</strong> - {run.status}
+                      </p>
+                      <p>Prompt: {run.prompt}</p>
+                      <p>Lifecycle: {run.statusTimeline.join(" -> ")}</p>
+                      {run.delegatedTasks && run.delegatedTasks.length > 0 ? (
+                        <div>
+                          <p>Delegated tasks</p>
+                          <ul>
+                            {run.delegatedTasks.map((task) => (
+                              <li key={task.id}>
+                                {task.type} ({task.specialist}): {task.status} [
+                                {task.statusTimeline.join(" -> ")}]
+                                {task.errorMessage ? (
+                                  <>
+                                    {" "}
+                                    - <span className="field-error">{task.errorMessage}</span>
+                                  </>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                      {run.errorMessage ? <p className="field-error">{run.errorMessage}</p> : null}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ) : null}
           </div>
