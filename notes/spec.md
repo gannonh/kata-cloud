@@ -16,38 +16,44 @@ task:
 This section is the current source of truth for handoff. Historical sections below are retained for audit trail but are superseded by this snapshot.
 
 ### Repository Baseline
-1. `main` now includes run-history persistence via PR `#24` (merge commit `82ad50fda40d16de06cb41d1caab3c9ac933459e`).
-2. Working tree is clean (`git status -sb` -> `## main...origin/main`).
-3. Branch strategy moving forward:
+1. `main` now includes the latest merged implementation slices:
+   - PR `#30`: context adapter conflict-resolution integration.
+   - PR `#31`: in-app browser preview implementation.
+   - PR `#32`: provider runtime Slice 1 foundation.
+   - PR `#33`: context retrieval contract v1 docs.
+2. Coordination worktree baseline is clean and synced to `origin/main`.
+3. Branch strategy remains enforced:
    - Start each new task branch from updated `origin/main`.
-   - Keep task scope isolated per PR.
-   - Avoid stacking new work on historical feature branches.
+   - Keep scope isolated to one task per PR.
+   - Avoid absolute worktree paths in notes/prompts; use repo-relative paths only.
 
 ### Completed Since Last Handoff
-1. [Build changes tab with diff inspection and selective staging](intent://local/task/e1ea609a-a0d0-4025-92ea-f20564110a9d) is complete and merged via PR `#11` (merge commit `8269445221475d042b9d3c42b753934c1a9e4223`).
-2. [Add GitHub PR creation workflow in Changes tab](intent://local/task/10a48d6c-9fd1-452f-aa99-3120bf23641c) is complete and merged via PR `#18` (merge commit `96b3538647818fd24765bfa5705052de7ff57a49`).
-3. [Persist and display orchestrator run history across sessions](intent://local/task/c5f554ea-2059-40d2-9fb2-bf522a590cae) is complete and merged via PR `#24` (merge commit `82ad50fda40d16de06cb41d1caab3c9ac933459e`), including manual UAT restart persistence validation.
+1. [Integrate context engine adapter and initial providers](intent://local/task/302fcffa-863d-4d90-b017-08369fad3f73) is complete and merged via PR `#30`.
+2. [Add in-app browser preview for local development](intent://local/task/22770f24-a79b-4d14-9add-14ffd1447b2f) is complete and merged via PR `#31`.
+3. [Implement real model provider runtime and authentication](intent://local/task/dfb65dc8-1eb9-47f1-b95f-e22c99005ddb) Slice 1 foundation is complete and merged via PR `#32`.
+4. Context Engine interface guidance is documented in `docs/context-retrieval-contract-v1.md` via PR `#33`.
 
-### Open Tasks
-1. [Integrate context engine adapter and initial providers](intent://local/task/302fcffa-863d-4d90-b017-08369fad3f73)
-   - Status: `review_required`
-   - Current evidence: commit/push/test artifacts posted on `feature/context-adapter-foundation` (`ac97a5cf0ccc0191e3d45453a319cbeb268664c8`).
-   - Next gate: verifier closeout GO/NO-GO.
-2. [Add in-app browser preview for local development](intent://local/task/22770f24-a79b-4d14-9add-14ffd1447b2f)
-   - Status: `waiting`
-   - Dependency: context closure must be finalized first.
-3. [Implement real model provider runtime and authentication](intent://local/task/dfb65dc8-1eb9-47f1-b95f-e22c99005ddb)
-   - Status: `not_started`
-   - Dependency: proceed after browser/context closure sequence is stable.
+### Active Tasks
+1. [Implement real model provider runtime and authentication](intent://local/task/dfb65dc8-1eb9-47f1-b95f-e22c99005ddb)
+   - Status: `in_progress` (Slice 1 merged).
+   - Next gate: Slice 2 runtime plumbing (main/preload/shared IPC contract integration, no renderer UX scope).
+2. Spec/task hygiene
+   - Status: `in_progress`.
+   - Next gate: keep `notes/spec.md` top snapshot aligned after each merged PR.
+3. Backlog execution lanes (GitHub issues `#13-#21`)
+   - Status: `open`.
+   - Next gate: dispatch low-overlap issue work in parallel with provider-runtime slices.
 
 ### Exact Next Steps
-1. Run verifier closure for context task `302fcffa-863d-4d90-b017-08369fad3f73` and record explicit GO/NO-GO.
-2. If context is GO, resume browser task `22770f24-a79b-4d14-9add-14ffd1447b2f` from fresh `origin/main` baseline and complete/merge.
-3. After browser task is merged, start provider runtime task `dfb65dc8-1eb9-47f1-b95f-e22c99005ddb` on fresh `origin/main`.
-4. Re-run final MVP E2E verification sweep after provider runtime lands.
+1. Dispatch Provider Runtime Slice 2 from fresh `origin/main` with strict non-overlap guardrails:
+   - include `src/main/provider-runtime/**`, `src/main/index.ts`, `src/preload/index.ts`, `src/shared/shell-api.ts`.
+   - exclude renderer UX/settings work in `src/main.tsx`.
+2. In parallel, run one low-overlap backlog issue (recommended: `#17` responsive changes-panel heights).
+3. After Slice 2 merges, dispatch provider adapter execution slices (Anthropic API key path, then OpenAI API key path).
+4. Run coordinated UAT after each provider slice merge and full MVP sweep after provider runtime is fully wired.
 
 ### Next Steps After Open Tasks Complete
-1. Execute full E2E MVP verification: space creation, orchestrator run lifecycle, spec draft/apply, changes-tab diff/staging, PR creation flow, browser preview, provider runtime.
+1. Execute full E2E MVP verification: space creation, orchestrator run lifecycle, spec draft/apply, changes-tab diff/staging, PR creation flow, browser preview, context retrieval, provider runtime.
 2. Produce final release handoff packet with validated commands, residual risks, and recommended post-MVP backlog order.
 
 ## Goal
