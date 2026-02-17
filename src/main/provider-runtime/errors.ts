@@ -77,18 +77,18 @@ export function mapProviderRuntimeError(
 
 function inferCode(normalizedMessage: string): ProviderRuntimeErrorCode {
   if (
+    normalizedMessage.includes("session expired") ||
+    normalizedMessage.includes("token expired")
+  ) {
+    return "session_expired";
+  }
+
+  if (
     normalizedMessage.includes("invalid api key") ||
     normalizedMessage.includes("unauthorized") ||
     normalizedMessage.includes("401")
   ) {
     return "invalid_auth";
-  }
-
-  if (
-    normalizedMessage.includes("session expired") ||
-    normalizedMessage.includes("token expired")
-  ) {
-    return "session_expired";
   }
 
   if (
