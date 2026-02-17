@@ -2,6 +2,7 @@ import {
   isSpaceGitLifecycleStatus,
   type SpaceGitLifecycleStatus
 } from "../git/types";
+import type { ContextProviderId, ContextSnippet } from "../context/types";
 
 export const APP_STATE_VERSION = 1;
 
@@ -42,6 +43,7 @@ export interface SpaceRecord {
   description: string;
   tags: string[];
   repoUrl?: string;
+  contextProvider?: ContextProviderId;
   gitStatus?: SpaceGitLifecycleStatus;
   createdAt: string;
   updatedAt: string;
@@ -51,6 +53,7 @@ export interface SessionRecord {
   id: string;
   spaceId: string;
   label: string;
+  contextProvider?: ContextProviderId;
   createdAt: string;
   updatedAt: string;
 }
@@ -66,6 +69,7 @@ export interface OrchestratorRunRecord {
   updatedAt: string;
   completedAt?: string;
   errorMessage?: string;
+  contextSnippets?: ContextSnippet[];
   draft?: OrchestratorSpecDraft;
   draftAppliedAt?: string;
   draftApplyError?: string;
@@ -101,6 +105,26 @@ function isNavigationView(value: unknown): value is NavigationView {
 
 function isOrchestratorRunStatus(value: unknown): value is OrchestratorRunStatus {
   return value === "queued" || value === "running" || value === "completed" || value === "failed";
+}
+
+function isContextProviderId(value: unknown): value is ContextProviderId {
+  return value === "filesystem" || value === "mcp";
+}
+
+function isContextSnippet(value: unknown): value is ContextSnippet {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  return (
+    isString(value.id) &&
+    isContextProviderId(value.provider) &&
+    isString(value.path) &&
+    isString(value.source) &&
+    typeof value.content === "string" &&
+    typeof value.score === "number" &&
+    Number.isFinite(value.score)
+  );
 }
 
 function isOrchestratorTaskType(value: unknown): value is OrchestratorTaskType {
@@ -157,6 +181,8 @@ function isSpaceRecord(value: unknown): value is SpaceRecord {
 
   const maybeRepoUrl = value.repoUrl;
   const repoUrlIsValid = maybeRepoUrl === undefined || isString(maybeRepoUrl);
+  const contextProviderIsValid =
+    value.contextProvider === undefined || isContextProviderId(value.contextProvider);
   const gitStatusIsValid =
     value.gitStatus === undefined || isSpaceGitLifecycleStatus(value.gitStatus);
 
@@ -167,6 +193,7 @@ function isSpaceRecord(value: unknown): value is SpaceRecord {
     typeof value.description === "string" &&
     isStringArray(value.tags) &&
     repoUrlIsValid &&
+    contextProviderIsValid &&
     gitStatusIsValid &&
     isString(value.createdAt) &&
     isString(value.updatedAt)
@@ -182,6 +209,7 @@ function isSessionRecord(value: unknown): value is SessionRecord {
     isString(value.id) &&
     isString(value.spaceId) &&
     isString(value.label) &&
+    (value.contextProvider === undefined || isContextProviderId(value.contextProvider)) &&
     isString(value.createdAt) &&
     isString(value.updatedAt)
   );
@@ -194,6 +222,9 @@ function isOrchestratorRunRecord(value: unknown): value is OrchestratorRunRecord
 
   const completedAtIsValid = value.completedAt === undefined || isString(value.completedAt);
   const errorMessageIsValid = value.errorMessage === undefined || isString(value.errorMessage);
+  const contextSnippetsAreValid =
+    value.contextSnippets === undefined ||
+    (Array.isArray(value.contextSnippets) && value.contextSnippets.every(isContextSnippet));
   const draftIsValid = value.draft === undefined || isOrchestratorSpecDraft(value.draft);
   const draftAppliedAtIsValid = value.draftAppliedAt === undefined || isString(value.draftAppliedAt);
   const draftApplyErrorIsValid = value.draftApplyError === undefined || isString(value.draftApplyError);
@@ -215,6 +246,7 @@ function isOrchestratorRunRecord(value: unknown): value is OrchestratorRunRecord
     isString(value.updatedAt) &&
     completedAtIsValid &&
     errorMessageIsValid &&
+    contextSnippetsAreValid &&
     draftIsValid &&
     draftAppliedAtIsValid &&
     draftApplyErrorIsValid &&
@@ -238,6 +270,7 @@ export function createInitialAppState(nowIso = new Date().toISOString()): AppSta
         rootPath: "~/kata/getting-started",
         description: "Starter space for bootstrapping the app shell and workflow.",
         tags: ["starter", "bootstrap"],
+        contextProvider: "filesystem",
         createdAt: nowIso,
         updatedAt: nowIso
       }

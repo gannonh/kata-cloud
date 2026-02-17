@@ -14,6 +14,7 @@ import type {
   SpaceGitPullRequestDraftRequest,
   SpaceGitPullRequestDraftResult
 } from "../git/types";
+import type { ContextRetrievalRequest, ContextSnippet } from "../context/types";
 
 export const IPC_CHANNELS = {
   getState: "kata-cloud/state:get",
@@ -29,6 +30,7 @@ export const IPC_CHANNELS = {
   clearGitHubSession: "kata-cloud/github:session-clear",
   generatePullRequestDraft: "kata-cloud/github:pr-draft",
   createPullRequest: "kata-cloud/github:pr-create",
+  retrieveContext: "kata-cloud/context:retrieve",
   openExternalUrl: "kata-cloud/system:open-external-url"
 } as const;
 
@@ -60,5 +62,6 @@ export interface ShellApi {
   createPullRequest: (
     request: SpaceGitCreatePullRequestRequest
   ) => Promise<SpaceGitCreatePullRequestResult>;
+  retrieveContext: (request: ContextRetrievalRequest) => Promise<ContextSnippet[]>;
   openExternalUrl: (url: string) => Promise<void>;
 }

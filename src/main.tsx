@@ -43,6 +43,10 @@ import {
   type SpaceValidationErrors,
   validateCreateSpaceInput
 } from "./space/validation";
+import {
+  resolveContextProviderId
+} from "./context/context-adapter";
+import type { ContextSnippet } from "./context/types";
 import "./styles.css";
 import { resolveRunFailure } from "./shared/orchestrator-failure";
 
@@ -113,7 +117,22 @@ function appendRunStatus(run: OrchestratorRunRecord, status: OrchestratorRunStat
   };
 }
 
-function createSpecDraft(run: OrchestratorRunRecord, generatedAt: string): OrchestratorSpecDraft {
+function formatContextSnippetSection(snippets: ContextSnippet[]): string {
+  if (snippets.length === 0) {
+    return "## Context Snippets\n- No matching snippets found.";
+  }
+
+  return [
+    "## Context Snippets",
+    ...snippets.map((snippet) => `- ${snippet.path}: ${snippet.content}`)
+  ].join("\n");
+}
+
+function createSpecDraft(
+  run: OrchestratorRunRecord,
+  generatedAt: string,
+  contextSnippets: ContextSnippet[]
+): OrchestratorSpecDraft {
   const prompt = run.prompt.trim();
   const summary = prompt.length > 0 ? prompt : "Describe the project outcome.";
   const defaultTask = suggestSpaceNameFromPrompt(prompt).replace(/-/g, " ").trim() || "define implementation milestones";
@@ -121,7 +140,7 @@ function createSpecDraft(run: OrchestratorRunRecord, generatedAt: string): Orche
   return {
     runId: run.id,
     generatedAt,
-    content: `## Goal\n${summary}\n\n## Tasks\n- [ ] ${defaultTask}\n\n## Acceptance Criteria\n1. Define measurable completion criteria.\n\n## Verification Plan\n1. Run targeted tests.\n2. Run desktop typecheck.`
+    content: `## Goal\n${summary}\n\n## Tasks\n- [ ] ${defaultTask}\n\n${formatContextSnippetSection(contextSnippets)}\n\n## Acceptance Criteria\n1. Define measurable completion criteria.\n\n## Verification Plan\n1. Run targeted tests.\n2. Run desktop typecheck.`
   };
 }
 
@@ -779,6 +798,7 @@ function App(): React.JSX.Element {
       id: `session-${Date.now()}`,
       spaceId: state.activeSpaceId,
       label: createSessionLabel(sessionsForActiveSpace.length),
+      contextProvider: activeSpace?.contextProvider,
       createdAt: timestamp,
       updatedAt: timestamp
     };
@@ -789,7 +809,7 @@ function App(): React.JSX.Element {
       activeSessionId: nextSession.id,
       lastOpenedAt: timestamp
     });
-  }, [persistState, sessionsForActiveSpace.length, state]);
+  }, [activeSpace?.contextProvider, persistState, sessionsForActiveSpace.length, state]);
 
   const onOpenCreateSpaceForm = useCallback(() => {
     setIsCreateSpaceOpen(true);
@@ -844,6 +864,26 @@ function App(): React.JSX.Element {
     await persistState(runningState);
 
     const endedAt = new Date().toISOString();
+    const contextProviderId = resolveContextProviderId(
+      activeSpace.contextProvider,
+      activeSession.contextProvider
+    );
+    let contextSnippets: ContextSnippet[] = [];
+    if (window.kataShell) {
+      try {
+        contextSnippets = await window.kataShell.retrieveContext({
+          prompt,
+          rootPath: activeSpace.rootPath,
+          spaceId: activeSpace.id,
+          sessionId: activeSession.id,
+          providerId: contextProviderId,
+          limit: 3
+        });
+      } catch {
+        contextSnippets = [];
+      }
+    }
+
     const runFailureMessage = resolveRunFailure(prompt);
     const delegationOutcome = runFailureMessage
       ? { tasks: undefined, failureMessage: runFailureMessage }
@@ -851,7 +891,7 @@ function App(): React.JSX.Element {
     const failureMessage = delegationOutcome.failureMessage;
     const endedStatus: OrchestratorRunStatus = failureMessage ? "failed" : "completed";
     const endedRun = appendRunStatus(runningRun, endedStatus);
-    const draft = failureMessage ? undefined : createSpecDraft(endedRun, endedAt);
+    const draft = failureMessage ? undefined : createSpecDraft(endedRun, endedAt, contextSnippets);
     const endedState: AppState = {
       ...runningState,
       orchestratorRuns: runningState.orchestratorRuns.map((run) =>
@@ -861,6 +901,7 @@ function App(): React.JSX.Element {
               updatedAt: endedAt,
               completedAt: endedAt,
               errorMessage: failureMessage ?? undefined,
+              contextSnippets,
               draft,
               draftAppliedAt: undefined,
               draftApplyError: undefined,
@@ -940,6 +981,7 @@ function App(): React.JSX.Element {
         repoUrl: candidateInput.repo?.trim() || undefined,
         description: candidateInput.description?.trim() ?? "",
         tags: sanitizedTags,
+        contextProvider: "filesystem",
         createdAt: now,
         updatedAt: now
       };
@@ -948,6 +990,7 @@ function App(): React.JSX.Element {
         id: newSessionId,
         spaceId: newSpaceId,
         label: "Initial Orchestrator Session",
+        contextProvider: "filesystem",
         createdAt: now,
         updatedAt: now
       };

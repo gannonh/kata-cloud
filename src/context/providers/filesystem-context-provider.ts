@@ -1,0 +1,118 @@
+import { readdir, readFile, stat } from "node:fs/promises";
+import path from "node:path";
+import type { ContextProvider, ContextQuery, ContextSnippet } from "../types";
+
+const DEFAULT_LIMIT = 5;
+const MAX_FILE_BYTES = 200_000;
+const MAX_FILES_TO_SCAN = 250;
+const SKIPPED_DIRECTORIES = new Set([".git", "node_modules", "dist", "coverage"]);
+
+function toSearchTerms(prompt: string): string[] {
+  const terms = prompt
+    .toLowerCase()
+    .split(/[^a-z0-9]+/g)
+    .filter((term) => term.length >= 3);
+  return Array.from(new Set(terms));
+}
+
+function isProbablyBinary(content: string): boolean {
+  return content.includes("\u0000");
+}
+
+function createSnippetContent(content: string, matchIndex: number): string {
+  const start = Math.max(0, matchIndex - 100);
+  const end = Math.min(content.length, matchIndex + 220);
+  return content.slice(start, end).replace(/\s+/g, " ").trim();
+}
+
+async function collectFiles(rootPath: string): Promise<string[]> {
+  const queue = [rootPath];
+  const collected: string[] = [];
+
+  while (queue.length > 0 && collected.length < MAX_FILES_TO_SCAN) {
+    const current = queue.shift();
+    if (!current) {
+      continue;
+    }
+
+    let entries;
+    try {
+      entries = await readdir(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      if (collected.length >= MAX_FILES_TO_SCAN) {
+        break;
+      }
+
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        if (!SKIPPED_DIRECTORIES.has(entry.name)) {
+          queue.push(fullPath);
+        }
+        continue;
+      }
+
+      if (entry.isFile()) {
+        collected.push(fullPath);
+      }
+    }
+  }
+
+  return collected;
+}
+
+export class FilesystemContextProvider implements ContextProvider {
+  readonly id = "filesystem" as const;
+
+  async retrieve(query: ContextQuery): Promise<ContextSnippet[]> {
+    const terms = toSearchTerms(query.prompt);
+    if (terms.length === 0) {
+      return [];
+    }
+
+    const files = await collectFiles(query.rootPath);
+    const snippets: ContextSnippet[] = [];
+    const maxResults = query.limit ?? DEFAULT_LIMIT;
+
+    for (const filePath of files) {
+      if (snippets.length >= maxResults) {
+        break;
+      }
+
+      try {
+        const metadata = await stat(filePath);
+        if (metadata.size > MAX_FILE_BYTES) {
+          continue;
+        }
+
+        const raw = await readFile(filePath, "utf8");
+        if (isProbablyBinary(raw)) {
+          continue;
+        }
+
+        const content = raw.toLowerCase();
+        const term = terms.find((candidate) => content.includes(candidate));
+        if (!term) {
+          continue;
+        }
+
+        const matchIndex = content.indexOf(term);
+        snippets.push({
+          id: `${this.id}:${filePath}`,
+          provider: this.id,
+          path: filePath,
+          source: "filesystem",
+          content: createSnippetContent(raw, matchIndex),
+          score: 1
+        });
+      } catch {
+        // Keep retrieval resilient when individual files cannot be read.
+      }
+    }
+
+    return snippets;
+  }
+}
