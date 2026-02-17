@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   createSpaceGitRequest,
@@ -202,6 +202,7 @@ function App(): React.JSX.Element {
   const [selectedFileDiff, setSelectedFileDiff] = useState<SpaceGitFileDiffResult | null>(null);
   const [isLoadingFileDiff, setIsLoadingFileDiff] = useState(false);
   const [activeFileActionKey, setActiveFileActionKey] = useState<string | null>(null);
+  const changesSnapshotRequestIdRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -421,11 +422,15 @@ function App(): React.JSX.Element {
   }, []);
 
   const loadChangesSnapshot = useCallback(async () => {
+    const requestId = changesSnapshotRequestIdRef.current + 1;
+    changesSnapshotRequestIdRef.current = requestId;
+
     if (!activeChangesRepoPath) {
       setChangesSnapshot(null);
       setSelectedChangePath(null);
       setSelectedFileDiff(null);
       setChangesError(null);
+      setIsLoadingChanges(false);
       return;
     }
 
@@ -435,6 +440,7 @@ function App(): React.JSX.Element {
       setChangesSnapshot(null);
       setSelectedChangePath(null);
       setSelectedFileDiff(null);
+      setIsLoadingChanges(false);
       return;
     }
 
@@ -443,11 +449,19 @@ function App(): React.JSX.Element {
 
     try {
       const snapshot = await shellApi.getSpaceChanges({ repoPath: activeChangesRepoPath });
+      if (requestId !== changesSnapshotRequestIdRef.current) {
+        return;
+      }
       applyChangesSnapshot(snapshot);
     } catch (error) {
+      if (requestId !== changesSnapshotRequestIdRef.current) {
+        return;
+      }
       setChangesError(`Unable to load changes: ${toErrorMessage(error)}`);
     } finally {
-      setIsLoadingChanges(false);
+      if (requestId === changesSnapshotRequestIdRef.current) {
+        setIsLoadingChanges(false);
+      }
     }
   }, [activeChangesRepoPath, applyChangesSnapshot]);
 
@@ -457,6 +471,10 @@ function App(): React.JSX.Element {
     }
 
     void loadChangesSnapshot();
+
+    return () => {
+      changesSnapshotRequestIdRef.current += 1;
+    };
   }, [loadChangesSnapshot, state.activeView, activeSpace?.gitStatus?.updatedAt]);
 
   useEffect(() => {
@@ -533,9 +551,7 @@ function App(): React.JSX.Element {
               });
         applyChangesSnapshot(snapshot);
       } catch (error) {
-        setChangesError(
-          `Unable to ${action === "stage" ? "stage" : "unstage"} file: ${toErrorMessage(error)}`
-        );
+        setChangesError(`Unable to ${action} file: ${toErrorMessage(error)}`);
       } finally {
         setActiveFileActionKey((currentAction) =>
           currentAction === `${action}:${filePath}` ? null : currentAction

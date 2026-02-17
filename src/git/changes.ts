@@ -5,6 +5,7 @@ import type {
 } from "./types";
 
 const MERGE_CONFLICT_CODES = new Set(["DD", "AU", "UD", "UA", "DU", "AA", "UU"]);
+const UTF8_DECODER = new TextDecoder();
 
 export function parseGitStatusPorcelain(statusOutput: string): SpaceGitChangeFile[] {
   return statusOutput
@@ -49,6 +50,11 @@ export function summarizeStagedChanges(
   stagedNumstatOutput: string
 ): SpaceGitStagedSummary {
   const summary = createEmptyStagedSummary();
+  const stagedPaths = new Set(
+    files
+      .filter((file) => isStagedFileChange(file))
+      .map((file) => file.path)
+  );
 
   for (const file of files) {
     if (!isStagedFileChange(file)) {
@@ -87,7 +93,12 @@ export function summarizeStagedChanges(
       continue;
     }
 
-    const [insertionsRaw, deletionsRaw] = trimmed.split("\t");
+    const [insertionsRaw, deletionsRaw, ...pathParts] = trimmed.split("\t");
+    const numstatPath = normalizeNumstatPath(pathParts.join("\t"));
+    if (!stagedPaths.has(numstatPath)) {
+      continue;
+    }
+
     const insertions = Number.parseInt(insertionsRaw ?? "", 10);
     const deletions = Number.parseInt(deletionsRaw ?? "", 10);
 
@@ -167,15 +178,75 @@ function splitPathField(rawPath: string): { path: string; previousPath: string |
   };
 }
 
+function normalizeNumstatPath(rawPath: string): string {
+  const trimmed = rawPath.trim();
+  const braceRenameMatch = trimmed.match(/^(.*)\{(.+) => (.+)\}(.*)$/);
+  if (braceRenameMatch) {
+    const [, prefix, , renamedTarget, suffix] = braceRenameMatch;
+    return `${prefix}${renamedTarget}${suffix}`;
+  }
+
+  const renameArrowIndex = trimmed.indexOf(" => ");
+  if (renameArrowIndex !== -1) {
+    return trimmed.slice(renameArrowIndex + 4);
+  }
+
+  return decodeQuotedPath(trimmed);
+}
+
 function decodeQuotedPath(rawPath: string): string {
   if (!rawPath.startsWith("\"") || !rawPath.endsWith("\"")) {
     return rawPath;
   }
 
-  return rawPath
-    .slice(1, -1)
-    .replace(/\\"/g, "\"")
-    .replace(/\\\\/g, "\\");
+  const unwrapped = rawPath.slice(1, -1);
+  const decodedCharacters: string[] = [];
+  const octalByteBuffer: number[] = [];
+
+  function flushOctalBytes(): void {
+    if (octalByteBuffer.length === 0) {
+      return;
+    }
+
+    decodedCharacters.push(UTF8_DECODER.decode(new Uint8Array(octalByteBuffer)));
+    octalByteBuffer.length = 0;
+  }
+
+  for (let index = 0; index < unwrapped.length; index += 1) {
+    const current = unwrapped[index] ?? "";
+    if (current !== "\\") {
+      flushOctalBytes();
+      decodedCharacters.push(current);
+      continue;
+    }
+
+    const next = unwrapped[index + 1] ?? "";
+    const nextTwo = unwrapped[index + 2] ?? "";
+    const nextThree = unwrapped[index + 3] ?? "";
+
+    if (isOctalDigit(next) && isOctalDigit(nextTwo) && isOctalDigit(nextThree)) {
+      octalByteBuffer.push(Number.parseInt(`${next}${nextTwo}${nextThree}`, 8));
+      index += 3;
+      continue;
+    }
+
+    flushOctalBytes();
+    if (next === "\"" || next === "\\") {
+      decodedCharacters.push(next);
+      index += 1;
+      continue;
+    }
+
+    decodedCharacters.push(next);
+    index += 1;
+  }
+
+  flushOctalBytes();
+  return decodedCharacters.join("");
+}
+
+function isOctalDigit(value: string): boolean {
+  return value.length === 1 && value >= "0" && value <= "7";
 }
 
 function toStatusCode(rawCode: string): SpaceGitFileStatusCode | null {

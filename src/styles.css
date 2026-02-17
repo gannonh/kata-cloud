@@ -399,12 +399,12 @@ body {
 .changes-diff__panel pre {
   margin: 0.5rem 0 0;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: break-word;
   max-height: 380px;
   overflow: auto;
   font-size: 0.75rem;
   line-height: 1.4;
-  font-family: "IBM Plex Mono", "SF Mono", "Consolas", monospace;
+  font-family: "IBM Plex Mono", "SF Mono", Consolas, monospace;
 }
 
 .spec-panel {

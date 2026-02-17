@@ -241,5 +241,23 @@ describe("SpaceGitLifecycleService", () => {
 
     expect(diff.stagedDiff).toBe("staged diff");
     expect(diff.unstagedDiff).toBe("unstaged diff");
+
+    const stagedOnly = await service.getFileDiff({
+      repoPath: "/repo",
+      filePath: "src/app.ts",
+      includeStaged: true,
+      includeUnstaged: false
+    });
+    expect(stagedOnly.stagedDiff).toBe("staged diff");
+    expect(stagedOnly.unstagedDiff).toBeNull();
+
+    const unstagedOnly = await service.getFileDiff({
+      repoPath: "/repo",
+      filePath: "src/app.ts",
+      includeStaged: false,
+      includeUnstaged: true
+    });
+    expect(unstagedOnly.stagedDiff).toBeNull();
+    expect(unstagedOnly.unstagedDiff).toBe("unstaged diff");
   });
 });

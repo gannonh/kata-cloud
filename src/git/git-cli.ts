@@ -64,20 +64,8 @@ export class GitCli {
   }
 
   async isDirty(repoPath: string): Promise<boolean> {
-    const result = await this.commandRunner([
-      "-C",
-      repoPath,
-      "status",
-      "--porcelain"
-    ]);
-
-    this.assertSuccess(
-      result,
-      "Could not read repository state.",
-      "Check repository permissions and git configuration."
-    );
-
-    return result.stdout.trim().length > 0;
+    const status = await this.readStatusPorcelain(repoPath);
+    return status.trim().length > 0;
   }
 
   async readStatusPorcelain(repoPath: string): Promise<string> {

@@ -51,6 +51,20 @@ describe("parseGitStatusPorcelain", () => {
     });
     expect(isStagedFileChange(changes[0]!)).toBe(true);
     expect(isUnstagedFileChange(changes[0]!)).toBe(false);
+    expect(isStagedFileChange(changes[5]!)).toBe(true);
+    expect(isUnstagedFileChange(changes[5]!)).toBe(true);
+  });
+
+  it("decodes quoted and octal-escaped rename paths", () => {
+    const output = String.raw`R  "src/ol\303\251.ts" -> "src/ne\303\251 name.ts"`;
+
+    const changes = parseGitStatusPorcelain(output);
+
+    expect(changes).toHaveLength(1);
+    expect(changes[0]).toMatchObject({
+      previousPath: "src/olé.ts",
+      path: "src/neé name.ts"
+    });
   });
 });
 
@@ -76,5 +90,15 @@ describe("summarizeStagedChanges", () => {
       insertions: 18,
       deletions: 3
     });
+  });
+
+  it("ignores numstat rows that do not match staged files", () => {
+    const files = parseGitStatusPorcelain(["M  src/staged.ts"].join("\n"));
+    const stagedNumstat = ["9\t2\tsrc/staged.ts", "4\t4\tsrc/other.ts"].join("\n");
+
+    const summary = summarizeStagedChanges(files, stagedNumstat);
+
+    expect(summary.insertions).toBe(9);
+    expect(summary.deletions).toBe(2);
   });
 });

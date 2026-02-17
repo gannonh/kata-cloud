@@ -126,12 +126,13 @@ describe("GitCli", () => {
   it("uses no-index diff for untracked file content", async () => {
     const command = createRunner(ok(""), ok("src/new.ts\n"), { exitCode: 1, stdout: "new file diff\n", stderr: "" });
     const cli = new GitCli(command.runner);
+    const nullDevice = process.platform === "win32" ? "NUL" : "/dev/null";
 
     await expect(cli.readFileDiff("/repo", "src/new.ts", "unstaged")).resolves.toBe("new file diff");
     expect(command.calls).toEqual([
       ["-C", "/repo", "diff", "--", "src/new.ts"],
       ["-C", "/repo", "ls-files", "--others", "--exclude-standard", "--", "src/new.ts"],
-      ["-C", "/repo", "diff", "--no-index", "--", "/dev/null", "src/new.ts"]
+      ["-C", "/repo", "diff", "--no-index", "--", nullDevice, "src/new.ts"]
     ]);
   });
 
