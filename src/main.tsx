@@ -3,9 +3,17 @@ import { createRoot } from "react-dom/client";
 import {
   createSpaceGitRequest,
   createSpaceGitStatus,
+  type SpaceGitChangeFile,
+  type SpaceGitChangesSnapshot,
+  type SpaceGitFileDiffResult,
   type SpaceGitLifecycleRequest,
   type SpaceGitLifecycleStatus
 } from "./git/types";
+import {
+  isStagedFileChange,
+  isUnstagedFileChange,
+  toGitStatusLabel
+} from "./git/changes";
 import { toSpaceGitUiState } from "./git/space-git-ui-state";
 import { SpecNotePanel } from "./notes/spec-note-panel";
 import { buildDelegatedTaskTimeline } from "./shared/orchestrator-delegation";
@@ -147,6 +155,34 @@ function toSpaceMetadata(space: SpaceRecord): SpaceMetadata {
   };
 }
 
+function resolveSpaceChangesRepoPath(space: SpaceRecord): string | null {
+  if (space.gitStatus?.worktreePath) {
+    return space.gitStatus.worktreePath;
+  }
+
+  if (space.repoUrl) {
+    return space.rootPath;
+  }
+
+  return null;
+}
+
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Unexpected error.";
+}
+
+function toChangePathLabel(change: SpaceGitChangeFile): string {
+  if (!change.previousPath) {
+    return change.path;
+  }
+
+  return `${change.previousPath} -> ${change.path}`;
+}
+
 function App(): React.JSX.Element {
   const [state, setState] = useState<AppState>(() => createInitialAppState());
   const [isBootstrapping, setIsBootstrapping] = useState(true);
@@ -159,6 +195,13 @@ function App(): React.JSX.Element {
   const [editSpaceDraft, setEditSpaceDraft] = useState<CreateSpaceDraft>(EMPTY_CREATE_SPACE_DRAFT);
   const [editSpaceErrors, setEditSpaceErrors] = useState<SpaceValidationErrors>({});
   const [activeGitOperationSpaceId, setActiveGitOperationSpaceId] = useState<string | null>(null);
+  const [changesSnapshot, setChangesSnapshot] = useState<SpaceGitChangesSnapshot | null>(null);
+  const [changesError, setChangesError] = useState<string | null>(null);
+  const [isLoadingChanges, setIsLoadingChanges] = useState(false);
+  const [selectedChangePath, setSelectedChangePath] = useState<string | null>(null);
+  const [selectedFileDiff, setSelectedFileDiff] = useState<SpaceGitFileDiffResult | null>(null);
+  const [isLoadingFileDiff, setIsLoadingFileDiff] = useState(false);
+  const [activeFileActionKey, setActiveFileActionKey] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -330,6 +373,15 @@ function App(): React.JSX.Element {
     () => (activeSpace ? toSpaceGitUiState(activeSpace.gitStatus) : null),
     [activeSpace]
   );
+  const activeChangesRepoPath = useMemo(
+    () => (activeSpace ? resolveSpaceChangesRepoPath(activeSpace) : null),
+    [activeSpace]
+  );
+  const selectedChange = useMemo(
+    () =>
+      changesSnapshot?.files.find((change) => change.path === selectedChangePath) ?? null,
+    [changesSnapshot, selectedChangePath]
+  );
 
   const activeSession = useMemo(
     () => state.sessions.find((session) => session.id === state.activeSessionId),
@@ -351,6 +403,146 @@ function App(): React.JSX.Element {
   const sessionsForActiveSpace = useMemo(
     () => state.sessions.filter((session) => session.spaceId === state.activeSpaceId),
     [state.activeSpaceId, state.sessions]
+  );
+
+  const applyChangesSnapshot = useCallback((snapshot: SpaceGitChangesSnapshot) => {
+    setChangesSnapshot(snapshot);
+    setSelectedChangePath((currentPath) => {
+      if (snapshot.files.length === 0) {
+        return null;
+      }
+
+      if (currentPath && snapshot.files.some((file) => file.path === currentPath)) {
+        return currentPath;
+      }
+
+      return snapshot.files[0]?.path ?? null;
+    });
+  }, []);
+
+  const loadChangesSnapshot = useCallback(async () => {
+    if (!activeChangesRepoPath) {
+      setChangesSnapshot(null);
+      setSelectedChangePath(null);
+      setSelectedFileDiff(null);
+      setChangesError(null);
+      return;
+    }
+
+    const shellApi = window.kataShell;
+    if (!shellApi) {
+      setChangesError("Git changes are unavailable in this runtime.");
+      setChangesSnapshot(null);
+      setSelectedChangePath(null);
+      setSelectedFileDiff(null);
+      return;
+    }
+
+    setIsLoadingChanges(true);
+    setChangesError(null);
+
+    try {
+      const snapshot = await shellApi.getSpaceChanges({ repoPath: activeChangesRepoPath });
+      applyChangesSnapshot(snapshot);
+    } catch (error) {
+      setChangesError(`Unable to load changes: ${toErrorMessage(error)}`);
+    } finally {
+      setIsLoadingChanges(false);
+    }
+  }, [activeChangesRepoPath, applyChangesSnapshot]);
+
+  useEffect(() => {
+    if (state.activeView !== "changes") {
+      return;
+    }
+
+    void loadChangesSnapshot();
+  }, [loadChangesSnapshot, state.activeView, activeSpace?.gitStatus?.updatedAt]);
+
+  useEffect(() => {
+    if (state.activeView !== "changes" || !activeChangesRepoPath || !selectedChange) {
+      setSelectedFileDiff(null);
+      return;
+    }
+
+    const shellApi = window.kataShell;
+    if (!shellApi) {
+      setSelectedFileDiff(null);
+      return;
+    }
+
+    const includeStaged = isStagedFileChange(selectedChange);
+    const includeUnstaged = isUnstagedFileChange(selectedChange);
+
+    if (!includeStaged && !includeUnstaged) {
+      setSelectedFileDiff(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingFileDiff(true);
+
+    void shellApi
+      .getSpaceFileDiff({
+        repoPath: activeChangesRepoPath,
+        filePath: selectedChange.path,
+        includeStaged,
+        includeUnstaged
+      })
+      .then((nextDiff) => {
+        if (!cancelled) {
+          setSelectedFileDiff(nextDiff);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setChangesError(`Unable to load file diff: ${toErrorMessage(error)}`);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoadingFileDiff(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChangesRepoPath, selectedChange, state.activeView]);
+
+  const onRunFileStageAction = useCallback(
+    async (filePath: string, action: "stage" | "unstage") => {
+      if (!activeChangesRepoPath || !window.kataShell) {
+        return;
+      }
+
+      setActiveFileActionKey(`${action}:${filePath}`);
+      setChangesError(null);
+
+      try {
+        const shellApi = window.kataShell;
+        const snapshot =
+          action === "stage"
+            ? await shellApi.stageSpaceFile({
+                repoPath: activeChangesRepoPath,
+                filePath
+              })
+            : await shellApi.unstageSpaceFile({
+                repoPath: activeChangesRepoPath,
+                filePath
+              });
+        applyChangesSnapshot(snapshot);
+      } catch (error) {
+        setChangesError(
+          `Unable to ${action === "stage" ? "stage" : "unstage"} file: ${toErrorMessage(error)}`
+        );
+      } finally {
+        setActiveFileActionKey((currentAction) =>
+          currentAction === `${action}:${filePath}` ? null : currentAction
+        );
+      }
+    },
+    [activeChangesRepoPath, applyChangesSnapshot]
   );
 
   const onViewSelect = useCallback(
@@ -1044,7 +1236,7 @@ function App(): React.JSX.Element {
               <>
                 <div className="info-card">
                   <h3>Changes View</h3>
-                  <p>Inspect and apply branch/worktree setup for the active space.</p>
+                  <p>Inspect diffs and stage/unstage selected files for the active space.</p>
                 </div>
                 <div className="info-card">
                   <h3>Branch / Worktree</h3>
@@ -1084,6 +1276,16 @@ function App(): React.JSX.Element {
                           >
                             Switch Branch/Worktree
                           </button>
+                          <button
+                            type="button"
+                            className="pill-button"
+                            disabled={!activeChangesRepoPath || isLoadingChanges}
+                            onClick={() => {
+                              void loadChangesSnapshot();
+                            }}
+                          >
+                            {isLoadingChanges ? "Refreshing..." : "Refresh Changes"}
+                          </button>
                         </div>
                       ) : (
                         <p>Link a repository when creating the space to enable git lifecycle actions.</p>
@@ -1093,6 +1295,142 @@ function App(): React.JSX.Element {
                     <p>No active space selected.</p>
                   )}
                 </div>
+                {activeSpace && activeChangesRepoPath ? (
+                  <>
+                    <div className="info-card">
+                      <h3>Staged Summary</h3>
+                      {changesSnapshot ? (
+                        <>
+                          <p>
+                            Files: {changesSnapshot.stagedSummary.fileCount} staged /{" "}
+                            {changesSnapshot.unstagedFileCount} unstaged
+                          </p>
+                          <p>
+                            Added {changesSnapshot.stagedSummary.added}, Modified{" "}
+                            {changesSnapshot.stagedSummary.modified}, Deleted{" "}
+                            {changesSnapshot.stagedSummary.deleted}
+                          </p>
+                          <p>
+                            Renamed {changesSnapshot.stagedSummary.renamed}, Copied{" "}
+                            {changesSnapshot.stagedSummary.copied}, Conflicts{" "}
+                            {changesSnapshot.stagedSummary.conflicted}
+                          </p>
+                          <p>
+                            Staged lines +{changesSnapshot.stagedSummary.insertions} / -
+                            {changesSnapshot.stagedSummary.deletions}
+                          </p>
+                        </>
+                      ) : (
+                        <p>{isLoadingChanges ? "Loading changes..." : "No changes loaded."}</p>
+                      )}
+                      {changesError ? <p className="field-error">{changesError}</p> : null}
+                    </div>
+                    <div className="changes-layout">
+                      <section className="changes-files">
+                        <header>
+                          <h3>Files</h3>
+                          <p>{changesSnapshot?.files.length ?? 0} changed file(s)</p>
+                        </header>
+                        {changesSnapshot && changesSnapshot.files.length > 0 ? (
+                          <ul className="changes-file-list">
+                            {changesSnapshot.files.map((change) => {
+                              const isSelected = selectedChangePath === change.path;
+                              const canStage = isUnstagedFileChange(change);
+                              const canUnstage = isStagedFileChange(change);
+                              const stageActionKey = `stage:${change.path}`;
+                              const unstageActionKey = `unstage:${change.path}`;
+                              return (
+                                <li
+                                  key={`${change.statusCode}:${change.path}`}
+                                  className={isSelected ? "changes-file is-selected" : "changes-file"}
+                                >
+                                  <button
+                                    type="button"
+                                    className="changes-file__select"
+                                    onClick={() => {
+                                      setSelectedChangePath(change.path);
+                                    }}
+                                  >
+                                    {toChangePathLabel(change)}
+                                  </button>
+                                  <div className="changes-file__meta">
+                                    {isStagedFileChange(change) ? (
+                                      <span className="changes-pill is-staged">
+                                        Staged: {toGitStatusLabel(change.stagedStatus)}
+                                      </span>
+                                    ) : null}
+                                    {isUnstagedFileChange(change) ? (
+                                      <span className="changes-pill is-unstaged">
+                                        Unstaged: {toGitStatusLabel(change.unstagedStatus)}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                  <div className="space-create__actions">
+                                    {canStage ? (
+                                      <button
+                                        type="button"
+                                        className="pill-button"
+                                        disabled={activeFileActionKey === stageActionKey}
+                                        onClick={() => {
+                                          void onRunFileStageAction(change.path, "stage");
+                                        }}
+                                      >
+                                        {activeFileActionKey === stageActionKey ? "Staging..." : "Stage"}
+                                      </button>
+                                    ) : null}
+                                    {canUnstage ? (
+                                      <button
+                                        type="button"
+                                        className="pill-button"
+                                        disabled={activeFileActionKey === unstageActionKey}
+                                        onClick={() => {
+                                          void onRunFileStageAction(change.path, "unstage");
+                                        }}
+                                      >
+                                        {activeFileActionKey === unstageActionKey ? "Unstaging..." : "Unstage"}
+                                      </button>
+                                    ) : null}
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          <p>{isLoadingChanges ? "Loading files..." : "Working tree is clean."}</p>
+                        )}
+                      </section>
+                      <section className="changes-diff">
+                        <header>
+                          <h3>Diff</h3>
+                          <p>{selectedChange ? toChangePathLabel(selectedChange) : "Select a file"}</p>
+                        </header>
+                        {selectedChange ? (
+                          <>
+                            {isLoadingFileDiff ? <p>Loading diff...</p> : null}
+                            {isStagedFileChange(selectedChange) ? (
+                              <article className="changes-diff__panel">
+                                <h4>Staged</h4>
+                                <pre>
+                                  {selectedFileDiff?.stagedDiff ?? "No staged diff for this file."}
+                                </pre>
+                              </article>
+                            ) : null}
+                            {isUnstagedFileChange(selectedChange) ? (
+                              <article className="changes-diff__panel">
+                                <h4>Unstaged</h4>
+                                <pre>
+                                  {selectedFileDiff?.unstagedDiff ?? "No unstaged diff for this file."}
+                                </pre>
+                              </article>
+                            ) : null}
+                          </>
+                        ) : (
+                          <p>Select a changed file to inspect its diff.</p>
+                        )}
+                      </section>
+                    </div>
+                  </>
+                ) : null}
               </>
             ) : (
               <SpecNotePanel

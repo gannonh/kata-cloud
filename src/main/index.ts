@@ -4,7 +4,12 @@ import { AppState } from "../shared/state";
 import { IPC_CHANNELS } from "../shared/shell-api";
 import { PersistedStateStore } from "./persisted-state-store";
 import { SpaceGitLifecycleService } from "../git/space-git-service";
-import type { SpaceGitLifecycleRequest } from "../git/types";
+import type {
+  SpaceGitChangesRequest,
+  SpaceGitFileDiffRequest,
+  SpaceGitFileRequest,
+  SpaceGitLifecycleRequest
+} from "../git/types";
 
 let stateStore: PersistedStateStore | undefined;
 
@@ -65,6 +70,26 @@ function registerStateHandlers(
     IPC_CHANNELS.switchSpaceGit,
     async (_event, request: SpaceGitLifecycleRequest) =>
       gitLifecycleService.switchSpace(request)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.getSpaceChanges,
+    async (_event, request: SpaceGitChangesRequest) =>
+      gitLifecycleService.getChanges(request)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.getSpaceFileDiff,
+    async (_event, request: SpaceGitFileDiffRequest) =>
+      gitLifecycleService.getFileDiff(request)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.stageSpaceFile,
+    async (_event, request: SpaceGitFileRequest) =>
+      gitLifecycleService.stageFile(request)
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.unstageSpaceFile,
+    async (_event, request: SpaceGitFileRequest) =>
+      gitLifecycleService.unstageFile(request)
   );
 }
 
