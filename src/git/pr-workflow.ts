@@ -234,8 +234,8 @@ function buildSuggestedBody(input: {
     "```",
     "",
     "## Verification",
-    "- [ ] pnpm run test -- pr-workflow",
-    "- [ ] pnpm run desktop:typecheck"
+    "- [ ] Run relevant automated tests",
+    "- [ ] Verify build/typecheck status"
   ].join("\n");
 }
 
@@ -288,7 +288,7 @@ export class PullRequestWorkflowService {
   }
 
   async createGitHubSession(request: GitHubSessionRequest): Promise<GitHubSessionInfo> {
-    const token = request.token.trim();
+    const token = typeof request?.token === "string" ? request.token.trim() : "";
     if (token.length === 0) {
       throw new PullRequestWorkflowError(
         PR_WORKFLOW_ERROR_CODES.AUTH_REQUIRED,
@@ -350,23 +350,43 @@ export class PullRequestWorkflowService {
   }
 
   async clearGitHubSession(sessionId: string): Promise<void> {
+    if (typeof sessionId !== "string" || sessionId.trim().length === 0) {
+      return;
+    }
+
     this.sessions.delete(sessionId);
   }
 
   async generatePullRequestDraft(
     request: SpaceGitPullRequestDraftRequest
   ): Promise<SpaceGitPullRequestDraftResult> {
-    await this.assertRepositoryAvailable(request.repoPath);
+    const repoPath = this.requireNonEmptyString(
+      request?.repoPath,
+      PR_WORKFLOW_ERROR_CODES.GITHUB_VALIDATION_FAILED,
+      "Repository path is required.",
+      "Select a valid repository path for this space and retry."
+    );
+    const repoUrl = this.requireNonEmptyString(
+      request?.repoUrl,
+      PR_WORKFLOW_ERROR_CODES.INVALID_REPOSITORY_URL,
+      "Repository URL is required.",
+      "Set the space repository URL to a GitHub repository and retry."
+    );
+    const specContext = typeof request?.specContext === "string" ? request.specContext : "";
+    const requestedBaseBranch =
+      typeof request?.baseBranch === "string" ? request.baseBranch.trim() : "";
 
-    if (!parseGitHubRepoReference(request.repoUrl)) {
+    await this.assertRepositoryAvailable(repoPath);
+
+    if (!parseGitHubRepoReference(repoUrl)) {
       throw new PullRequestWorkflowError(
         PR_WORKFLOW_ERROR_CODES.INVALID_REPOSITORY_URL,
-        `Unsupported GitHub repository URL: "${request.repoUrl}".`,
+        `Unsupported GitHub repository URL: "${repoUrl}".`,
         "Use a GitHub repository URL like https://github.com/org/repo or git@github.com:org/repo.git."
       );
     }
 
-    const rawStatus = await this.git.readStatusPorcelain(request.repoPath);
+    const rawStatus = await this.git.readStatusPorcelain(repoPath);
     const files = parseGitStatusPorcelain(rawStatus);
     const stagedFiles = files.filter(isStagedFileChange);
 
@@ -378,10 +398,10 @@ export class PullRequestWorkflowService {
       );
     }
 
-    const stagedNumstat = await this.git.readStagedNumstat(request.repoPath);
+    const stagedNumstat = await this.git.readStagedNumstat(repoPath);
     const stagedSummary = summarizeStagedChanges(files, stagedNumstat);
-    const stagedDiff = await this.git.readStagedDiff(request.repoPath);
-    const headBranch = (await this.git.currentBranch(request.repoPath)).trim();
+    const stagedDiff = await this.git.readStagedDiff(repoPath);
+    const headBranch = (await this.git.currentBranch(repoPath)).trim();
 
     if (!headBranch) {
       throw new PullRequestWorkflowError(
@@ -391,10 +411,10 @@ export class PullRequestWorkflowService {
       );
     }
 
-    const baseBranch = request.baseBranch?.trim() || "main";
-    const title = buildSuggestedTitle(request.specContext, stagedFiles.length);
+    const baseBranch = requestedBaseBranch || "main";
+    const title = buildSuggestedTitle(specContext, stagedFiles.length);
     const body = buildSuggestedBody({
-      specContext: request.specContext,
+      specContext,
       stagedFilePaths: stagedFiles.map((file) => file.path),
       stagedFileCount: stagedFiles.length,
       insertions: stagedSummary.insertions,
@@ -415,9 +435,28 @@ export class PullRequestWorkflowService {
   async createPullRequest(
     request: SpaceGitCreatePullRequestRequest
   ): Promise<SpaceGitCreatePullRequestResult> {
-    await this.assertRepositoryAvailable(request.repoPath);
+    const repoPath = this.requireNonEmptyString(
+      request?.repoPath,
+      PR_WORKFLOW_ERROR_CODES.GITHUB_VALIDATION_FAILED,
+      "Repository path is required.",
+      "Select a valid repository path for this space and retry."
+    );
+    const repoUrl = this.requireNonEmptyString(
+      request?.repoUrl,
+      PR_WORKFLOW_ERROR_CODES.INVALID_REPOSITORY_URL,
+      "Repository URL is required.",
+      "Set the space repository URL to a GitHub repository and retry."
+    );
+    const sessionId = this.requireNonEmptyString(
+      request?.sessionId,
+      PR_WORKFLOW_ERROR_CODES.AUTH_SESSION_MISSING,
+      "GitHub session is required.",
+      "Reconnect GitHub session and retry pull request creation."
+    );
 
-    const session = this.sessions.get(request.sessionId);
+    await this.assertRepositoryAvailable(repoPath);
+
+    const session = this.sessions.get(sessionId);
     if (!session) {
       throw new PullRequestWorkflowError(
         PR_WORKFLOW_ERROR_CODES.AUTH_SESSION_MISSING,
@@ -426,18 +465,18 @@ export class PullRequestWorkflowService {
       );
     }
 
-    const repoRef = parseGitHubRepoReference(request.repoUrl);
+    const repoRef = parseGitHubRepoReference(repoUrl);
     if (!repoRef) {
       throw new PullRequestWorkflowError(
         PR_WORKFLOW_ERROR_CODES.INVALID_REPOSITORY_URL,
-        `Unsupported GitHub repository URL: "${request.repoUrl}".`,
+        `Unsupported GitHub repository URL: "${repoUrl}".`,
         "Update the space repository URL to a GitHub repository and retry."
       );
     }
 
     let originRepoRef: GitHubRepoRef | null = null;
     try {
-      const originUrl = await this.git.readRemoteUrl(request.repoPath, "origin");
+      const originUrl = await this.git.readRemoteUrl(repoPath, "origin");
       originRepoRef = parseGitHubRepoReference(originUrl);
     } catch {
       throw new PullRequestWorkflowError(
@@ -459,7 +498,7 @@ export class PullRequestWorkflowService {
       );
     }
 
-    const headBranch = (await this.git.currentBranch(request.repoPath)).trim();
+    const headBranch = (await this.git.currentBranch(repoPath)).trim();
     if (!headBranch) {
       throw new PullRequestWorkflowError(
         PR_WORKFLOW_ERROR_CODES.REPOSITORY_BRANCH_MISSING,
@@ -468,9 +507,18 @@ export class PullRequestWorkflowService {
       );
     }
 
-    const baseBranch = request.baseBranch.trim() || "main";
-    const title = request.title.trim();
-    const body = request.body.trim();
+    const baseBranch =
+      typeof request?.baseBranch === "string" && request.baseBranch.trim().length > 0
+        ? request.baseBranch.trim()
+        : "main";
+    const title =
+      typeof request?.title === "string"
+        ? request.title.trim()
+        : "";
+    const body =
+      typeof request?.body === "string"
+        ? request.body.trim()
+        : "";
 
     if (!title) {
       throw new PullRequestWorkflowError(
@@ -575,6 +623,19 @@ export class PullRequestWorkflowService {
         return null;
       }
     }
+  }
+
+  private requireNonEmptyString(
+    value: unknown,
+    code: PullRequestWorkflowErrorCode,
+    message: string,
+    remediation: string
+  ): string {
+    if (typeof value !== "string" || value.trim().length === 0) {
+      throw new PullRequestWorkflowError(code, message, remediation);
+    }
+
+    return value.trim();
   }
 
   private async assertRepositoryAvailable(repoPath: string): Promise<void> {

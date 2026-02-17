@@ -119,7 +119,18 @@ function registerStateHandlers(
   ipcMain.handle(
     IPC_CHANNELS.openExternalUrl,
     async (_event, url: string) => {
-      await shell.openExternal(url);
+      let parsedUrl: URL;
+      try {
+        parsedUrl = new URL(url);
+      } catch {
+        throw new Error("Invalid URL. Only HTTPS URLs are permitted.");
+      }
+
+      if (parsedUrl.protocol !== "https:") {
+        throw new Error("Only HTTPS URLs are permitted.");
+      }
+
+      await shell.openExternal(parsedUrl.toString());
     }
   );
 }

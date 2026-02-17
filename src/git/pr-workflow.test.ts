@@ -20,6 +20,10 @@ describe("parseGitHubRepoReference", () => {
       owner: "example",
       repo: "kata-cloud"
     });
+    expect(parseGitHubRepoReference("ssh://git@github.com/example/kata-cloud.git")).toEqual({
+      owner: "example",
+      repo: "kata-cloud"
+    });
     expect(parseGitHubRepoReference("https://gitlab.com/example/kata-cloud")).toBeNull();
   });
 });
@@ -54,6 +58,8 @@ describe("PullRequestWorkflowService", () => {
     expect(draft.body).toContain("src/main.tsx");
     expect(draft.body).toContain("Spec Context");
     expect(draft.body).toContain("Diff Preview");
+    expect(draft.body).toContain("Run relevant automated tests");
+    expect(draft.body).toContain("Verify build/typecheck status");
   });
 
   it("returns an actionable error when no staged changes exist", async () => {
@@ -198,5 +204,28 @@ describe("PullRequestWorkflowService", () => {
         specContext: ""
       })
     ).rejects.toBeInstanceOf(PullRequestWorkflowError);
+  });
+
+  it("handles unknown GitHub session clear as a no-op", async () => {
+    const service = new PullRequestWorkflowService({
+      pathExists: async () => true,
+      fetchFn: async () => mockResponse(200, { login: "octocat" })
+    });
+
+    await expect(service.clearGitHubSession("missing-session")).resolves.toBeUndefined();
+    await expect(service.clearGitHubSession("" as unknown as string)).resolves.toBeUndefined();
+  });
+
+  it("returns typed validation errors for malformed auth payloads", async () => {
+    const service = new PullRequestWorkflowService({
+      pathExists: async () => true,
+      fetchFn: async () => mockResponse(200, { login: "octocat" })
+    });
+
+    await expect(
+      service.createGitHubSession({ token: 123 as unknown as string })
+    ).rejects.toMatchObject({
+      code: PR_WORKFLOW_ERROR_CODES.AUTH_REQUIRED
+    });
   });
 });
