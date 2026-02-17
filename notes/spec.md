@@ -16,7 +16,7 @@ task:
 This section is the current source of truth for handoff. Historical sections below are retained for audit trail but are superseded by this snapshot.
 
 ### Repository Baseline
-1. Local branch is synced to `main` at `96b3538647818fd24765bfa5705052de7ff57a49`.
+1. `main` now includes run-history persistence via PR `#24` (merge commit `82ad50fda40d16de06cb41d1caab3c9ac933459e`).
 2. Working tree is clean (`git status -sb` -> `## main...origin/main`).
 3. Branch strategy moving forward:
    - Start each new task branch from updated `origin/main`.
@@ -26,29 +26,25 @@ This section is the current source of truth for handoff. Historical sections bel
 ### Completed Since Last Handoff
 1. [Build changes tab with diff inspection and selective staging](intent://local/task/e1ea609a-a0d0-4025-92ea-f20564110a9d) is complete and merged via PR `#11` (merge commit `8269445221475d042b9d3c42b753934c1a9e4223`).
 2. [Add GitHub PR creation workflow in Changes tab](intent://local/task/10a48d6c-9fd1-452f-aa99-3120bf23641c) is complete and merged via PR `#18` (merge commit `96b3538647818fd24765bfa5705052de7ff57a49`).
+3. [Persist and display orchestrator run history across sessions](intent://local/task/c5f554ea-2059-40d2-9fb2-bf522a590cae) is complete and merged via PR `#24` (merge commit `82ad50fda40d16de06cb41d1caab3c9ac933459e`), including manual UAT restart persistence validation.
 
 ### Open Tasks
-1. [Persist and display orchestrator run history across sessions](intent://local/task/c5f554ea-2059-40d2-9fb2-bf522a590cae)
-   - Status: `in_progress`
-   - Blockers: verifier closeout not recorded, manual restart evidence missing, independent inspectable commit evidence still required in closure context.
-2. [Integrate context engine adapter and initial providers](intent://local/task/302fcffa-863d-4d90-b017-08369fad3f73)
+1. [Integrate context engine adapter and initial providers](intent://local/task/302fcffa-863d-4d90-b017-08369fad3f73)
    - Status: `review_required`
    - Current evidence: commit/push/test artifacts posted on `feature/context-adapter-foundation` (`ac97a5cf0ccc0191e3d45453a319cbeb268664c8`).
    - Next gate: verifier closeout GO/NO-GO.
-3. [Add in-app browser preview for local development](intent://local/task/22770f24-a79b-4d14-9add-14ffd1447b2f)
+2. [Add in-app browser preview for local development](intent://local/task/22770f24-a79b-4d14-9add-14ffd1447b2f)
    - Status: `waiting`
-   - Dependency: run-history and context closure must be finalized first.
-4. [Implement real model provider runtime and authentication](intent://local/task/dfb65dc8-1eb9-47f1-b95f-e22c99005ddb)
+   - Dependency: context closure must be finalized first.
+3. [Implement real model provider runtime and authentication](intent://local/task/dfb65dc8-1eb9-47f1-b95f-e22c99005ddb)
    - Status: `not_started`
-   - Dependency: proceed after browser/context/run-history closure sequence is stable.
+   - Dependency: proceed after browser/context closure sequence is stable.
 
 ### Exact Next Steps
 1. Run verifier closure for context task `302fcffa-863d-4d90-b017-08369fad3f73` and record explicit GO/NO-GO.
-2. Run verifier closure for run-history task `c5f554ea-2059-40d2-9fb2-bf522a590cae` with:
-   - manual restart proof (multi-run history persists),
-   - independent commit inspection evidence in current workspace context.
-3. If both are GO, resume browser task `22770f24-a79b-4d14-9add-14ffd1447b2f` from fresh `origin/main` baseline and complete/merge.
-4. After browser task is merged, start provider runtime task `dfb65dc8-1eb9-47f1-b95f-e22c99005ddb` on fresh `origin/main`.
+2. If context is GO, resume browser task `22770f24-a79b-4d14-9add-14ffd1447b2f` from fresh `origin/main` baseline and complete/merge.
+3. After browser task is merged, start provider runtime task `dfb65dc8-1eb9-47f1-b95f-e22c99005ddb` on fresh `origin/main`.
+4. Re-run final MVP E2E verification sweep after provider runtime lands.
 
 ### Next Steps After Open Tasks Complete
 1. Execute full E2E MVP verification: space creation, orchestrator run lifecycle, spec draft/apply, changes-tab diff/staging, PR creation flow, browser preview, provider runtime.
@@ -58,9 +54,9 @@ This section is the current source of truth for handoff. Historical sections bel
 Close Wave 1 by verifying completed implementation tasks, unblocking the browser follow-up, and preparing a clean handoff package for your external outsourcing step.
 
 ## Tasks
-- [/] Verify and close run-history task
+- [x] Verify and close run-history task
 
-- [x] Verify and close context-adapter task
+- [/] Verify and close context-adapter task
 
 - [x] [Resolve browser-task sequencing and next action](intent://local/task/14bc6806-c210-44a3-8acc-ebca2014ea78)
 
@@ -83,10 +79,10 @@ Close Wave 1 by verifying completed implementation tasks, unblocking the browser
 3. Browser task sequencing depends on confirmed closure of context/run-history verification (confirm?).
 
 ## Verification Plan
-1. Delegate verifier for run-history task and record result.
-2. Ensure context task artifact completeness, then delegate verifier and record result.
-3. Reconcile browser-task status based on verifier outputs.
-4. Deliver explicit external handoff instructions for changes-tab then PR-workflow tasks.
+1. Confirm run-history closure evidence is recorded (PR `#24` merge + manual UAT restart persistence pass).
+2. Ensure context task artifact completeness, then delegate verifier and record explicit GO/NO-GO.
+3. Reconcile browser-task status based on context verifier output and execute next branch-from-main implementation step.
+4. Proceed to provider runtime only after browser task merges cleanly.
 
 ## Rollback Plan
 1. If verifier returns NO-GO, revert task status from `review_required/complete` to `in_progress`.
