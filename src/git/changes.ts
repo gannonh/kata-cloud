@@ -174,7 +174,7 @@ function decodeQuotedPath(rawPath: string): string {
 
   return rawPath
     .slice(1, -1)
-    .replace(/\\\"/g, "\"")
+    .replace(/\\"/g, "\"")
     .replace(/\\\\/g, "\\");
 }
 
