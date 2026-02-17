@@ -54,8 +54,8 @@ export function createProviderRuntimeRegistry(
 }
 
 export function resolveModelProviderId(
-  spaceProviderId: ModelProviderId | undefined,
   sessionProviderId: ModelProviderId | undefined,
+  spaceProviderId: ModelProviderId | undefined,
   defaultProviderId: ModelProviderId = "anthropic"
 ): ModelProviderId {
   return sessionProviderId ?? spaceProviderId ?? defaultProviderId;

@@ -41,7 +41,11 @@ describe("createProviderRuntimeRegistry", () => {
 
 describe("resolveModelProviderId", () => {
   it("prioritizes session provider over space provider", () => {
-    expect(resolveModelProviderId("anthropic", "openai")).toBe("openai");
+    expect(resolveModelProviderId("openai", "anthropic")).toBe("openai");
+  });
+
+  it("uses space provider when no session provider is set", () => {
+    expect(resolveModelProviderId(undefined, "openai")).toBe("openai");
   });
 
   it("falls back to default provider when no selection exists", () => {

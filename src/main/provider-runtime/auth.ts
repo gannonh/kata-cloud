@@ -3,7 +3,8 @@ import type {
   ProviderAuthFailureCode,
   ProviderAuthInput,
   ProviderAuthMode,
-  ProviderAuthResolution
+  ProviderAuthResolution,
+  ProviderClientAuth
 } from "./types";
 
 interface ResolveProviderAuthInput {
@@ -130,6 +131,18 @@ function createFailureResolution(
     reason,
     apiKey,
     tokenSessionId
+  };
+}
+
+export function toClientAuth(resolution: ProviderAuthResolution): ProviderClientAuth {
+  if (!resolution.resolvedMode) {
+    throw new Error("Expected resolved auth mode for provider client request.");
+  }
+
+  return {
+    authMode: resolution.resolvedMode,
+    apiKey: resolution.apiKey ?? undefined,
+    tokenSessionId: resolution.tokenSessionId ?? undefined
   };
 }
 

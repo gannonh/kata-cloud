@@ -83,6 +83,22 @@ describe("AnthropicProviderAdapter", () => {
       { id: "claude-3-haiku", displayName: "claude-3-haiku" }
     ]);
   });
+
+  it("enforces missing_auth in listModels when API key mode is requested without a key", async () => {
+    const client = createClient();
+    const adapter = new AnthropicProviderAdapter(client);
+
+    await expect(
+      adapter.listModels({
+        auth: { preferredMode: "api_key" }
+      })
+    ).rejects.toMatchObject({
+      name: "ProviderRuntimeError",
+      code: "missing_auth",
+      providerId: "anthropic"
+    } satisfies Partial<ProviderRuntimeError>);
+    expect(client.listModels).not.toHaveBeenCalled();
+  });
 });
 
 function createClient(): {

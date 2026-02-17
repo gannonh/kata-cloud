@@ -70,7 +70,7 @@ export function mapProviderRuntimeError(
     code,
     message,
     remediation: getRemediationForCode(code),
-    retryable: code === "rate_limited" || code === "provider_unavailable",
+    retryable: code === "rate_limited" || code === "provider_unavailable" || code === "session_expired",
     cause: error
   });
 }

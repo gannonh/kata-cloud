@@ -19,7 +19,7 @@ describe("resolveProviderAuth", () => {
     expect(resolution.tokenSessionId).toBe("session-1");
   });
 
-  it("falls back to API key mode when token session mode is unavailable", () => {
+  it("falls back to API key when no active token session exists", () => {
     const resolution = resolveProviderAuth({
       providerId: "openai",
       supportsTokenSession: true,
@@ -34,6 +34,21 @@ describe("resolveProviderAuth", () => {
     expect(resolution.resolvedMode).toBe("api_key");
     expect(resolution.fallbackApplied).toBe(true);
     expect(resolution.apiKey).toBe("sk-openai");
+  });
+
+  it("falls back to API key when provider does not support token sessions", () => {
+    const resolution = resolveProviderAuth({
+      providerId: "openai",
+      supportsTokenSession: false,
+      auth: {
+        preferredMode: "token_session",
+        apiKey: "sk-openai"
+      }
+    });
+
+    expect(resolution.status).toBe("authenticated");
+    expect(resolution.resolvedMode).toBe("api_key");
+    expect(resolution.fallbackApplied).toBe(true);
   });
 
   it("returns session_expired when token session has expired and no API key fallback is available", () => {

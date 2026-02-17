@@ -1,4 +1,4 @@
-import { resolveProviderAuth } from "../../provider-runtime/auth";
+import { resolveProviderAuth, toClientAuth } from "../../provider-runtime/auth";
 import { createAuthResolutionError, mapProviderRuntimeError } from "../../provider-runtime/errors";
 import type {
   ProviderAuthInput,
@@ -74,10 +74,6 @@ export class AnthropicProviderAdapter implements ProviderRuntimeAdapter {
     if (resolution.status !== "authenticated") {
       throw createAuthResolutionError(this.providerId, resolution);
     }
-    const resolvedMode = resolution.resolvedMode;
-    if (!resolvedMode) {
-      throw createAuthResolutionError(this.providerId, resolution);
-    }
 
     try {
       const result = await this.client.execute({
@@ -92,7 +88,7 @@ export class AnthropicProviderAdapter implements ProviderRuntimeAdapter {
       return {
         providerId: this.providerId,
         model: result.model ?? request.model,
-        authMode: resolvedMode,
+        authMode: resolution.resolvedMode!,
         text: result.text
       };
     } catch (error) {
@@ -101,14 +97,3 @@ export class AnthropicProviderAdapter implements ProviderRuntimeAdapter {
   }
 }
 
-function toClientAuth(resolution: ProviderAuthResolution): ProviderClientAuth {
-  if (!resolution.resolvedMode) {
-    throw new Error("Expected resolved auth mode for provider client request.");
-  }
-
-  return {
-    authMode: resolution.resolvedMode,
-    apiKey: resolution.apiKey ?? undefined,
-    tokenSessionId: resolution.tokenSessionId ?? undefined
-  };
-}

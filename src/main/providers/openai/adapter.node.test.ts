@@ -65,6 +65,43 @@ describe("OpenAiProviderAdapter", () => {
     } satisfies Partial<ProviderRuntimeError>);
     expect(client.execute).not.toHaveBeenCalled();
   });
+
+  it("normalizes model descriptors from provider responses", async () => {
+    const client = createClient();
+    client.listModels.mockResolvedValue([
+      { id: "gpt-4o", displayName: "GPT-4o" },
+      { id: "gpt-4-turbo" }
+    ]);
+    const adapter = new OpenAiProviderAdapter(client);
+
+    const models = await adapter.listModels({
+      auth: { preferredMode: "api_key", apiKey: "sk-openai" }
+    });
+
+    expect(models).toEqual([
+      { id: "gpt-4o", displayName: "GPT-4o" },
+      { id: "gpt-4-turbo", displayName: "gpt-4-turbo" }
+    ]);
+  });
+
+  it("enforces session_expired in listModels when token session has expired", async () => {
+    const client = createClient();
+    const adapter = new OpenAiProviderAdapter(client);
+
+    await expect(
+      adapter.listModels({
+        auth: {
+          preferredMode: "token_session",
+          tokenSession: { id: "expired-openai", status: "expired" }
+        }
+      })
+    ).rejects.toMatchObject({
+      name: "ProviderRuntimeError",
+      code: "session_expired",
+      providerId: "openai"
+    } satisfies Partial<ProviderRuntimeError>);
+    expect(client.listModels).not.toHaveBeenCalled();
+  });
 });
 
 function createClient(): {
