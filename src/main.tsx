@@ -411,13 +411,13 @@ function App(): React.JSX.Element {
     () => getRunsForActiveSession(state.orchestratorRuns, state.activeSpaceId, state.activeSessionId),
     [state.activeSessionId, state.activeSpaceId, state.orchestratorRuns]
   );
-  const latestRunForActiveSession = useMemo(
-    () => runsForActiveSession[runsForActiveSession.length - 1],
-    [runsForActiveSession]
-  );
   const runHistoryForActiveSession = useMemo(
     () => getRunHistoryForActiveSession(runsForActiveSession),
     [runsForActiveSession]
+  );
+  const latestRunForActiveSession = useMemo(
+    () => runHistoryForActiveSession[0],
+    [runHistoryForActiveSession]
   );
   const priorRunHistoryForActiveSession = useMemo(
     () => runHistoryForActiveSession.filter((run) => run.id !== latestRunForActiveSession?.id),

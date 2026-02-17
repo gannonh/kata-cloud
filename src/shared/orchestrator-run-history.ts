@@ -14,6 +14,6 @@ export function getRunHistoryForActiveSession(
   runsForActiveSession: OrchestratorRunRecord[]
 ): OrchestratorRunRecord[] {
   return [...runsForActiveSession].sort((leftRun, rightRun) =>
-    rightRun.updatedAt.localeCompare(leftRun.updatedAt)
+    rightRun.updatedAt < leftRun.updatedAt ? -1 : rightRun.updatedAt > leftRun.updatedAt ? 1 : 0
   );
 }
