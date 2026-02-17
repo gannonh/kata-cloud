@@ -16,6 +16,20 @@ function toSearchTerms(prompt: string): string[] {
   return Array.from(new Set(terms));
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function findFirstMatchIndex(raw: string, terms: string[]): number {
+  for (const candidate of terms) {
+    const matchIndex = raw.search(new RegExp(escapeRegExp(candidate), "i"));
+    if (matchIndex !== -1) {
+      return matchIndex;
+    }
+  }
+  return -1;
+}
+
 function isProbablyBinary(content: string): boolean {
   return content.includes("\u0000");
 }
@@ -106,13 +120,11 @@ export class FilesystemContextProvider implements ContextProvider {
           continue;
         }
 
-        const content = raw.toLowerCase();
-        const term = terms.find((candidate) => content.includes(candidate));
-        if (!term) {
+        const matchIndex = findFirstMatchIndex(raw, terms);
+        if (matchIndex === -1) {
           continue;
         }
 
-        const matchIndex = content.indexOf(term);
         snippets.push({
           id: `${this.id}:${filePath}`,
           provider: this.id,
