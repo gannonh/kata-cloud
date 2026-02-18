@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - main
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
 
 jobs:
   quality-gates:
@@ -36,3 +39,79 @@ jobs:
 
       - name: Tests with coverage
         run: pnpm run test --coverage
+
+  e2e-electron-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Electron E2E smoke
+        run: xvfb-run -a pnpm run e2e:electron:smoke
+
+      - name: Upload Playwright artifacts (smoke)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-electron-smoke-artifacts
+          path: output/playwright/
+          if-no-files-found: ignore
+
+  e2e-electron-full:
+    if: github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs:
+      - quality-gates
+      - e2e-electron-smoke
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Electron E2E full suite
+        run: xvfb-run -a pnpm run e2e
+
+      - name: Upload Playwright artifacts (full)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-electron-full-artifacts
+          path: output/playwright/
+          if-no-files-found: ignore
