@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm run build`: compile main process and bundle renderer assets.
 - `pnpm run desktop:typecheck`: strict TS type checks for main + renderer configs.
 - `pnpm run uat:electron:smoke`: run Playwright-driven Electron smoke flow (validates `window.kataShell` bridge and Changes view runtime wiring).
+- `pnpm run uat:electron:e2e`: run Playwright-driven Electron end-to-end UAT codification flows (local git/no-repo-link + PR redaction).
 - `pnpm run repo:guardrails`: run repository hygiene guardrails.
 - `pnpm run lint`: lint all files with ESLint (flat config in `eslint.config.mjs`).
 - `pnpm test`: run Vitest once.

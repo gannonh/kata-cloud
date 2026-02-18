@@ -11,6 +11,7 @@
     "desktop:build-main": "tsc -p tsconfig.main.json",
     "desktop:typecheck": "tsc --noEmit -p tsconfig.main.json && tsc --noEmit -p tsconfig.renderer.json",
     "uat:electron:smoke": "node scripts/playwright-electron-smoke.mjs",
+    "uat:electron:e2e": "node scripts/playwright-electron-e2e.mjs",
     "repo:guardrails": "node scripts/repo-guardrails.mjs",
     "lint": "eslint .",
     "test": "vitest run",
