@@ -20,6 +20,7 @@ export function resolveProviderAuth(input: ResolveProviderAuthInput): ProviderAu
   const tokenSessionId = normalizeString(tokenSession?.id);
   const tokenSessionActive = tokenSession?.status === "active";
   const tokenSessionExpired = tokenSession?.status === "expired";
+  const allowApiKeyFallback = input.auth.allowApiKeyFallback ?? true;
   const requestedMode =
     input.auth.preferredMode ??
     input.defaultMode ??
@@ -40,14 +41,16 @@ export function resolveProviderAuth(input: ResolveProviderAuthInput): ProviderAu
   }
 
   if (!input.supportsTokenSession) {
-    if (apiKey) {
+    if (canApplyApiKeyFallback(apiKey, allowApiKeyFallback)) {
       return createAuthenticatedResolution(requestedMode, "api_key", true, apiKey, null);
     }
 
     return createFailureResolution(
       requestedMode,
-      "missing_auth",
-      `${input.providerId} token session mode is unavailable and no API key is configured.`,
+      allowApiKeyFallback ? "missing_auth" : "invalid_auth",
+      allowApiKeyFallback
+        ? `${input.providerId} token session mode is unavailable and no API key fallback is configured.`
+        : `${input.providerId} token session mode is unsupported and API key fallback is disabled.`,
       apiKey,
       tokenSessionId
     );
@@ -55,7 +58,7 @@ export function resolveProviderAuth(input: ResolveProviderAuthInput): ProviderAu
 
   if (tokenSessionActive) {
     if (!tokenSessionId) {
-      if (apiKey) {
+      if (canApplyApiKeyFallback(apiKey, allowApiKeyFallback)) {
         return createAuthenticatedResolution(requestedMode, "api_key", true, apiKey, null);
       }
 
@@ -71,11 +74,11 @@ export function resolveProviderAuth(input: ResolveProviderAuthInput): ProviderAu
     return createAuthenticatedResolution(requestedMode, requestedMode, false, null, tokenSessionId);
   }
 
-  if (apiKey) {
-    return createAuthenticatedResolution(requestedMode, "api_key", true, apiKey, null);
-  }
-
   if (tokenSessionExpired) {
+    if (canApplyApiKeyFallback(apiKey, allowApiKeyFallback)) {
+      return createAuthenticatedResolution(requestedMode, "api_key", true, apiKey, null);
+    }
+
     return createFailureResolution(
       requestedMode,
       "session_expired",
@@ -85,10 +88,16 @@ export function resolveProviderAuth(input: ResolveProviderAuthInput): ProviderAu
     );
   }
 
+  if (canApplyApiKeyFallback(apiKey, allowApiKeyFallback)) {
+    return createAuthenticatedResolution(requestedMode, "api_key", true, apiKey, null);
+  }
+
   return createFailureResolution(
     requestedMode,
     "missing_auth",
-    `${input.providerId} token session is unavailable and no API key fallback is configured.`,
+    allowApiKeyFallback
+      ? `${input.providerId} token session is unavailable and no API key fallback is configured.`
+      : `${input.providerId} token session is unavailable and API key fallback is disabled.`,
     apiKey,
     tokenSessionId
   );
@@ -153,4 +162,8 @@ function normalizeString(value: string | null | undefined): string | null {
 
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : null;
+}
+
+function canApplyApiKeyFallback(apiKey: string | null, allowApiKeyFallback: boolean): boolean {
+  return allowApiKeyFallback && typeof apiKey === "string" && apiKey.length > 0;
 }

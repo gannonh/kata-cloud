@@ -61,6 +61,15 @@ export class AnthropicProviderAdapter implements ProviderRuntimeAdapter {
     if (resolution.status !== "authenticated") {
       throw createAuthResolutionError(this.providerId, resolution);
     }
+    if (!resolution.resolvedMode) {
+      throw createProviderRuntimeError({
+        providerId: this.providerId,
+        code: "unexpected_error",
+        message: "Anthropic auth resolution did not return a resolved mode.",
+        remediation: "Retry the request. If this persists, report the provider runtime issue.",
+        retryable: false
+      });
+    }
 
     try {
       const models = await this.client.listModels(toClientAuth(resolution));

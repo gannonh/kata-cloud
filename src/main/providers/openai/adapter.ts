@@ -1,5 +1,9 @@
 import { resolveProviderAuth, toClientAuth } from "../../provider-runtime/auth";
-import { createAuthResolutionError, mapProviderRuntimeError } from "../../provider-runtime/errors";
+import {
+  createAuthResolutionError,
+  createProviderRuntimeError,
+  mapProviderRuntimeError
+} from "../../provider-runtime/errors";
 import type {
   ProviderAuthInput,
   ProviderAuthResolution,
@@ -57,6 +61,15 @@ export class OpenAiProviderAdapter implements ProviderRuntimeAdapter {
     if (resolution.status !== "authenticated") {
       throw createAuthResolutionError(this.providerId, resolution);
     }
+    if (!resolution.resolvedMode) {
+      throw createProviderRuntimeError({
+        providerId: this.providerId,
+        code: "unexpected_error",
+        message: "OpenAI auth resolution did not return a resolved mode.",
+        remediation: "Retry the request. If this persists, report the provider runtime issue.",
+        retryable: false
+      });
+    }
 
     try {
       const models = await this.client.listModels(toClientAuth(resolution));
@@ -74,6 +87,15 @@ export class OpenAiProviderAdapter implements ProviderRuntimeAdapter {
     if (resolution.status !== "authenticated") {
       throw createAuthResolutionError(this.providerId, resolution);
     }
+    if (!resolution.resolvedMode) {
+      throw createProviderRuntimeError({
+        providerId: this.providerId,
+        code: "unexpected_error",
+        message: "OpenAI auth resolution did not return a resolved mode.",
+        remediation: "Retry the request. If this persists, report the provider runtime issue.",
+        retryable: false
+      });
+    }
 
     try {
       const result = await this.client.execute({
@@ -88,7 +110,7 @@ export class OpenAiProviderAdapter implements ProviderRuntimeAdapter {
       return {
         providerId: this.providerId,
         model: result.model ?? request.model,
-        authMode: resolution.resolvedMode!,
+        authMode: resolution.resolvedMode,
         text: result.text
       };
     } catch (error) {

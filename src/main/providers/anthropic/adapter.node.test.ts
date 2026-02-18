@@ -3,7 +3,7 @@ import { ProviderRuntimeError } from "../../provider-runtime/errors";
 import { AnthropicProviderAdapter, type AnthropicProviderClient } from "./adapter";
 
 describe("AnthropicProviderAdapter", () => {
-  it("falls back to API key mode when token sessions are requested in slice 3", async () => {
+  it("falls back to api_key when token_session is requested and api key is available", async () => {
     const client = createClient();
     client.execute.mockResolvedValue({ text: "hello from anthropic" });
     const adapter = new AnthropicProviderAdapter(client);
@@ -19,6 +19,7 @@ describe("AnthropicProviderAdapter", () => {
     });
 
     expect(result.authMode).toBe("api_key");
+    expect(adapter.capabilities.supportsTokenSession).toBe(false);
     expect(client.execute).toHaveBeenCalledTimes(1);
     expect(client.execute.mock.calls[0]?.[0].auth).toEqual({
       authMode: "api_key",
@@ -27,7 +28,31 @@ describe("AnthropicProviderAdapter", () => {
     });
   });
 
-  it("returns missing_auth when token session mode is requested without API key fallback", async () => {
+  it("falls back to API key mode when token session is expired and fallback is allowed", async () => {
+    const client = createClient();
+    client.execute.mockResolvedValue({ text: "fallback with api key" });
+    const adapter = new AnthropicProviderAdapter(client);
+
+    const result = await adapter.execute({
+      auth: {
+        preferredMode: "token_session",
+        tokenSession: { id: "session-1", status: "expired" },
+        apiKey: "sk-ant"
+      },
+      model: "claude-3-5-sonnet",
+      prompt: "Say hello"
+    });
+
+    expect(result.authMode).toBe("api_key");
+    expect(client.execute).toHaveBeenCalledTimes(1);
+    expect(client.execute.mock.calls[0]?.[0].auth).toEqual({
+      authMode: "api_key",
+      apiKey: "sk-ant",
+      tokenSessionId: undefined
+    });
+  });
+
+  it("returns invalid_auth when token session is requested but unsupported and fallback is disabled", async () => {
     const client = createClient();
     const adapter = new AnthropicProviderAdapter(client);
 
@@ -35,7 +60,29 @@ describe("AnthropicProviderAdapter", () => {
       adapter.execute({
         auth: {
           preferredMode: "token_session",
-          tokenSession: { id: "session-1", status: "active" }
+          tokenSession: { id: "session-1", status: "expired" },
+          apiKey: "sk-ant",
+          allowApiKeyFallback: false
+        },
+        model: "claude-3-5-sonnet",
+        prompt: "Say hello"
+      })
+    ).rejects.toMatchObject({
+      name: "ProviderRuntimeError",
+      code: "invalid_auth",
+      providerId: "anthropic"
+    } satisfies Partial<ProviderRuntimeError>);
+    expect(client.execute).not.toHaveBeenCalled();
+  });
+
+  it("returns missing_auth when token session mode is requested without usable auth", async () => {
+    const client = createClient();
+    const adapter = new AnthropicProviderAdapter(client);
+
+    await expect(
+      adapter.execute({
+        auth: {
+          preferredMode: "token_session"
         },
         model: "claude-3-5-sonnet",
         prompt: "Say hello"
@@ -133,13 +180,13 @@ describe("AnthropicProviderAdapter", () => {
     ]);
   });
 
-  it("enforces missing_auth in listModels when API key mode is requested without a key", async () => {
+  it("returns missing_auth in listModels when token_session mode has no usable auth", async () => {
     const client = createClient();
     const adapter = new AnthropicProviderAdapter(client);
 
     await expect(
       adapter.listModels({
-        auth: { preferredMode: "api_key" }
+        auth: { preferredMode: "token_session" }
       })
     ).rejects.toMatchObject({
       name: "ProviderRuntimeError",

@@ -3,7 +3,7 @@ import { ProviderRuntimeError } from "../../provider-runtime/errors";
 import { OpenAiProviderAdapter, type OpenAiProviderClient } from "./adapter";
 
 describe("OpenAiProviderAdapter", () => {
-  it("falls back to api_key when token_session is requested", async () => {
+  it("falls back to api_key when token_session is requested and api key is available", async () => {
     const client = createClient();
     client.execute.mockResolvedValue({ text: "openai says hi" });
     const adapter = new OpenAiProviderAdapter(client);
@@ -12,6 +12,31 @@ describe("OpenAiProviderAdapter", () => {
       auth: {
         preferredMode: "token_session",
         tokenSession: { id: "session-openai", status: "active" },
+        apiKey: "sk-openai"
+      },
+      model: "gpt-4.1",
+      prompt: "Say hi"
+    });
+
+    expect(result.authMode).toBe("api_key");
+    expect(adapter.capabilities.supportsTokenSession).toBe(false);
+    expect(client.execute).toHaveBeenCalledTimes(1);
+    expect(client.execute.mock.calls[0]?.[0].auth).toEqual({
+      authMode: "api_key",
+      apiKey: "sk-openai",
+      tokenSessionId: undefined
+    });
+  });
+
+  it("falls back to api_key when token_session is expired and fallback is allowed", async () => {
+    const client = createClient();
+    client.execute.mockResolvedValue({ text: "openai fallback says hi" });
+    const adapter = new OpenAiProviderAdapter(client);
+
+    const result = await adapter.execute({
+      auth: {
+        preferredMode: "token_session",
+        tokenSession: { id: "expired-openai", status: "expired" },
         apiKey: "sk-openai"
       },
       model: "gpt-4.1",
@@ -46,7 +71,7 @@ describe("OpenAiProviderAdapter", () => {
     } satisfies Partial<ProviderRuntimeError>);
   });
 
-  it("returns missing_auth when token_session is requested without api key", async () => {
+  it("returns invalid_auth when token_session is requested but unsupported and fallback is disabled", async () => {
     const client = createClient();
     const adapter = new OpenAiProviderAdapter(client);
 
@@ -54,7 +79,29 @@ describe("OpenAiProviderAdapter", () => {
       adapter.execute({
         auth: {
           preferredMode: "token_session",
-          tokenSession: { id: "expired-openai", status: "expired" }
+          tokenSession: { id: "expired-openai", status: "expired" },
+          apiKey: "sk-openai",
+          allowApiKeyFallback: false
+        },
+        model: "gpt-4.1",
+        prompt: "Hello"
+      })
+    ).rejects.toMatchObject({
+      name: "ProviderRuntimeError",
+      code: "invalid_auth",
+      providerId: "openai"
+    } satisfies Partial<ProviderRuntimeError>);
+    expect(client.execute).not.toHaveBeenCalled();
+  });
+
+  it("returns missing_auth when token_session is requested without usable auth", async () => {
+    const client = createClient();
+    const adapter = new OpenAiProviderAdapter(client);
+
+    await expect(
+      adapter.execute({
+        auth: {
+          preferredMode: "token_session"
         },
         model: "gpt-4.1",
         prompt: "Hello"
@@ -85,15 +132,14 @@ describe("OpenAiProviderAdapter", () => {
     ]);
   });
 
-  it("returns missing_auth in listModels when token_session is requested without api key", async () => {
+  it("returns missing_auth in listModels when token_session is requested without usable auth", async () => {
     const client = createClient();
     const adapter = new OpenAiProviderAdapter(client);
 
     await expect(
       adapter.listModels({
         auth: {
-          preferredMode: "token_session",
-          tokenSession: { id: "expired-openai", status: "expired" }
+          preferredMode: "token_session"
         }
       })
     ).rejects.toMatchObject({

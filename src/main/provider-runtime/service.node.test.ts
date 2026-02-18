@@ -37,6 +37,28 @@ function createMockAdapter(providerId: ModelProviderId): ProviderRuntimeAdapter 
   };
 }
 
+function createMockAdapterWithTokenSessionExpiry(providerId: ModelProviderId): ProviderRuntimeAdapter {
+  return {
+    ...createMockAdapter(providerId),
+    resolveAuth: (auth: ProviderAuthInput): ProviderAuthResolution => {
+      if (auth.preferredMode === "token_session" && auth.tokenSession?.status === "expired") {
+        return {
+          requestedMode: "token_session",
+          resolvedMode: null,
+          status: "error",
+          fallbackApplied: false,
+          failureCode: "session_expired",
+          reason: `${providerId} token session expired and no API key fallback is configured.`,
+          apiKey: auth.apiKey ?? null,
+          tokenSessionId: auth.tokenSession.id
+        };
+      }
+
+      return createMockAdapter(providerId).resolveAuth(auth);
+    }
+  };
+}
+
 function createMockAdapterWithAuthCheck(providerId: ModelProviderId): ProviderRuntimeAdapter {
   return {
     ...createMockAdapter(providerId),
@@ -79,6 +101,25 @@ describe("ProviderRuntimeService.resolveAuth", () => {
     expect(result.requestedMode).toBe("api_key");
     if (result.status === "error") {
       expect(result.failureCode).toBe("missing_auth");
+      expect(result.resolvedMode).toBeNull();
+    }
+  });
+
+  it("returns session_expired when the adapter resolves token-session expiry", () => {
+    const registry = createProviderRuntimeRegistry([createMockAdapterWithTokenSessionExpiry("anthropic")]);
+    const service = new ProviderRuntimeService(registry);
+
+    const result = service.resolveAuth({
+      providerId: "anthropic",
+      auth: {
+        preferredMode: "token_session",
+        tokenSession: { id: "expired-session", status: "expired" }
+      }
+    });
+
+    expect(result.status).toBe("error");
+    if (result.status === "error") {
+      expect(result.failureCode).toBe("session_expired");
       expect(result.resolvedMode).toBeNull();
     }
   });

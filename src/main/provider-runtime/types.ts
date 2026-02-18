@@ -21,6 +21,7 @@ export interface ProviderAuthInput {
   preferredMode?: ProviderAuthMode;
   apiKey?: string | null;
   tokenSession?: ProviderTokenSession | null;
+  allowApiKeyFallback?: boolean;
 }
 
 export interface ProviderAuthResolution {
