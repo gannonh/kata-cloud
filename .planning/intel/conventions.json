@@ -1,27 +1,31 @@
 {
   "version": 2,
-  "generated_at": "2026-02-18T00:00:00.000Z",
-  "style": {
-    "indent": 2,
-    "quotes": "double",
-    "semicolons": true,
-    "typescript_strict": true
-  },
+  "generated": "2026-02-18T23:17:15.380Z",
+  "commitHash": "41d59c7",
   "naming": {
-    "files": "kebab-case",
-    "functions": "camelCase",
-    "types": "PascalCase",
-    "constants": "UPPER_SNAKE_CASE",
-    "node_tests_suffix": ".node.test.ts"
+    "exports": {
+      "pattern": "mixed",
+      "confidence": 0.62,
+      "sampleSize": 29,
+      "breakdown": {
+        "SCREAMING_SNAKE": 3,
+        "PascalCase": 18,
+        "camelCase": 8
+      }
+    }
   },
-  "testing": {
-    "runner": "vitest",
-    "ui_env": "jsdom",
-    "coverage_thresholds": {
-      "statements": 80,
-      "branches": 70,
-      "functions": 80,
-      "lines": 80
+  "directories": {
+    "src/shared/": {
+      "purpose": "test files",
+      "detectedBy": "suffix-analysis",
+      "fileCount": 10,
+      "dominantSuffix": ".ts"
+    }
+  },
+  "fileSuffixes": {
+    ".test.ts": {
+      "purpose": "test files",
+      "count": 5
     }
   }
 }

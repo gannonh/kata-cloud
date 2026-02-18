@@ -1,10 +1,9 @@
 {
   "version": 2,
-  "generated_at": "2026-02-18T00:00:00.000Z",
-  "project": {
-    "name": "kata-cloud",
-    "type": "electron-desktop-app"
-  },
+  "generated": "2026-02-18T23:17:15.380Z",
+  "source": "code-scan",
+  "generatedBy": "scan-codebase",
+  "commitHash": "41d59c7",
   "files": {
     "src/main/index.ts": {
       "purpose": "Electron main bootstrap and IPC registration",
@@ -19,18 +18,65 @@
       ]
     },
     "src/main.tsx": {
-      "purpose": "Renderer root UI and workflow orchestration",
-      "layer": "renderer",
-      "exports": []
+      "exports": [],
+      "imports": {
+        "packages": [
+          "react",
+          "react-dom/client"
+        ],
+        "local": [
+          "./browser/local-dev-browser",
+          "./context/context-adapter",
+          "./context/types",
+          "./git/changes",
+          "./git/changes-diff-text",
+          "./git/space-git-ui-state",
+          "./git/types",
+          "./notes/spec-note-panel",
+          "./notes/store",
+          "./shared/orchestrator-delegation",
+          "./shared/orchestrator-failure",
+          "./shared/orchestrator-run-history",
+          "./shared/orchestrator-run-lifecycle",
+          "./shared/orchestrator-run-view-model",
+          "./shared/state",
+          "./space/types",
+          "./space/validation",
+          "./styles.css"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "41d59c7",
+      "indexedAt": "2026-02-18T23:17:15.380Z"
     },
     "src/shared/state.ts": {
-      "purpose": "AppState contract and normalization",
-      "layer": "shared",
       "exports": [
         "APP_STATE_VERSION",
+        "AppState",
+        "NavigationView",
+        "OrchestratorDelegatedTaskRecord",
+        "OrchestratorRunRecord",
+        "OrchestratorRunStatus",
+        "OrchestratorSpecDraft",
+        "OrchestratorTaskStatus",
+        "OrchestratorTaskType",
+        "SessionRecord",
+        "SpaceRecord",
         "createInitialAppState",
         "normalizeAppState"
-      ]
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "../context/types",
+          "../git/types"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "41d59c7",
+      "indexedAt": "2026-02-18T23:17:15.380Z"
     },
     "src/shared/shell-api.ts": {
       "purpose": "IPC channels and ShellApi interface",
@@ -66,6 +112,157 @@
       "exports": [
         "parseTaskBlocks"
       ]
+    },
+    "src/shared/orchestrator-run-history.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "vitest"
+        ],
+        "local": [
+          "./orchestrator-run-history",
+          "./state"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "41d59c7",
+      "indexedAt": "2026-02-18T23:17:15.380Z"
+    },
+    "src/shared/orchestrator-run-history.ts": {
+      "exports": [
+        "getRunHistoryForActiveSession",
+        "getRunsForActiveSession"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "./state"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "41d59c7",
+      "indexedAt": "2026-02-18T23:17:15.380Z"
+    },
+    "src/shared/orchestrator-run-lifecycle.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "vitest"
+        ],
+        "local": [
+          "./orchestrator-run-lifecycle",
+          "./state"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "41d59c7",
+      "indexedAt": "2026-02-18T23:17:15.380Z"
+    },
+    "src/shared/orchestrator-run-lifecycle.ts": {
+      "exports": [
+        "OrchestratorRunTransitionFailure",
+        "OrchestratorRunTransitionResult",
+        "OrchestratorRunTransitionSuccess",
+        "transitionOrchestratorRunStatus"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "./state"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "41d59c7",
+      "indexedAt": "2026-02-18T23:17:15.380Z"
+    },
+    "src/shared/orchestrator-run-view-model.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "vitest"
+        ],
+        "local": [
+          "./orchestrator-run-view-model",
+          "./state"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "41d59c7",
+      "indexedAt": "2026-02-18T23:17:15.380Z"
+    },
+    "src/shared/orchestrator-run-view-model.ts": {
+      "exports": [
+        "OrchestratorDelegatedTaskViewModel",
+        "OrchestratorRunViewModel",
+        "projectOrchestratorRunHistory",
+        "projectOrchestratorRunViewModel"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "../context/types",
+          "./state"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "41d59c7",
+      "indexedAt": "2026-02-18T23:17:15.380Z"
+    },
+    "src/shared/orchestrator-state.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "vitest"
+        ],
+        "local": [
+          "./state"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "41d59c7",
+      "indexedAt": "2026-02-18T23:17:15.380Z"
+    },
+    "src/shared/state.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "vitest"
+        ],
+        "local": [
+          "./state"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "41d59c7",
+      "indexedAt": "2026-02-18T23:17:15.380Z"
+    }
+  },
+  "stats": {
+    "totalFiles": 17,
+    "byType": {
+      "undefined": 7,
+      "util": 5,
+      "test": 5
+    },
+    "byLayer": {
+      "main": 2,
+      "preload": 1,
+      "shared": 11,
+      "domain": 2,
+      "package": 1
+    },
+    "byExtension": {
+      ".ts": 15,
+      ".tsx": 1,
+      ".js": 1
     }
   }
 }
