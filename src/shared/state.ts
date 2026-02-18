@@ -221,12 +221,58 @@ function isSessionRecord(value: unknown): value is SessionRecord {
   );
 }
 
+const ORCHESTRATOR_RUN_TRANSITIONS: Record<OrchestratorRunStatus, readonly OrchestratorRunStatus[]> = {
+  queued: ["running"],
+  running: ["completed", "failed"],
+  completed: [],
+  failed: []
+};
+
+function hasValidRunTimeline(
+  statusTimeline: OrchestratorRunStatus[],
+  status: OrchestratorRunStatus
+): boolean {
+  if (statusTimeline.length === 0 || statusTimeline[0] !== "queued") {
+    return false;
+  }
+
+  const dedupedTimeline: OrchestratorRunStatus[] = [];
+  for (const entry of statusTimeline) {
+    if (dedupedTimeline[dedupedTimeline.length - 1] !== entry) {
+      dedupedTimeline.push(entry);
+    }
+  }
+
+  if (dedupedTimeline.length === 0 || dedupedTimeline[dedupedTimeline.length - 1] !== status) {
+    return false;
+  }
+
+  for (let index = 1; index < dedupedTimeline.length; index += 1) {
+    const from = dedupedTimeline[index - 1];
+    const to = dedupedTimeline[index];
+    if (!ORCHESTRATOR_RUN_TRANSITIONS[from].includes(to)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function isOrchestratorRunRecord(value: unknown): value is OrchestratorRunRecord {
   if (!isObject(value)) {
     return false;
   }
 
-  const completedAtIsValid = value.completedAt === undefined || isString(value.completedAt);
+  const runStatusIsValid = isOrchestratorRunStatus(value.status);
+  const statusTimelineIsValid =
+    Array.isArray(value.statusTimeline) &&
+    value.statusTimeline.length > 0 &&
+    value.statusTimeline.every(isOrchestratorRunStatus) &&
+    runStatusIsValid &&
+    hasValidRunTimeline(value.statusTimeline, value.status);
+  const terminalStatus = runStatusIsValid && (value.status === "completed" || value.status === "failed");
+  const completedAtIsValid =
+    terminalStatus ? isString(value.completedAt) : value.completedAt === undefined || isString(value.completedAt);
   const errorMessageIsValid = value.errorMessage === undefined || isString(value.errorMessage);
   const contextSnippetsAreValid =
     value.contextSnippets === undefined ||
@@ -244,10 +290,7 @@ function isOrchestratorRunRecord(value: unknown): value is OrchestratorRunRecord
     isString(value.spaceId) &&
     isString(value.sessionId) &&
     typeof value.prompt === "string" &&
-    isOrchestratorRunStatus(value.status) &&
-    Array.isArray(value.statusTimeline) &&
-    value.statusTimeline.length > 0 &&
-    value.statusTimeline.every(isOrchestratorRunStatus) &&
+    statusTimelineIsValid &&
     isString(value.createdAt) &&
     isString(value.updatedAt) &&
     completedAtIsValid &&
