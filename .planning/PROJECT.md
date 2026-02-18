@@ -8,6 +8,17 @@ Kata Cloud is a desktop app for spec-driven development where developers orchest
 
 The spec is the source of truth that stays aligned with real implementation while agents execute, so every workflow reliably produces a high-quality, reviewable pull request.
 
+## Current Milestone: v1.0 Desktop MVP Closure
+
+**Goal:** Complete provider-runtime UX and hardening, then finish a full MVP validation sweep with explicit release handoff.
+
+**Target features:**
+
+- Provider Runtime Slice 6: renderer settings and provider auth/status UX
+- Provider Runtime Slice 7: runtime hardening (timeouts, retries, error polish, regression expansion)
+- Full MVP UAT sweep with codified Playwright coverage for validated flows
+- Release-ready handoff packet with residual risk and backlog ordering
+
 ## Requirements
 
 ### Validated
@@ -21,11 +32,11 @@ The spec is the source of truth that stays aligned with real implementation whil
 - ✓ In-app localhost browser preview for iterative dev workflows — existing (`src/browser/local-dev-browser.ts`, `src/main.tsx`)
 - ✓ Context adapter foundation with filesystem provider and MCP-compatible stub — existing (`src/context/*`)
 - ✓ Provider runtime foundation + Anthropic/OpenAI API-key execution path slices — existing (`src/main/provider-runtime/*`, `src/main/providers/*`, through merged slices 1-4)
+- ✓ Provider runtime Slice 5 deterministic token-session fallback semantics — existing (merged PR #50)
 - ✓ UAT-to-E2E codification baseline with Electron Playwright smoke/full CI split — existing (`scripts/playwright-electron-*.mjs`, `.github/workflows/*`)
 
 ### Active
 
-- [ ] Complete Provider Runtime Slice 5: token-session auth mode integration with deterministic fallback semantics for Anthropic and OpenAI (no renderer UX in this slice)
 - [ ] Complete Provider Runtime Slice 6: renderer settings/status UX for provider auth health, mode visibility, and execution wiring
 - [ ] Complete Provider Runtime Slice 7: hardening pass (timeouts/retries/error polish/regression expansion)
 - [ ] Run end-to-end MVP verification across full user journey (space -> spec -> delegate -> changes -> PR) and codify any remaining manual UAT scenarios into Playwright
@@ -42,7 +53,7 @@ The spec is the source of truth that stays aligned with real implementation whil
 
 Kata Cloud consolidates prior Kata R&D into one product: spec-driven development + multi-agent orchestration + context-aware execution. The product direction and positioning are defined in `docs/kata-cloud-ovweview.md` and `docs/PRD.md`, with the living execution state tracked in `notes/spec.md`.
 
-Current repository state is brownfield and active: core desktop workflows are already implemented and merged through a sequence of scoped PRs (including context integration, browser preview, provider-runtime slices 1-4, and Electron E2E codification). The immediate execution focus is Provider Runtime Slice 5 (`notes/dfb65dc8-1eb9-47f1-b95f-e22c99005ddb.md`), specifically deterministic token-session fallback behavior and typed failure semantics.
+Current repository state is brownfield and active: core desktop workflows are already implemented and merged through a sequence of scoped PRs (including context integration, browser preview, provider-runtime slices 1-5, and Electron E2E codification). The immediate execution focus is milestone closure work: Provider Runtime Slice 6, Slice 7 hardening, and final MVP verification.
 
 The team operates with strict branch hygiene and slice discipline: start from fresh `origin/main`, keep single-purpose PRs, avoid cross-scope edits, and require explicit validation artifacts (`test`, `typecheck`, and targeted UAT/E2E evidence). This workflow is central to how work is delegated and merged.
 
@@ -57,15 +68,15 @@ The team operates with strict branch hygiene and slice discipline: start from fr
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-| -------- | --------- | ------- |
-| Keep spec-driven workflow as product center | Maintains alignment between intent, execution, and reviewable output | ✓ Good |
-| Treat pull request as the core deliverable | Makes agent work auditable and team-compatible | ✓ Good |
-| Build desktop-first local mode before cloud mode | Needed for filesystem/git control and rapid MVP iteration | ✓ Good |
-| Support both Anthropic and OpenAI provider runtimes | Different models/providers fit different task profiles and risk posture | ✓ Good |
-| Implement provider runtime via small deterministic slices | Limits blast radius and preserves clear validation per capability | ✓ Good |
-| Enforce non-overlap guardrails on active slices | Prevents mixed-scope regressions and review ambiguity | ✓ Good |
-| Defer renderer settings UX to dedicated Slice 6 | Keeps Slice 5 focused on auth semantics and fallback correctness | — Pending |
+| Decision                                                  | Rationale                                                               | Outcome   |
+| --------------------------------------------------------- | ----------------------------------------------------------------------- | --------- |
+| Keep spec-driven workflow as product center               | Maintains alignment between intent, execution, and reviewable output    | ✓ Good    |
+| Treat pull request as the core deliverable                | Makes agent work auditable and team-compatible                          | ✓ Good    |
+| Build desktop-first local mode before cloud mode          | Needed for filesystem/git control and rapid MVP iteration               | ✓ Good    |
+| Support both Anthropic and OpenAI provider runtimes       | Different models/providers fit different task profiles and risk posture | ✓ Good    |
+| Implement provider runtime via small deterministic slices | Limits blast radius and preserves clear validation per capability       | ✓ Good    |
+| Enforce non-overlap guardrails on active slices           | Prevents mixed-scope regressions and review ambiguity                   | ✓ Good    |
+| Defer renderer settings UX to dedicated Slice 6           | Keeps Slice 5 focused on auth semantics and fallback correctness        | — Pending |
 
 ---
-*Last updated: 2026-02-18 after initialization*
+*Last updated: 2026-02-18 after milestone v1.0 initialization*
