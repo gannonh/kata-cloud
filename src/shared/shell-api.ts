@@ -21,7 +21,7 @@ import type {
   ProviderModelDescriptor,
   ProviderExecuteResult
 } from "../main/provider-runtime/types";
-import type { ProviderStatusResult } from "../main/provider-runtime/service";
+import type { ProviderStatusRequest, ProviderStatusResult } from "../main/provider-runtime/service";
 
 export const IPC_CHANNELS = {
   getState: "kata-cloud/state:get",
@@ -44,12 +44,7 @@ export const IPC_CHANNELS = {
   openExternalUrl: "kata-cloud/system:open-external-url"
 } as const;
 
-export interface ProviderStatusRequest {
-  providerId: ModelProviderId;
-  auth: ProviderAuthInput;
-}
-
-export interface ProviderListModelsRequest {
+export interface ProviderListModelsIpcRequest {
   providerId: ModelProviderId;
   auth: ProviderAuthInput;
 }
@@ -64,7 +59,7 @@ export interface ProviderExecuteIpcRequest {
   temperature?: number;
 }
 
-export type { ProviderStatusResult, ProviderModelDescriptor, ProviderExecuteResult };
+export type { ProviderStatusRequest, ProviderStatusResult, ProviderModelDescriptor, ProviderExecuteResult };
 
 export interface ShellApi {
   getState: () => Promise<AppState>;
@@ -96,7 +91,7 @@ export interface ShellApi {
   ) => Promise<SpaceGitCreatePullRequestResult>;
   retrieveContext: (request: ContextRetrievalRequest) => Promise<ContextSnippet[]>;
   providerResolveAuth: (request: ProviderStatusRequest) => Promise<ProviderStatusResult>;
-  providerListModels: (request: ProviderListModelsRequest) => Promise<ProviderModelDescriptor[]>;
+  providerListModels: (request: ProviderListModelsIpcRequest) => Promise<ProviderModelDescriptor[]>;
   providerExecute: (request: ProviderExecuteIpcRequest) => Promise<ProviderExecuteResult>;
   openExternalUrl: (url: string) => Promise<void>;
 }
