@@ -48,6 +48,12 @@ const shellApi: ShellApi = {
     ipcRenderer.invoke(IPC_CHANNELS.createPullRequest, request),
   retrieveContext: async (request: ContextRetrievalRequest) =>
     ipcRenderer.invoke(IPC_CHANNELS.retrieveContext, request),
+  providerResolveAuth: async (request) =>
+    ipcRenderer.invoke(IPC_CHANNELS.providerResolveAuth, request),
+  providerListModels: async (request) =>
+    ipcRenderer.invoke(IPC_CHANNELS.providerListModels, request),
+  providerExecute: async (request) =>
+    ipcRenderer.invoke(IPC_CHANNELS.providerExecute, request),
   openExternalUrl: async (url: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.openExternalUrl, url)
 };

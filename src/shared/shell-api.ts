@@ -15,6 +15,13 @@ import type {
   SpaceGitPullRequestDraftResult
 } from "../git/types";
 import type { ContextRetrievalRequest, ContextSnippet } from "../context/types";
+import type {
+  ModelProviderId,
+  ProviderAuthInput,
+  ProviderModelDescriptor,
+  ProviderExecuteResult
+} from "../main/provider-runtime/types";
+import type { ProviderStatusResult } from "../main/provider-runtime/service";
 
 export const IPC_CHANNELS = {
   getState: "kata-cloud/state:get",
@@ -31,8 +38,33 @@ export const IPC_CHANNELS = {
   generatePullRequestDraft: "kata-cloud/github:pr-draft",
   createPullRequest: "kata-cloud/github:pr-create",
   retrieveContext: "kata-cloud/context:retrieve",
+  providerResolveAuth: "kata-cloud/provider:resolve-auth",
+  providerListModels: "kata-cloud/provider:list-models",
+  providerExecute: "kata-cloud/provider:execute",
   openExternalUrl: "kata-cloud/system:open-external-url"
 } as const;
+
+export interface ProviderStatusRequest {
+  providerId: ModelProviderId;
+  auth: ProviderAuthInput;
+}
+
+export interface ProviderListModelsRequest {
+  providerId: ModelProviderId;
+  auth: ProviderAuthInput;
+}
+
+export interface ProviderExecuteIpcRequest {
+  providerId: ModelProviderId;
+  auth: ProviderAuthInput;
+  model: string;
+  prompt: string;
+  systemPrompt?: string;
+  maxTokens?: number;
+  temperature?: number;
+}
+
+export type { ProviderStatusResult, ProviderModelDescriptor, ProviderExecuteResult };
 
 export interface ShellApi {
   getState: () => Promise<AppState>;
@@ -63,5 +95,8 @@ export interface ShellApi {
     request: SpaceGitCreatePullRequestRequest
   ) => Promise<SpaceGitCreatePullRequestResult>;
   retrieveContext: (request: ContextRetrievalRequest) => Promise<ContextSnippet[]>;
+  providerResolveAuth: (request: ProviderStatusRequest) => Promise<ProviderStatusResult>;
+  providerListModels: (request: ProviderListModelsRequest) => Promise<ProviderModelDescriptor[]>;
+  providerExecute: (request: ProviderExecuteIpcRequest) => Promise<ProviderExecuteResult>;
   openExternalUrl: (url: string) => Promise<void>;
 }
