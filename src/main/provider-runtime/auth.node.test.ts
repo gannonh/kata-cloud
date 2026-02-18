@@ -19,13 +19,13 @@ describe("resolveProviderAuth", () => {
     expect(resolution.tokenSessionId).toBe("session-1");
   });
 
-  it("falls back to API key when no active token session exists", () => {
+  it("falls back to API key when token session is expired and fallback is allowed", () => {
     const resolution = resolveProviderAuth({
       providerId: "openai",
       supportsTokenSession: true,
       auth: {
         preferredMode: "token_session",
-        tokenSession: null,
+        tokenSession: { id: "expired-openai", status: "expired" },
         apiKey: "sk-openai"
       }
     });
@@ -36,7 +36,24 @@ describe("resolveProviderAuth", () => {
     expect(resolution.apiKey).toBe("sk-openai");
   });
 
-  it("falls back to API key when provider does not support token sessions", () => {
+  it("returns session_expired when token session has expired and fallback is disabled", () => {
+    const resolution = resolveProviderAuth({
+      providerId: "openai",
+      supportsTokenSession: true,
+      auth: {
+        preferredMode: "token_session",
+        tokenSession: { id: "expired-openai", status: "expired" },
+        apiKey: "sk-openai",
+        allowApiKeyFallback: false
+      }
+    });
+
+    expect(resolution.status).toBe("error");
+    expect(resolution.failureCode).toBe("session_expired");
+    expect(resolution.resolvedMode).toBeNull();
+  });
+
+  it("falls back to API key when provider does not support token sessions and fallback is allowed", () => {
     const resolution = resolveProviderAuth({
       providerId: "openai",
       supportsTokenSession: false,
@@ -51,18 +68,36 @@ describe("resolveProviderAuth", () => {
     expect(resolution.fallbackApplied).toBe(true);
   });
 
-  it("returns session_expired when token session has expired and no API key fallback is available", () => {
+  it("returns invalid_auth when token session mode is unsupported and fallback is disabled", () => {
+    const resolution = resolveProviderAuth({
+      providerId: "anthropic",
+      supportsTokenSession: false,
+      auth: {
+        preferredMode: "token_session",
+        apiKey: "sk-ant",
+        allowApiKeyFallback: false
+      }
+    });
+
+    expect(resolution.status).toBe("error");
+    expect(resolution.failureCode).toBe("invalid_auth");
+    expect(resolution.resolvedMode).toBeNull();
+  });
+
+  it("returns invalid_auth when active token session is missing a session id and fallback is disabled", () => {
     const resolution = resolveProviderAuth({
       providerId: "anthropic",
       supportsTokenSession: true,
       auth: {
         preferredMode: "token_session",
-        tokenSession: { id: "expired-session", status: "expired" }
+        tokenSession: { id: " ", status: "active" },
+        apiKey: "sk-ant",
+        allowApiKeyFallback: false
       }
     });
 
     expect(resolution.status).toBe("error");
-    expect(resolution.failureCode).toBe("session_expired");
+    expect(resolution.failureCode).toBe("invalid_auth");
     expect(resolution.resolvedMode).toBeNull();
   });
 
