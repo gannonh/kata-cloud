@@ -12,32 +12,35 @@ type OpenAiFetch = (
 ) => Promise<{
   ok: boolean;
   status: number;
-  json: () => Promise<unknown>;
   text: () => Promise<string>;
 }>;
 
 export interface OpenAiApiKeyClientOptions {
   fetchFn?: OpenAiFetch;
   apiBaseUrl?: string;
+  timeoutMs?: number;
 }
 
 const OPENAI_API_BASE_URL = "https://api.openai.com";
 const DEFAULT_MAX_TOKENS = 1024;
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 export class OpenAiApiKeyClient implements OpenAiProviderClient {
   private readonly fetchFn: OpenAiFetch;
   private readonly apiBaseUrl: string;
+  private readonly timeoutMs: number;
 
   constructor(options: OpenAiApiKeyClientOptions = {}) {
     this.fetchFn = options.fetchFn ?? (fetch as OpenAiFetch);
     this.apiBaseUrl = options.apiBaseUrl ?? OPENAI_API_BASE_URL;
+    this.timeoutMs = normalizeTimeoutMs(options.timeoutMs);
   }
 
   async listModels(auth: ProviderClientAuth): Promise<OpenAiClientModel[]> {
     const apiKey = requireApiKey(auth);
     let response: Awaited<ReturnType<OpenAiFetch>>;
     try {
-      response = await this.fetchFn(`${this.apiBaseUrl}/v1/models`, {
+      response = await this.fetchWithTimeout(`${this.apiBaseUrl}/v1/models`, {
         method: "GET",
         headers: this.createHeaders(apiKey)
       });
@@ -81,15 +84,15 @@ export class OpenAiApiKeyClient implements OpenAiProviderClient {
     const body: Record<string, unknown> = {
       model: request.model,
       messages,
-      max_tokens: normalizeMaxTokens(request.maxTokens)
+      max_completion_tokens: normalizeMaxTokens(request.maxTokens)
     };
     if (typeof request.temperature === "number" && Number.isFinite(request.temperature)) {
-      body.temperature = request.temperature;
+      body.temperature = clampTemperature(request.temperature);
     }
 
     let response: Awaited<ReturnType<OpenAiFetch>>;
     try {
-      response = await this.fetchFn(`${this.apiBaseUrl}/v1/chat/completions`, {
+      response = await this.fetchWithTimeout(`${this.apiBaseUrl}/v1/chat/completions`, {
         method: "POST",
         headers: {
           ...this.createHeaders(apiKey),
@@ -119,6 +122,22 @@ export class OpenAiApiKeyClient implements OpenAiProviderClient {
       Authorization: `Bearer ${apiKey}`
     };
   }
+
+  private async fetchWithTimeout(
+    input: string,
+    init: RequestInit
+  ): Promise<Awaited<ReturnType<OpenAiFetch>>> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      return await this.fetchFn(input, {
+        ...init,
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
 }
 
 function normalizeMaxTokens(value: number | undefined): number {
@@ -127,6 +146,17 @@ function normalizeMaxTokens(value: number | undefined): number {
   }
 
   return DEFAULT_MAX_TOKENS;
+}
+
+function normalizeTimeoutMs(value: number | undefined): number {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.max(1, Math.floor(value));
+  }
+  return DEFAULT_TIMEOUT_MS;
+}
+
+function clampTemperature(value: number): number {
+  return Math.max(0, Math.min(2, value));
 }
 
 function parseModelsPayload(payload: unknown): OpenAiClientModel[] {
@@ -347,18 +377,17 @@ function extractErrorDetail(payload: unknown): string | null {
 }
 
 async function readPayload(response: {
-  json: () => Promise<unknown>;
   text: () => Promise<string>;
 }): Promise<{ payload: unknown; readError: unknown | null }> {
   try {
-    return { payload: await response.json(), readError: null };
-  } catch {
+    const raw = await response.text();
     try {
-      const raw = await response.text();
+      return { payload: JSON.parse(raw), readError: null };
+    } catch {
       return { payload: raw.trim().length > 0 ? raw : null, readError: null };
-    } catch (error) {
-      return { payload: null, readError: error };
     }
+  } catch (error) {
+    return { payload: null, readError: error };
   }
 }
 

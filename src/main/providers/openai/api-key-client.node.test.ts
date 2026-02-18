@@ -4,7 +4,6 @@ import { OpenAiApiKeyClient } from "./api-key-client";
 type MockFetchResponse = {
   ok: boolean;
   status: number;
-  json: () => Promise<unknown>;
   text: () => Promise<string>;
 };
 
@@ -95,12 +94,37 @@ describe("OpenAiApiKeyClient", () => {
         { role: "system", content: "Be concise" },
         { role: "user", content: "Say hello" }
       ],
-      max_tokens: 256,
+      max_completion_tokens: 256,
       temperature: 0.2
     });
   });
 
-  it("returns unexpected_error for malformed payloads", async () => {
+  it("clamps temperature into the provider-supported range", async () => {
+    const fetchFn = vi.fn<MockFetch>().mockResolvedValue(
+      createResponse({
+        ok: true,
+        status: 200,
+        jsonBody: {
+          model: "gpt-4.1",
+          choices: [{ message: { content: "ok" } }]
+        }
+      })
+    );
+    const client = new OpenAiApiKeyClient({ fetchFn });
+
+    await client.execute({
+      auth: { authMode: "api_key", apiKey: "sk-openai" },
+      model: "gpt-4.1",
+      prompt: "Hello",
+      temperature: 5
+    });
+
+    expect(JSON.parse((fetchFn.mock.calls[0]?.[1]?.body as string) ?? "{}")).toMatchObject({
+      temperature: 2
+    });
+  });
+
+  it("returns unexpected_error when model listing payload is malformed", async () => {
     const malformedModelsFetch = vi.fn<MockFetch>().mockResolvedValue(
       createResponse({
         ok: true,
@@ -117,7 +141,9 @@ describe("OpenAiApiKeyClient", () => {
       code: "unexpected_error",
       providerId: "openai"
     });
+  });
 
+  it("returns unexpected_error when execute payload contains no text", async () => {
     const malformedExecuteFetch = vi.fn<MockFetch>().mockResolvedValue(
       createResponse({
         ok: true,
@@ -140,7 +166,7 @@ describe("OpenAiApiKeyClient", () => {
     });
   });
 
-  it("maps auth and HTTP failures to provider-runtime taxonomy", async () => {
+  it("maps 401 auth failures to invalid_auth", async () => {
     const unauthorizedFetch = vi.fn<MockFetch>().mockResolvedValue(
       createResponse({
         ok: false,
@@ -157,7 +183,9 @@ describe("OpenAiApiKeyClient", () => {
       retryable: false,
       providerId: "openai"
     });
+  });
 
+  it("maps 429 failures to rate_limited", async () => {
     const rateLimitedFetch = vi.fn<MockFetch>().mockResolvedValue(
       createResponse({
         ok: false,
@@ -175,6 +203,30 @@ describe("OpenAiApiKeyClient", () => {
     ).rejects.toMatchObject({
       name: "ProviderRuntimeError",
       code: "rate_limited",
+      retryable: true,
+      providerId: "openai"
+    });
+  });
+
+  it("aborts hung requests after timeout and maps to provider_unavailable", async () => {
+    const fetchFn = vi.fn<MockFetch>(
+      async (_input, init) =>
+        new Promise<MockFetchResponse>((_resolve, reject) => {
+          const signal = init?.signal;
+          if (signal) {
+            signal.addEventListener("abort", () => {
+              reject(new Error("request timeout"));
+            });
+          }
+        })
+    );
+    const client = new OpenAiApiKeyClient({ fetchFn, timeoutMs: 1 });
+
+    await expect(
+      client.listModels({ authMode: "api_key", apiKey: "sk-openai" })
+    ).rejects.toMatchObject({
+      name: "ProviderRuntimeError",
+      code: "provider_unavailable",
       retryable: true,
       providerId: "openai"
     });
@@ -210,7 +262,6 @@ function createResponse(input: {
   return {
     ok: input.ok,
     status: input.status,
-    json: async () => input.jsonBody,
     text: async () => input.textBody ?? JSON.stringify(input.jsonBody)
   };
 }
