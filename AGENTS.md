@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm run web:dev`: run renderer only (Vite dev server on port 5173).
 - `pnpm run build`: compile main process and bundle renderer assets.
 - `pnpm run desktop:typecheck`: strict TS type checks for main + renderer configs.
+- `pnpm run uat:electron:smoke`: run Playwright-driven Electron smoke flow (validates `window.kataShell` bridge and Changes view runtime wiring).
 - `pnpm run repo:guardrails`: run repository hygiene guardrails.
 - `pnpm run lint`: lint all files with ESLint (flat config in `eslint.config.mjs`).
 - `pnpm test`: run Vitest once.
@@ -92,6 +93,13 @@ The git feature is the most complex domain. Key files:
 - When changing shared logic (`src/git/*` or `packages/task-parser/*`), add/adjust tests in both impacted areas.
 - Coverage thresholds: 80% statements/functions/lines, 70% branches (enforced by `vitest.config.ts`).
 - Main process and preload code (`src/main/**`, `src/preload/**`) are excluded from coverage.
+
+### UAT to E2E Policy
+- Every UAT session must be followed by codifying the exercised behavior as Playwright end-to-end coverage.
+- For each manual UAT scenario that passes or finds a regression, add/update a Playwright scenario that reproduces the same flow and expected result.
+- Prefer shipping the Playwright coverage in the same PR as the fix; if scope is too large, open a follow-up task/issue before merge and link it in the PR.
+- Keep Playwright artifacts in `output/playwright/` when screenshots are needed for debugging or PR evidence.
+- Use repo-relative paths and commands in agent prompts/instructions; do not hard-code machine-specific absolute worktree paths.
 
 ## TypeScript Configuration
 - `tsconfig.main.json`: CommonJS, Node/Electron types, outputs to `dist/`.

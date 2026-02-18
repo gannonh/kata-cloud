@@ -16,3 +16,5 @@ dist
 # Test/build artifacts
 coverage/
 *.tsbuildinfo
+.playwright-cli/
+output/playwright/
