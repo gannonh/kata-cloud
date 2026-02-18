@@ -24,6 +24,8 @@ import { ProviderRuntimeService } from "./provider-runtime/service";
 import { serializeProviderRuntimeError } from "./provider-runtime/errors";
 import { AnthropicProviderAdapter } from "./providers/anthropic/adapter";
 import { AnthropicApiKeyClient } from "./providers/anthropic/api-key-client";
+import { OpenAiProviderAdapter } from "./providers/openai/adapter";
+import { OpenAiApiKeyClient } from "./providers/openai/api-key-client";
 
 let stateStore: PersistedStateStore | undefined;
 
@@ -214,7 +216,8 @@ async function bootstrap(): Promise<void> {
   const gitLifecycleService = new SpaceGitLifecycleService();
   const pullRequestWorkflowService = new PullRequestWorkflowService();
   const providerRegistry = createProviderRuntimeRegistry([
-    new AnthropicProviderAdapter(new AnthropicApiKeyClient())
+    new AnthropicProviderAdapter(new AnthropicApiKeyClient()),
+    new OpenAiProviderAdapter(new OpenAiApiKeyClient())
   ]);
   const providerService = new ProviderRuntimeService(providerRegistry);
   await stateStore.initialize();
