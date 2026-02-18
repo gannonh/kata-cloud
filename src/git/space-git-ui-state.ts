@@ -14,11 +14,11 @@ export function toSpaceGitUiState(
 ): SpaceGitUiState {
   if (!status) {
     return {
-      title: "Git not linked",
-      detail: "Link a repository to set up an isolated branch and worktree.",
+      title: "Git not initialized",
+      detail: "Workspace is available; initialize branch/worktree when you are ready.",
       branchName: null,
       worktreePath: null,
-      remediation: "Select a repository path when creating or editing the space.",
+      remediation: "Set a valid workspace root path in space metadata to run git actions.",
       isError: false
     };
   }

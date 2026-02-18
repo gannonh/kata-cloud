@@ -197,8 +197,9 @@ function resolveSpaceChangesRepoPath(space: SpaceRecord): string | null {
     return space.gitStatus.worktreePath;
   }
 
-  if (space.repoUrl) {
-    return space.rootPath;
+  const rootPath = space.rootPath.trim();
+  if (rootPath.length > 0) {
+    return rootPath;
   }
 
   return null;
@@ -361,10 +362,6 @@ function App(): React.JSX.Element {
 
   const runSpaceGitLifecycle = useCallback(
     async (space: SpaceRecord, mode: "initialize" | "switch") => {
-      if (!space.repoUrl) {
-        return;
-      }
-
       const request = resolveSpaceGitRequest(space);
       const inProgressStatus = createSpaceGitStatus(
         request,
@@ -1591,12 +1588,14 @@ function App(): React.JSX.Element {
                       {activeSpaceGitUiState?.remediation ? (
                         <p className="field-error">{activeSpaceGitUiState.remediation}</p>
                       ) : null}
-                      {activeSpace.repoUrl ? (
+                      {activeChangesRepoPath ? (
                         <div className="space-create__actions">
                           <button
                             type="button"
                             className="pill-button"
-                            disabled={activeGitOperationSpaceId === activeSpace.id}
+                            disabled={
+                              activeGitOperationSpaceId === activeSpace.id || !activeChangesRepoPath
+                            }
                             onClick={() => {
                               void runSpaceGitLifecycle(activeSpace, "initialize");
                             }}
@@ -1606,7 +1605,9 @@ function App(): React.JSX.Element {
                           <button
                             type="button"
                             className="pill-button"
-                            disabled={activeGitOperationSpaceId === activeSpace.id}
+                            disabled={
+                              activeGitOperationSpaceId === activeSpace.id || !activeChangesRepoPath
+                            }
                             onClick={() => {
                               void runSpaceGitLifecycle(activeSpace, "switch");
                             }}
@@ -1625,7 +1626,7 @@ function App(): React.JSX.Element {
                           </button>
                         </div>
                       ) : (
-                        <p>Link a repository when creating the space to enable git lifecycle actions.</p>
+                        <p>Select a workspace root path to enable git lifecycle actions.</p>
                       )}
                     </>
                   ) : (
