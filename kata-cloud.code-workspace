@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../../../intent"
+		},
+		{
+			"path": "../../../.codex/worktrees/23f6"
 		}
 	],
 	"settings": {}
