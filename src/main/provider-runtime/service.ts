@@ -42,16 +42,20 @@ export class ProviderRuntimeService {
   constructor(private readonly registry: ProviderRuntimeRegistry) {}
 
   resolveAuth(request: ProviderStatusRequest): ProviderStatusResult {
-    const adapter = this.registry.require(request.providerId);
-    const resolution = adapter.resolveAuth(request.auth);
-    return {
-      providerId: request.providerId,
-      resolvedMode: resolution.resolvedMode,
-      status: resolution.status,
-      fallbackApplied: resolution.fallbackApplied,
-      failureCode: resolution.failureCode,
-      reason: resolution.reason
-    };
+    try {
+      const adapter = this.registry.require(request.providerId);
+      const resolution = adapter.resolveAuth(request.auth);
+      return {
+        providerId: request.providerId,
+        resolvedMode: resolution.resolvedMode,
+        status: resolution.status,
+        fallbackApplied: resolution.fallbackApplied,
+        failureCode: resolution.failureCode,
+        reason: resolution.reason
+      };
+    } catch (error) {
+      throw mapProviderRuntimeError(request.providerId, error);
+    }
   }
 
   async listModels(request: ProviderListModelsServiceRequest): Promise<ProviderModelDescriptor[]> {

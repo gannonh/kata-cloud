@@ -26,7 +26,7 @@ function createMockAdapter(providerId: ModelProviderId): ProviderRuntimeAdapter 
       apiKey: auth.apiKey ?? null,
       tokenSessionId: null
     }),
-    listModels: async () => [{ id: "claude-3", displayName: "Claude 3" }],
+    listModels: async () => [{ id: `${providerId}-model`, displayName: `${providerId} model` }],
     execute: async (request) => ({
       providerId,
       model: request.model,
@@ -95,7 +95,7 @@ describe("ProviderRuntimeService.listModels", () => {
     const models = await service.listModels({ providerId: "openai", auth: MOCK_API_KEY_AUTH });
 
     expect(models).toHaveLength(1);
-    expect(models[0].id).toBe("claude-3");
+    expect(models[0].id).toBe("openai-model");
   });
 
   it("throws ProviderRuntimeError when adapter rejects missing auth", async () => {
