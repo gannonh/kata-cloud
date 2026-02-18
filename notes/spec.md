@@ -11,7 +11,7 @@ task:
 > NOTE: `intent://local/task/[uuid]` resolves to a local markdown file with the specified UUID:
 > Example: `intent://local/task/10a48d6c-9fd1-452f-aa99-3120bf23641c` → `notes/10a48d6c-9fd1-452f-aa99-3120bf23641c.md`
 
-## Handoff Snapshot (2026-02-18)
+## Handoff Snapshot (2026-02-18, Post-PR #47)
 
 This section is the current source of truth for handoff. Historical sections below are retained for audit trail but are superseded by this snapshot.
 
@@ -27,6 +27,11 @@ This section is the current source of truth for handoff. Historical sections bel
    - PR `#39`: PR workflow edge-case test expansion.
    - PR `#40`: provider runtime Slice 3 Anthropic API-key path.
    - PR `#41`: PR diff redaction/suppression guardrails.
+   - PR `#42`: spec snapshot refresh after `#38-#41`.
+   - PR `#44`: preload/runtime UAT fix for missing bridge channel wiring.
+   - PR `#45`: local git lifecycle fix so initialized repos are actionable in Changes view.
+   - PR `#46`: Electron Playwright smoke runner foundation.
+   - PR `#47`: UAT codified as Electron Playwright E2E with CI split (`CI Quality Gates` smoke + standalone `Electron E2E Full`).
 2. Coordination worktree baseline is clean and synced to `origin/main`.
 3. Branch strategy remains enforced:
    - Start each new task branch from updated `origin/main`.
@@ -45,23 +50,31 @@ This section is the current source of truth for handoff. Historical sections bel
 8. PR workflow edge-case coverage expansion is complete via PR `#39`.
 9. Provider runtime Slice 3 (Anthropic API-key execution path) is complete via PR `#40`.
 10. PR diff snippet redaction/suppression guardrails are complete via PR `#41`.
+11. UAT remediation/spec sync refresh is complete via PR `#42`.
+12. Preload bridge/runtime regression fix is complete via PR `#44`.
+13. Changes-view git-linking false-negative fix is complete via PR `#45`.
+14. Electron Playwright smoke harness setup is complete via PR `#46`.
+15. UAT-to-E2E codification + CI workflow separation is complete via PR `#47`.
 
 ### Active Tasks
 1. [Implement real model provider runtime and authentication](intent://local/task/dfb65dc8-1eb9-47f1-b95f-e22c99005ddb)
    - Status: `in_progress` (Slices 1, 2, and 3 merged).
-   - Next gate: Slice 4 OpenAI API-key runtime path.
+   - Next gates: Slice 4 (OpenAI API-key runtime path), Slice 5 (token-session mode/fallback), Slice 6 (renderer settings/status UX), Slice 7 (hardening + regression sweep).
 2. Spec/task hygiene
    - Status: `in_progress`.
    - Next gate: keep `notes/spec.md` top snapshot aligned after each merged PR and enforce context-first, repo-relative dispatch prompts.
-3. Full-cycle UAT for newly merged changes (`#38-#41`)
-   - Status: `ready`.
-   - Next gate: execute coordinated UAT and capture pass/fail + regressions.
+3. UAT and test codification track
+   - Status: `in_progress`.
+   - Current state: the latest UAT remediation cycle is complete and codified in Electron Playwright E2E (`#46`, `#47`).
+   - Next gate: continue codifying each new manual UAT scenario in the same PR (or linked immediate follow-up) as feature fixes land.
 
 ### Exact Next Steps
-1. Merge this spec/docs refresh PR to preserve current source-of-truth state.
-2. Run coordinated UAT cycle for merged PRs `#38-#41` (diff highlighting, PR workflow coverage/guardrails, Anthropic runtime path).
-3. Dispatch Provider Runtime Slice 4 (OpenAI API-key execution).
-4. After Slice 4 merges, dispatch Slice 5 (token-session mode/fallback), then Slice 6 (renderer settings/status UX), followed by full MVP sweep.
+1. Merge this spec refresh PR so `notes/spec.md` reflects the post-`#47` baseline.
+2. Dispatch Provider Runtime Slice 4 (OpenAI API-key execution path) from fresh `origin/main`.
+3. Dispatch Provider Runtime Slice 5 (token-session mode + deterministic fallback semantics).
+4. Dispatch Provider Runtime Slice 6 (renderer settings/status UX wiring and visibility).
+5. Dispatch Provider Runtime Slice 7 hardening pass (error polish, retries/timeouts, regression coverage).
+6. Run end-to-end MVP UAT sweep and codify any remaining manual-only flows into Electron Playwright tests.
 
 ### Next Steps After Open Tasks Complete
 1. Execute full E2E MVP verification: space creation, orchestrator run lifecycle, spec draft/apply, changes-tab diff/staging, PR creation flow, browser preview, context retrieval, provider runtime.
