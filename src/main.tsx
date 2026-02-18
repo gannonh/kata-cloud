@@ -22,10 +22,15 @@ import { toSpaceGitUiState } from "./git/space-git-ui-state";
 import { SpecNotePanel } from "./notes/spec-note-panel";
 import { loadSpecNote } from "./notes/store";
 import { buildDelegatedTaskTimeline } from "./shared/orchestrator-delegation";
+import { transitionOrchestratorRunStatus } from "./shared/orchestrator-run-lifecycle";
 import {
   getRunHistoryForActiveSession,
   getRunsForActiveSession
 } from "./shared/orchestrator-run-history";
+import {
+  projectOrchestratorRunHistory,
+  projectOrchestratorRunViewModel
+} from "./shared/orchestrator-run-view-model";
 import {
   createInitialBrowserNavigationState,
   DEFAULT_LOCAL_PREVIEW_URL,
@@ -116,15 +121,6 @@ function createOrchestratorRunId(): string {
   }
 
   return `run-${Date.now()}`;
-}
-
-function appendRunStatus(run: OrchestratorRunRecord, status: OrchestratorRunStatus): OrchestratorRunRecord {
-  const timeline = run.statusTimeline.includes(status) ? run.statusTimeline : [...run.statusTimeline, status];
-  return {
-    ...run,
-    status,
-    statusTimeline: timeline
-  };
 }
 
 function formatContextSnippetSection(snippets: ContextSnippet[]): string {
@@ -449,9 +445,17 @@ function App(): React.JSX.Element {
     () => runHistoryForActiveSession[0],
     [runHistoryForActiveSession]
   );
+  const latestRunViewModel = useMemo(
+    () => (latestRunForActiveSession ? projectOrchestratorRunViewModel(latestRunForActiveSession) : null),
+    [latestRunForActiveSession]
+  );
   const priorRunHistoryForActiveSession = useMemo(
     () => runHistoryForActiveSession.filter((run) => run.id !== latestRunForActiveSession?.id),
     [latestRunForActiveSession?.id, runHistoryForActiveSession]
+  );
+  const priorRunHistoryViewModels = useMemo(
+    () => projectOrchestratorRunHistory(priorRunHistoryForActiveSession),
+    [priorRunHistoryForActiveSession]
   );
   const latestDraftForActiveSession = latestRunForActiveSession?.draft;
 
@@ -870,7 +874,13 @@ function App(): React.JSX.Element {
     await persistState(queuedState);
 
     const runningAt = new Date().toISOString();
-    const runningRun = appendRunStatus(queuedRun, "running");
+    const runningTransition = transitionOrchestratorRunStatus(queuedRun, "running", runningAt);
+    if (!runningTransition.ok) {
+      console.error(runningTransition.reason);
+      return;
+    }
+
+    const runningRun = runningTransition.run;
     const runningState: AppState = {
       ...queuedState,
       orchestratorRuns: queuedState.orchestratorRuns.map((run) =>
@@ -908,7 +918,18 @@ function App(): React.JSX.Element {
       : buildDelegatedTaskTimeline(runId, prompt, endedAt);
     const failureMessage = delegationOutcome.failureMessage;
     const endedStatus: OrchestratorRunStatus = failureMessage ? "failed" : "completed";
-    const endedRun = appendRunStatus(runningRun, endedStatus);
+    const endedTransition = transitionOrchestratorRunStatus(
+      runningRun,
+      endedStatus,
+      endedAt,
+      failureMessage ?? undefined
+    );
+    if (!endedTransition.ok) {
+      console.error(endedTransition.reason);
+      return;
+    }
+
+    const endedRun = endedTransition.run;
     const draft = failureMessage ? undefined : createSpecDraft(endedRun, endedAt, contextSnippets);
     const endedState: AppState = {
       ...runningState,
@@ -1456,21 +1477,21 @@ function App(): React.JSX.Element {
             <div className="info-card">
               <h3>Status</h3>
               <p>
-                {latestRunForActiveSession
-                  ? `Run ${latestRunForActiveSession.id} is ${latestRunForActiveSession.status}.`
+                {latestRunViewModel
+                  ? `Run ${latestRunViewModel.id} is ${latestRunViewModel.status}.`
                   : "No orchestrator runs yet."}
               </p>
-              {latestRunForActiveSession ? (
+              {latestRunViewModel && latestRunForActiveSession ? (
                 <>
-                  <p>Prompt: {latestRunForActiveSession.prompt}</p>
-                  <p>Lifecycle: {latestRunForActiveSession.statusTimeline.join(" -> ")}</p>
-                  {latestRunForActiveSession.delegatedTasks ? (
+                  <p>Prompt: {latestRunViewModel.prompt}</p>
+                  <p>Lifecycle: {latestRunViewModel.lifecycleText}</p>
+                  {latestRunViewModel.delegatedTasks.length > 0 ? (
                     <div>
                       <p>Delegated tasks</p>
                       <ul>
-                        {latestRunForActiveSession.delegatedTasks.map((task) => (
+                        {latestRunViewModel.delegatedTasks.map((task) => (
                           <li key={task.id}>
-                            {task.type} ({task.specialist}): {task.status} [{task.statusTimeline.join(" -> ")}]
+                            {task.type} ({task.specialist}): {task.status} [{task.lifecycleText}]
                             {task.errorMessage ? (
                               <>
                                 {" "}
@@ -1488,8 +1509,8 @@ function App(): React.JSX.Element {
                   {latestRunForActiveSession.draftAppliedAt ? (
                     <p>Draft applied at {new Date(latestRunForActiveSession.draftAppliedAt).toLocaleString()}</p>
                   ) : null}
-                  {latestRunForActiveSession.errorMessage ? (
-                    <p className="field-error">{latestRunForActiveSession.errorMessage}</p>
+                  {latestRunViewModel.errorMessage ? (
+                    <p className="field-error">{latestRunViewModel.errorMessage}</p>
                   ) : null}
                   {latestRunForActiveSession.draftApplyError ? (
                     <p className="field-error">{latestRunForActiveSession.draftApplyError}</p>
@@ -1503,25 +1524,24 @@ function App(): React.JSX.Element {
                 <p>{latestRunForActiveSession.id}</p>
               </div>
             ) : null}
-            {priorRunHistoryForActiveSession.length > 0 ? (
+            {priorRunHistoryViewModels.length > 0 ? (
               <div className="info-card">
                 <h3>Run History</h3>
                 <ul>
-                  {priorRunHistoryForActiveSession.map((run) => (
+                  {priorRunHistoryViewModels.map((run) => (
                     <li key={run.id}>
                       <p>
                         <strong>{run.id}</strong> - {run.status}
                       </p>
                       <p>Prompt: {run.prompt}</p>
-                      <p>Lifecycle: {run.statusTimeline.join(" -> ")}</p>
-                      {run.delegatedTasks && run.delegatedTasks.length > 0 ? (
+                      <p>Lifecycle: {run.lifecycleText}</p>
+                      {run.delegatedTasks.length > 0 ? (
                         <div>
                           <p>Delegated tasks</p>
                           <ul>
                             {run.delegatedTasks.map((task) => (
                               <li key={task.id}>
-                                {task.type} ({task.specialist}): {task.status} [
-                                {task.statusTimeline.join(" -> ")}]
+                                {task.type} ({task.specialist}): {task.status} [{task.lifecycleText}]
                                 {task.errorMessage ? (
                                   <>
                                     {" "}

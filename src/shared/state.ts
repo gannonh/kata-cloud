@@ -263,14 +263,17 @@ function isOrchestratorRunRecord(value: unknown): value is OrchestratorRunRecord
     return false;
   }
 
-  const runStatusIsValid = isOrchestratorRunStatus(value.status);
+  let runStatus: OrchestratorRunStatus | null = null;
+  if (isOrchestratorRunStatus(value.status)) {
+    runStatus = value.status;
+  }
   const statusTimelineIsValid =
     Array.isArray(value.statusTimeline) &&
     value.statusTimeline.length > 0 &&
     value.statusTimeline.every(isOrchestratorRunStatus) &&
-    runStatusIsValid &&
-    hasValidRunTimeline(value.statusTimeline, value.status);
-  const terminalStatus = runStatusIsValid && (value.status === "completed" || value.status === "failed");
+    runStatus !== null &&
+    hasValidRunTimeline(value.statusTimeline, runStatus);
+  const terminalStatus = runStatus === "completed" || runStatus === "failed";
   const completedAtIsValid =
     terminalStatus ? isString(value.completedAt) : value.completedAt === undefined || isString(value.completedAt);
   const errorMessageIsValid = value.errorMessage === undefined || isString(value.errorMessage);
