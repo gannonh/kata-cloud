@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "generated_at": "2026-02-18T00:00:00.000Z",
+  "style": {
+    "indent": 2,
+    "quotes": "double",
+    "semicolons": true,
+    "typescript_strict": true
+  },
+  "naming": {
+    "files": "kebab-case",
+    "functions": "camelCase",
+    "types": "PascalCase",
+    "constants": "UPPER_SNAKE_CASE",
+    "node_tests_suffix": ".node.test.ts"
+  },
+  "testing": {
+    "runner": "vitest",
+    "ui_env": "jsdom",
+    "coverage_thresholds": {
+      "statements": 80,
+      "branches": 70,
+      "functions": 80,
+      "lines": 80
+    }
+  }
+}

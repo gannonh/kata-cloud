@@ -1,0 +1,71 @@
+{
+  "version": 2,
+  "generated_at": "2026-02-18T00:00:00.000Z",
+  "project": {
+    "name": "kata-cloud",
+    "type": "electron-desktop-app"
+  },
+  "files": {
+    "src/main/index.ts": {
+      "purpose": "Electron main bootstrap and IPC registration",
+      "layer": "main",
+      "exports": []
+    },
+    "src/preload/index.ts": {
+      "purpose": "Expose typed shell API through contextBridge",
+      "layer": "preload",
+      "exports": [
+        "PRELOAD_IPC_CHANNELS"
+      ]
+    },
+    "src/main.tsx": {
+      "purpose": "Renderer root UI and workflow orchestration",
+      "layer": "renderer",
+      "exports": []
+    },
+    "src/shared/state.ts": {
+      "purpose": "AppState contract and normalization",
+      "layer": "shared",
+      "exports": [
+        "APP_STATE_VERSION",
+        "createInitialAppState",
+        "normalizeAppState"
+      ]
+    },
+    "src/shared/shell-api.ts": {
+      "purpose": "IPC channels and ShellApi interface",
+      "layer": "shared",
+      "exports": [
+        "IPC_CHANNELS"
+      ]
+    },
+    "src/git/space-git-service.ts": {
+      "purpose": "Worktree/branch lifecycle and changes snapshots",
+      "layer": "domain",
+      "exports": [
+        "SpaceGitLifecycleService"
+      ]
+    },
+    "src/git/pr-workflow.ts": {
+      "purpose": "GitHub session, draft generation, and pull request creation",
+      "layer": "domain",
+      "exports": [
+        "PullRequestWorkflowService"
+      ]
+    },
+    "src/main/provider-runtime/service.ts": {
+      "purpose": "Provider runtime orchestration",
+      "layer": "main",
+      "exports": [
+        "ProviderRuntimeService"
+      ]
+    },
+    "packages/task-parser/src/task-block-parser.js": {
+      "purpose": "Parse task blocks from markdown",
+      "layer": "package",
+      "exports": [
+        "parseTaskBlocks"
+      ]
+    }
+  }
+}
