@@ -7,6 +7,11 @@ describe("classifyDiffLine", () => {
     expect(classifyDiffLine("index 123..456 100644")).toBe("meta");
     expect(classifyDiffLine("--- a/src/app.ts")).toBe("meta");
     expect(classifyDiffLine("+++ b/src/app.ts")).toBe("meta");
+    expect(classifyDiffLine("rename from src/old.ts")).toBe("meta");
+    expect(classifyDiffLine("rename to src/new.ts")).toBe("meta");
+    expect(classifyDiffLine("new file mode 100644")).toBe("meta");
+    expect(classifyDiffLine("deleted file mode 100644")).toBe("meta");
+    expect(classifyDiffLine("Binary files a/x.png and b/x.png differ")).toBe("meta");
     expect(classifyDiffLine("@@ -1,2 +1,3 @@")).toBe("hunk");
     expect(classifyDiffLine("+const next = true;")).toBe("add");
     expect(classifyDiffLine("-const next = false;")).toBe("remove");
@@ -19,6 +24,13 @@ describe("classifyDiffLine", () => {
 });
 
 describe("highlightDiff", () => {
+  it("returns plain mode for an empty diff", () => {
+    expect(highlightDiff("")).toEqual({
+      mode: "plain",
+      text: ""
+    });
+  });
+
   it("returns highlighted line entries for small diffs", () => {
     const result = highlightDiff(
       [
@@ -50,6 +62,13 @@ describe("highlightDiff", () => {
     expect(result).toEqual({
       mode: "plain",
       text: "line-1\nline-2\nline-3"
+    });
+  });
+
+  it("falls back to plain mode when maxHighlightLines is less than 1", () => {
+    expect(highlightDiff("+line", 0)).toEqual({
+      mode: "plain",
+      text: "+line"
     });
   });
 

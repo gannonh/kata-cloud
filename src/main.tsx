@@ -17,7 +17,7 @@ import {
   isUnstagedFileChange,
   toGitStatusLabel
 } from "./git/changes";
-import { highlightDiff } from "./git/changes-diff-highlighting";
+import { DiffText } from "./git/changes-diff-text";
 import { toSpaceGitUiState } from "./git/space-git-ui-state";
 import { SpecNotePanel } from "./notes/spec-note-panel";
 import { loadSpecNote } from "./notes/store";
@@ -218,28 +218,6 @@ function toChangePathLabel(change: SpaceGitChangeFile): string {
   }
 
   return `${change.previousPath} -> ${change.path}`;
-}
-
-function DiffText({ value }: { value: string }): React.JSX.Element {
-  const highlightedDiff = useMemo(() => highlightDiff(value), [value]);
-
-  if (highlightedDiff.mode === "plain") {
-    return <pre className="changes-diff__code">{highlightedDiff.text}</pre>;
-  }
-
-  return (
-    <pre className="changes-diff__code">
-      {highlightedDiff.lines.map((line, index) => (
-        <span
-          key={`${line.kind}:${index}`}
-          className={`changes-diff__line changes-diff__line--${line.kind}`}
-        >
-          {line.text}
-          {index < highlightedDiff.lines.length - 1 ? "\n" : null}
-        </span>
-      ))}
-    </pre>
-  );
 }
 
 function App(): React.JSX.Element {
