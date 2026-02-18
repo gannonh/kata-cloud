@@ -1,20 +1,23 @@
-# Roadmap
+# Roadmap: Kata Cloud
 
-Current Milestone: v1.0 Desktop MVP Closure
+## Overview
 
-## Milestone Overview
+Milestone execution is tracked as globally ordered phases.
+Current focus is closing the desktop MVP and preparing the next milestone.
 
-- 🔄 v1.0 Desktop MVP Closure (in progress)
-- ○ v1.1 Orchestrator and Context Engine Expansion (planned)
+## Milestones
 
-## Progress Summary
+- 🔄 **v1.0 Desktop MVP Closure** — Phases 1-4 (in progress)
+- ○ **v1.1 Orchestrator and Context Engine Expansion** — Phases TBD (planned)
 
-| Milestone | Status | Phases | Requirements | Notes |
-|-----------|--------|--------|--------------|-------|
-| v1.0 Desktop MVP Closure | In Progress | 4 | 15 | Slice 6/7 + MVP verification + release handoff |
-| v1.1 Orchestrator and Context Engine Expansion | Planned | — | — | Draft placeholder only |
+## Current Milestone: v1.0 Desktop MVP Closure
 
-## v1.0 Desktop MVP Closure
+**Goal:** Complete provider runtime UX/hardening and finalize MVP validation plus release handoff.
+
+- [ ] Phase 1: Provider Runtime UX Wiring (Slice 6)
+- [ ] Phase 2: Provider Runtime Hardening (Slice 7)
+- [ ] Phase 3: MVP Verification and UAT Codification
+- [ ] Phase 4: Release Readiness and Handoff
 
 ### Phase 1: Provider Runtime UX Wiring (Slice 6)
 
@@ -63,5 +66,17 @@ Success Criteria (what must be TRUE):
   2. Deferred backlog is prioritized for post-v1 execution with rationale.
   3. Spec/task records are synchronized to final milestone outcomes and deferred scope boundaries.
 
+## Planned Milestones
+
+### ○ v1.1 Orchestrator and Context Engine Expansion
+
+**Goal:** Expand orchestration and context primitives beyond MVP closure.
+
+**Target features:**
+- Orchestrator intelligence improvements
+- Deeper context engine capabilities
+- Workflow expansion beyond MVP baseline
+
 ---
-Last updated: 2026-02-18 after milestone initialization
+*Roadmap created: 2026-02-18*
+*Last updated: 2026-02-18 — migrated ROADMAP.md to current format*
