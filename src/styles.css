@@ -330,6 +330,11 @@ body {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) minmax(320px, 1.4fr);
   gap: 0.75rem;
+  min-height: 0;
+  --changes-file-list-max-height: clamp(14rem, 42vh, 38rem);
+  --changes-file-list-max-height-dvh: clamp(14rem, 42dvh, 38rem);
+  --changes-diff-max-height: clamp(15rem, 48vh, 42rem);
+  --changes-diff-max-height-dvh: clamp(15rem, 48dvh, 42rem);
 }
 
 .changes-files,
@@ -360,7 +365,8 @@ body {
   list-style: none;
   display: grid;
   gap: 0.55rem;
-  max-height: 360px;
+  max-height: var(--changes-file-list-max-height);
+  max-height: var(--changes-file-list-max-height-dvh);
   overflow: auto;
 }
 
@@ -433,7 +439,8 @@ body {
   margin: 0.5rem 0 0;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-  max-height: 380px;
+  max-height: var(--changes-diff-max-height);
+  max-height: var(--changes-diff-max-height-dvh);
   overflow: auto;
   font-size: 0.75rem;
   line-height: 1.4;
@@ -671,5 +678,9 @@ body {
 
   .changes-layout {
     grid-template-columns: 1fr;
+    --changes-file-list-max-height: clamp(10rem, 34vh, 22rem);
+    --changes-file-list-max-height-dvh: clamp(10rem, 34dvh, 22rem);
+    --changes-diff-max-height: clamp(12rem, 40vh, 26rem);
+    --changes-diff-max-height-dvh: clamp(12rem, 40dvh, 26rem);
   }
 }
