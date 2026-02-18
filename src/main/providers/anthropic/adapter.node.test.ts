@@ -52,7 +52,7 @@ describe("AnthropicProviderAdapter", () => {
     });
   });
 
-  it("returns invalid_auth when token session is requested and fallback is disabled", async () => {
+  it("returns invalid_auth when token session is requested but unsupported and fallback is disabled", async () => {
     const client = createClient();
     const adapter = new AnthropicProviderAdapter(client);
 

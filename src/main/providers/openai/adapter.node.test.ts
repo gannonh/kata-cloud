@@ -71,7 +71,7 @@ describe("OpenAiProviderAdapter", () => {
     } satisfies Partial<ProviderRuntimeError>);
   });
 
-  it("returns invalid_auth when token_session is requested and fallback is disabled", async () => {
+  it("returns invalid_auth when token_session is requested but unsupported and fallback is disabled", async () => {
     const client = createClient();
     const adapter = new OpenAiProviderAdapter(client);
 
