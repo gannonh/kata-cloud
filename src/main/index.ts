@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
 import { AppState } from "../shared/state";
 import { IPC_CHANNELS } from "../shared/shell-api";
+import type { ProviderStatusRequest, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest } from "../shared/shell-api";
 import { PersistedStateStore } from "./persisted-state-store";
 import { SpaceGitLifecycleService } from "../git/space-git-service";
 import { PullRequestWorkflowService } from "../git/pr-workflow";
@@ -21,7 +22,6 @@ import type { ContextRetrievalRequest } from "../context/types";
 import { createProviderRuntimeRegistry } from "./provider-runtime/registry";
 import { ProviderRuntimeService } from "./provider-runtime/service";
 import { ProviderRuntimeError } from "./provider-runtime/errors";
-import type { ModelProviderId, ProviderAuthInput } from "./provider-runtime/types";
 
 let stateStore: PersistedStateStore | undefined;
 
@@ -184,42 +184,31 @@ function registerStateHandlers(
   );
   ipcMain.handle(
     IPC_CHANNELS.providerResolveAuth,
-    (_event, request: { providerId: ModelProviderId; auth: ProviderAuthInput }) => {
+    async (_event, request: ProviderStatusRequest) => {
       try {
         return providerService.resolveAuth(request);
       } catch (error) {
-        serializeProviderError(error);
+        throw serializeProviderError(error);
       }
     }
   );
   ipcMain.handle(
     IPC_CHANNELS.providerListModels,
-    async (_event, request: { providerId: ModelProviderId; auth: ProviderAuthInput }) => {
+    async (_event, request: ProviderListModelsIpcRequest) => {
       try {
         return await providerService.listModels(request);
       } catch (error) {
-        serializeProviderError(error);
+        throw serializeProviderError(error);
       }
     }
   );
   ipcMain.handle(
     IPC_CHANNELS.providerExecute,
-    async (
-      _event,
-      request: {
-        providerId: ModelProviderId;
-        auth: ProviderAuthInput;
-        model: string;
-        prompt: string;
-        systemPrompt?: string;
-        maxTokens?: number;
-        temperature?: number;
-      }
-    ) => {
+    async (_event, request: ProviderExecuteIpcRequest) => {
       try {
         return await providerService.execute(request);
       } catch (error) {
-        serializeProviderError(error);
+        throw serializeProviderError(error);
       }
     }
   );
@@ -233,6 +222,7 @@ async function bootstrap(): Promise<void> {
   });
   const gitLifecycleService = new SpaceGitLifecycleService();
   const pullRequestWorkflowService = new PullRequestWorkflowService();
+  // Empty registry in Slice 2; adapters (Anthropic, OpenAI) registered in later slices.
   const providerRegistry = createProviderRuntimeRegistry();
   const providerService = new ProviderRuntimeService(providerRegistry);
   await stateStore.initialize();
