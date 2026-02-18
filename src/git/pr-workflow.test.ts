@@ -120,7 +120,9 @@ describe("PullRequestWorkflowService", () => {
 
     expect(draft.title.length).toBeLessThanOrEqual(72);
     expect(draft.title).toContain("feat: ");
-    expect(draft.title).not.toMatch(/[\[\]()`]/);
+    for (const disallowedChar of ["[", "]", "(", ")", "`"]) {
+      expect(draft.title).not.toContain(disallowedChar);
+    }
     expect(draft.body).toContain("- [ ] checklist item");
     expect(draft.body).toContain("- second bullet");
     expect(draft.body).toContain("- third bullet");
