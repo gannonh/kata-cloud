@@ -3,7 +3,7 @@ import { ProviderRuntimeError } from "../../provider-runtime/errors";
 import { AnthropicProviderAdapter, type AnthropicProviderClient } from "./adapter";
 
 describe("AnthropicProviderAdapter", () => {
-  it("falls back to API key mode when token sessions are requested in slice 3", async () => {
+  it("falls back to api_key when token session is requested and provider does not support token sessions", async () => {
     const client = createClient();
     client.execute.mockResolvedValue({ text: "hello from anthropic" });
     const adapter = new AnthropicProviderAdapter(client);
@@ -131,6 +131,50 @@ describe("AnthropicProviderAdapter", () => {
       { id: "claude-3-5-sonnet", displayName: "Claude 3.5 Sonnet" },
       { id: "claude-3-haiku", displayName: "claude-3-haiku" }
     ]);
+  });
+
+  it("falls back to api_key when token session is expired and api key is available", async () => {
+    const client = createClient();
+    client.execute.mockResolvedValue({ text: "hello from anthropic" });
+    const adapter = new AnthropicProviderAdapter(client);
+
+    const result = await adapter.execute({
+      auth: {
+        preferredMode: "token_session",
+        tokenSession: { id: "expired-session", status: "expired" },
+        apiKey: "sk-ant"
+      },
+      model: "claude-3-5-sonnet",
+      prompt: "Say hello"
+    });
+
+    expect(result.authMode).toBe("api_key");
+    expect(client.execute.mock.calls[0]?.[0].auth).toEqual({
+      authMode: "api_key",
+      apiKey: "sk-ant",
+      tokenSessionId: undefined
+    });
+  });
+
+  it("returns missing_auth when token session is expired and no api key is available", async () => {
+    const client = createClient();
+    const adapter = new AnthropicProviderAdapter(client);
+
+    await expect(
+      adapter.execute({
+        auth: {
+          preferredMode: "token_session",
+          tokenSession: { id: "expired-session", status: "expired" }
+        },
+        model: "claude-3-5-sonnet",
+        prompt: "Say hello"
+      })
+    ).rejects.toMatchObject({
+      name: "ProviderRuntimeError",
+      code: "missing_auth",
+      providerId: "anthropic"
+    } satisfies Partial<ProviderRuntimeError>);
+    expect(client.execute).not.toHaveBeenCalled();
   });
 
   it("enforces missing_auth in listModels when API key mode is requested without a key", async () => {

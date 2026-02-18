@@ -27,6 +27,29 @@ describe("OpenAiProviderAdapter", () => {
     });
   });
 
+  it("falls back to api_key when token session is expired and api key is available", async () => {
+    const client = createClient();
+    client.execute.mockResolvedValue({ text: "openai says hi" });
+    const adapter = new OpenAiProviderAdapter(client);
+
+    const result = await adapter.execute({
+      auth: {
+        preferredMode: "token_session",
+        tokenSession: { id: "expired-session", status: "expired" },
+        apiKey: "sk-openai"
+      },
+      model: "gpt-4.1",
+      prompt: "Say hi"
+    });
+
+    expect(result.authMode).toBe("api_key");
+    expect(client.execute.mock.calls[0]?.[0].auth).toEqual({
+      authMode: "api_key",
+      apiKey: "sk-openai",
+      tokenSessionId: undefined
+    });
+  });
+
   it("maps upstream rate limit failures to rate_limited", async () => {
     const client = createClient();
     client.execute.mockRejectedValue(new Error("429 rate limit exceeded"));

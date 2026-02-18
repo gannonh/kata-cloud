@@ -55,6 +55,40 @@ function createMockAdapterWithAuthCheck(providerId: ModelProviderId): ProviderRu
   };
 }
 
+function createTokenSessionAdapter(providerId: ModelProviderId): ProviderRuntimeAdapter {
+  return {
+    ...createMockAdapter(providerId),
+    capabilities: { supportsApiKey: true, supportsTokenSession: true, supportsModelListing: true },
+    resolveAuth: (): ProviderAuthResolution => ({
+      requestedMode: "token_session",
+      resolvedMode: "token_session",
+      status: "authenticated",
+      fallbackApplied: false,
+      failureCode: null,
+      reason: null,
+      apiKey: null,
+      tokenSessionId: "session-abc"
+    })
+  };
+}
+
+function createSessionExpiredAdapter(providerId: ModelProviderId): ProviderRuntimeAdapter {
+  return {
+    ...createMockAdapter(providerId),
+    capabilities: { supportsApiKey: true, supportsTokenSession: true, supportsModelListing: true },
+    resolveAuth: (): ProviderAuthResolution => ({
+      requestedMode: "token_session",
+      resolvedMode: null,
+      status: "error",
+      fallbackApplied: false,
+      failureCode: "session_expired",
+      reason: `${providerId} token session expired and no API key fallback is configured.`,
+      apiKey: null,
+      tokenSessionId: null
+    })
+  };
+}
+
 describe("ProviderRuntimeService.resolveAuth", () => {
   it("returns authenticated status when adapter is registered and auth is valid", () => {
     const registry = createProviderRuntimeRegistry([createMockAdapter("anthropic")]);
@@ -96,6 +130,35 @@ describe("ProviderRuntimeService.resolveAuth", () => {
 
     expect(thrownError).toBeInstanceOf(ProviderRuntimeError);
     expect((thrownError as ProviderRuntimeError).code).toBe("provider_unavailable");
+  });
+
+  it("passes through token_session resolved mode when adapter resolves token session", () => {
+    const registry = createProviderRuntimeRegistry([createTokenSessionAdapter("anthropic")]);
+    const service = new ProviderRuntimeService(registry);
+
+    const result = service.resolveAuth({
+      providerId: "anthropic",
+      auth: { preferredMode: "token_session", tokenSession: { id: "session-abc", status: "active" } }
+    });
+
+    expect(result.status).toBe("authenticated");
+    expect(result.resolvedMode).toBe("token_session");
+    expect(result.fallbackApplied).toBe(false);
+  });
+
+  it("passes through session_expired failure code when adapter resolves session_expired", () => {
+    const registry = createProviderRuntimeRegistry([createSessionExpiredAdapter("anthropic")]);
+    const service = new ProviderRuntimeService(registry);
+
+    const result = service.resolveAuth({
+      providerId: "anthropic",
+      auth: { preferredMode: "token_session", tokenSession: { id: "expired-session", status: "expired" } }
+    });
+
+    expect(result.status).toBe("error");
+    if (result.status === "error") {
+      expect(result.failureCode).toBe("session_expired");
+    }
   });
 });
 
