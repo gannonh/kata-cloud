@@ -17,6 +17,7 @@ import {
   isUnstagedFileChange,
   toGitStatusLabel
 } from "./git/changes";
+import { DiffText } from "./git/changes-diff-text";
 import { toSpaceGitUiState } from "./git/space-git-ui-state";
 import { SpecNotePanel } from "./notes/spec-note-panel";
 import { loadSpecNote } from "./notes/store";
@@ -1880,17 +1881,15 @@ function App(): React.JSX.Element {
                             {isStagedFileChange(selectedChange) ? (
                               <article className="changes-diff__panel">
                                 <h4>Staged</h4>
-                                <pre>
-                                  {selectedFileDiff?.stagedDiff ?? "No staged diff for this file."}
-                                </pre>
+                                <DiffText value={selectedFileDiff?.stagedDiff ?? "No staged diff for this file."} />
                               </article>
                             ) : null}
                             {isUnstagedFileChange(selectedChange) ? (
                               <article className="changes-diff__panel">
                                 <h4>Unstaged</h4>
-                                <pre>
-                                  {selectedFileDiff?.unstagedDiff ?? "No unstaged diff for this file."}
-                                </pre>
+                                <DiffText
+                                  value={selectedFileDiff?.unstagedDiff ?? "No unstaged diff for this file."}
+                                />
                               </article>
                             ) : null}
                           </>
