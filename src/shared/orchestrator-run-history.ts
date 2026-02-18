@@ -13,7 +13,15 @@ export function getRunsForActiveSession(
 export function getRunHistoryForActiveSession(
   runsForActiveSession: OrchestratorRunRecord[]
 ): OrchestratorRunRecord[] {
-  return [...runsForActiveSession].sort((leftRun, rightRun) =>
-    rightRun.updatedAt < leftRun.updatedAt ? -1 : rightRun.updatedAt > leftRun.updatedAt ? 1 : 0
-  );
+  return [...runsForActiveSession].sort((leftRun, rightRun) => {
+    if (rightRun.updatedAt !== leftRun.updatedAt) {
+      return rightRun.updatedAt < leftRun.updatedAt ? -1 : 1;
+    }
+
+    if (rightRun.createdAt !== leftRun.createdAt) {
+      return rightRun.createdAt < leftRun.createdAt ? -1 : 1;
+    }
+
+    return rightRun.id.localeCompare(leftRun.id);
+  });
 }
