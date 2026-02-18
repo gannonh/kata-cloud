@@ -3,7 +3,7 @@ import { ProviderRuntimeError } from "../../provider-runtime/errors";
 import { AnthropicProviderAdapter, type AnthropicProviderClient } from "./adapter";
 
 describe("AnthropicProviderAdapter", () => {
-  it("falls back to API key mode when token session mode is requested without an active session", async () => {
+  it("falls back to API key mode when token sessions are requested in slice 3", async () => {
     const client = createClient();
     client.execute.mockResolvedValue({ text: "hello from anthropic" });
     const adapter = new AnthropicProviderAdapter(client);
@@ -11,7 +11,7 @@ describe("AnthropicProviderAdapter", () => {
     const result = await adapter.execute({
       auth: {
         preferredMode: "token_session",
-        tokenSession: null,
+        tokenSession: { id: "session-1", status: "active" },
         apiKey: "sk-ant"
       },
       model: "claude-3-5-sonnet",
@@ -25,6 +25,27 @@ describe("AnthropicProviderAdapter", () => {
       apiKey: "sk-ant",
       tokenSessionId: undefined
     });
+  });
+
+  it("returns missing_auth when token session mode is requested without API key fallback", async () => {
+    const client = createClient();
+    const adapter = new AnthropicProviderAdapter(client);
+
+    await expect(
+      adapter.execute({
+        auth: {
+          preferredMode: "token_session",
+          tokenSession: { id: "session-1", status: "active" }
+        },
+        model: "claude-3-5-sonnet",
+        prompt: "Say hello"
+      })
+    ).rejects.toMatchObject({
+      name: "ProviderRuntimeError",
+      code: "missing_auth",
+      providerId: "anthropic"
+    } satisfies Partial<ProviderRuntimeError>);
+    expect(client.execute).not.toHaveBeenCalled();
   });
 
   it("enforces missing_auth in explicit api_key mode without a key", async () => {
@@ -43,6 +64,34 @@ describe("AnthropicProviderAdapter", () => {
     ).rejects.toMatchObject({
       name: "ProviderRuntimeError",
       code: "missing_auth",
+      providerId: "anthropic"
+    } satisfies Partial<ProviderRuntimeError>);
+    expect(client.execute).not.toHaveBeenCalled();
+  });
+
+  it("throws unexpected_error when auth resolution is inconsistent", async () => {
+    const client = createClient();
+    const adapter = new AnthropicProviderAdapter(client);
+    vi.spyOn(adapter, "resolveAuth").mockReturnValue({
+      requestedMode: "api_key",
+      resolvedMode: null,
+      status: "authenticated",
+      fallbackApplied: false,
+      failureCode: null,
+      reason: null,
+      apiKey: "sk-ant",
+      tokenSessionId: null
+    });
+
+    await expect(
+      adapter.execute({
+        auth: { preferredMode: "api_key", apiKey: "sk-ant" },
+        model: "claude-3-5-sonnet",
+        prompt: "Say hello"
+      })
+    ).rejects.toMatchObject({
+      name: "ProviderRuntimeError",
+      code: "unexpected_error",
       providerId: "anthropic"
     } satisfies Partial<ProviderRuntimeError>);
     expect(client.execute).not.toHaveBeenCalled();

@@ -42,6 +42,18 @@ type ServiceOptions = {
 };
 
 const GITHUB_API_BASE_URL = "https://api.github.com";
+const DIFF_PREVIEW_MAX_LINES = 80;
+const DIFF_PREVIEW_MAX_CHARS = 3000;
+const REDACTED_VALUE = "[REDACTED]";
+const SUPPRESSED_DIFF_PREVIEW_MESSAGE = "[diff preview suppressed: sensitive file path]";
+const SENSITIVE_DIFF_FILE_PATH_PATTERNS = [
+  /(^|\/)\.env(\.|$)/i,
+  /(^|\/)\.npmrc$/i,
+  /(^|\/)\.aws\/credentials$/i,
+  /(^|\/)id_(?:rsa|dsa|ed25519)$/i,
+  /\.(?:pem|p12|pfx|key|jks)$/i,
+  /(^|\/)(?:secret|secrets|credential|credentials)(?:\/|\.|$)/i
+];
 
 export const PR_WORKFLOW_ERROR_CODES = {
   AUTH_REQUIRED: "AUTH_REQUIRED",
@@ -193,15 +205,94 @@ function formatChangedFiles(paths: string[]): string {
   return paths.map((filePath) => `- \`${filePath}\``).join("\n");
 }
 
+type DiffPreviewSection = {
+  filePath: string | null;
+  content: string;
+};
+
+function parseDiffPreviewSections(stagedDiff: string): DiffPreviewSection[] {
+  const lines = stagedDiff.split("\n");
+  const sections: DiffPreviewSection[] = [];
+  let currentLines: string[] = [];
+  let currentFilePath: string | null = null;
+
+  const pushSection = (): void => {
+    if (currentLines.length === 0) {
+      return;
+    }
+    sections.push({
+      filePath: currentFilePath,
+      content: currentLines.join("\n")
+    });
+    currentLines = [];
+    currentFilePath = null;
+  };
+
+  for (const line of lines) {
+    if (line.startsWith("diff --git ")) {
+      pushSection();
+      currentLines = [line];
+      currentFilePath = extractDiffSectionFilePath(line);
+      continue;
+    }
+
+    currentLines.push(line);
+  }
+
+  pushSection();
+  return sections;
+}
+
+function extractDiffSectionFilePath(headerLine: string): string | null {
+  const match = headerLine.match(/^diff --git (?:"a\/(.+?)"|a\/(.+?)) (?:"b\/(.+?)"|b\/(.+?))$/);
+  if (!match) {
+    return null;
+  }
+
+  return (match[3] ?? match[4] ?? match[1] ?? match[2] ?? "").trim() || null;
+}
+
+function isSensitiveDiffFilePath(filePath: string): boolean {
+  return SENSITIVE_DIFF_FILE_PATH_PATTERNS.some((pattern) => pattern.test(filePath));
+}
+
+function redactSensitiveDiffValues(content: string): string {
+  let redacted = content;
+  redacted = redacted.replace(
+    /(gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,})/g,
+    REDACTED_VALUE
+  );
+  redacted = redacted.replace(/\bAKIA[0-9A-Z]{16}\b/g, REDACTED_VALUE);
+  redacted = redacted.replace(
+    /((?:["']?(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|private[_-]?key)["']?\s*[:=]\s*))(["'`]?)([^"'`\s,]+)(\2)/gi,
+    (_match, prefix: string, quote: string) => `${prefix}${quote}${REDACTED_VALUE}${quote}`
+  );
+  return redacted;
+}
+
+function sanitizeDiffPreview(stagedDiff: string): string {
+  const sections = parseDiffPreviewSections(stagedDiff);
+  return sections
+    .map((section) => {
+      if (section.filePath && isSensitiveDiffFilePath(section.filePath)) {
+        const header = section.content.split("\n", 1)[0] ?? `diff --git a/${section.filePath} b/${section.filePath}`;
+        return `${header}\n${SUPPRESSED_DIFF_PREVIEW_MESSAGE}`;
+      }
+      return redactSensitiveDiffValues(section.content);
+    })
+    .join("\n");
+}
+
 function selectDiffPreview(stagedDiff: string): string {
   const trimmed = stagedDiff.trim();
   if (trimmed.length === 0) {
     return "No staged diff content available.";
   }
 
-  const lines = trimmed.split("\n").slice(0, 80);
+  const sanitized = sanitizeDiffPreview(trimmed);
+  const lines = sanitized.split("\n").slice(0, DIFF_PREVIEW_MAX_LINES);
   const preview = lines.join("\n");
-  return preview.length <= 3000 ? preview : preview.slice(0, 3000);
+  return truncate(preview, DIFF_PREVIEW_MAX_CHARS);
 }
 
 function buildSuggestedBody(input: {

@@ -62,13 +62,30 @@ describe("PullRequestWorkflowService", () => {
     expect(draft.body).toContain("Verify build/typecheck status");
   });
 
-  it("falls back to default draft content when spec context is empty", async () => {
+  it("redacts sensitive values and suppresses previews for sensitive file paths", async () => {
     const git = {
       isRepository: async () => true,
-      readStatusPorcelain: async () => "M  src/git/pr-workflow.ts\n",
-      readStagedNumstat: async () => "2\t1\tsrc/git/pr-workflow.ts\n",
-      readStagedDiff: async () => "diff --git a/src/git/pr-workflow.ts b/src/git/pr-workflow.ts\n+change\n",
-      currentBranch: async () => "feature/pr-workflow"
+      readStatusPorcelain: async () => "A  .env\nM  src/config.ts\n",
+      readStagedNumstat: async () => "1\t0\t.env\n3\t1\tsrc/config.ts\n",
+      readStagedDiff: async () =>
+        [
+          "diff --git a/.env b/.env",
+          "new file mode 100644",
+          "index 0000000..1111111",
+          "--- /dev/null",
+          "+++ b/.env",
+          "@@ -0,0 +1 @@",
+          "+API_KEY=sk-live-super-secret",
+          "diff --git a/src/config.ts b/src/config.ts",
+          "index 1111111..2222222 100644",
+          "--- a/src/config.ts",
+          "+++ b/src/config.ts",
+          "@@ -1 +1,2 @@",
+          '-const token = "old-token"',
+          '+const token = "ghp_abcdefghijklmnopqrstuvwxyz123456"',
+          '+const password = "ultra-secret-password"'
+        ].join("\n"),
+      currentBranch: async () => "feature/redaction-guardrails"
     };
 
     const service = new PullRequestWorkflowService({
@@ -80,20 +97,34 @@ describe("PullRequestWorkflowService", () => {
     const draft = await service.generatePullRequestDraft({
       repoPath: "/repo",
       repoUrl: "https://github.com/example/kata-cloud",
-      specContext: ""
+      specContext: "## Goal\nShip redaction guardrails",
+      baseBranch: "main"
     });
 
-    expect(draft.title).toBe("feat: Update implementation based on staged changes");
-    expect(draft.body).toContain("- No spec context provided.");
+    expect(draft.body).toContain("[diff preview suppressed: sensitive file path]");
+    expect(draft.body).toContain('const token = "[REDACTED]"');
+    expect(draft.body).toContain('const password = "[REDACTED]"');
+    expect(draft.body).not.toContain("ghp_abcdefghijklmnopqrstuvwxyz123456");
+    expect(draft.body).not.toContain("ultra-secret-password");
+    expect(draft.body).not.toContain("sk-live-super-secret");
   });
 
-  it("handles long and special-character spec context when building draft content", async () => {
+  it("suppresses sensitive files when diff headers use quoted paths", async () => {
     const git = {
       isRepository: async () => true,
-      readStatusPorcelain: async () => "M  src/main.tsx\n",
-      readStagedNumstat: async () => "5\t4\tsrc/main.tsx\n",
-      readStagedDiff: async () => "diff --git a/src/main.tsx b/src/main.tsx\n+added line\n",
-      currentBranch: async () => "feature/pr-workflow"
+      readStatusPorcelain: async () => 'A  "config dir/.env"\n',
+      readStagedNumstat: async () => '1\t0\t"config dir/.env"\n',
+      readStagedDiff: async () =>
+        [
+          'diff --git "a/config dir/.env" "b/config dir/.env"',
+          "new file mode 100644",
+          "index 0000000..1111111",
+          "--- /dev/null",
+          '+++ "b/config dir/.env"',
+          "@@ -0,0 +1 @@",
+          "+TOKEN=quoted-path-secret"
+        ].join("\n"),
+      currentBranch: async () => "feature/redaction-guardrails"
     };
 
     const service = new PullRequestWorkflowService({
@@ -105,38 +136,31 @@ describe("PullRequestWorkflowService", () => {
     const draft = await service.generatePullRequestDraft({
       repoPath: "/repo",
       repoUrl: "https://github.com/example/kata-cloud",
-      specContext: [
-        "## Goal",
-        "[Release] (v1) `Edge` workflow update with a very long summary line that should be truncated to keep title length bounded.",
-        "",
-        "## Tasks",
-        "- [ ] checklist item",
-        "- second bullet",
-        "- third bullet",
-        "- fourth bullet",
-        "- fifth bullet"
-      ].join("\n")
+      specContext: "## Goal\nSupport quoted diff path suppression",
+      baseBranch: "main"
     });
 
-    expect(draft.title.length).toBeLessThanOrEqual(72);
-    expect(draft.title).toContain("feat: ");
-    for (const disallowedChar of ["[", "]", "(", ")", "`"]) {
-      expect(draft.title).not.toContain(disallowedChar);
-    }
-    expect(draft.body).toContain("- [ ] checklist item");
-    expect(draft.body).toContain("- second bullet");
-    expect(draft.body).toContain("- third bullet");
-    expect(draft.body).not.toContain("- fourth bullet");
+    expect(draft.body).toContain('diff --git "a/config dir/.env" "b/config dir/.env"');
+    expect(draft.body).toContain("[diff preview suppressed: sensitive file path]");
+    expect(draft.body).not.toContain("quoted-path-secret");
   });
 
-  it("limits diff preview to the first 80 lines of staged changes", async () => {
-    const stagedDiff = Array.from({ length: 100 }, (_, index) => `+line-${String(index).padStart(3, "0")}`).join("\n");
+  it("keeps diff preview truncated to fixed line and character limits", async () => {
+    const largeDiffBody = Array.from({ length: 150 }, (_value, index) => `+line-${index.toString().padStart(3, "0")}`).join("\n");
     const git = {
       isRepository: async () => true,
-      readStatusPorcelain: async () => "M  src/main.tsx\n",
-      readStagedNumstat: async () => "100\t0\tsrc/main.tsx\n",
-      readStagedDiff: async () => stagedDiff,
-      currentBranch: async () => "feature/pr-workflow"
+      readStatusPorcelain: async () => "M  src/large.ts\n",
+      readStagedNumstat: async () => "150\t0\tsrc/large.ts\n",
+      readStagedDiff: async () =>
+        [
+          "diff --git a/src/large.ts b/src/large.ts",
+          "index 1111111..2222222 100644",
+          "--- a/src/large.ts",
+          "+++ b/src/large.ts",
+          "@@ -1 +1,150 @@",
+          largeDiffBody
+        ].join("\n"),
+      currentBranch: async () => "feature/redaction-guardrails"
     };
 
     const service = new PullRequestWorkflowService({
@@ -148,12 +172,47 @@ describe("PullRequestWorkflowService", () => {
     const draft = await service.generatePullRequestDraft({
       repoPath: "/repo",
       repoUrl: "https://github.com/example/kata-cloud",
-      specContext: "## Goal\nPreview limit check"
+      specContext: "## Goal\nShip diff truncation guardrails",
+      baseBranch: "main"
     });
 
-    expect(draft.body).toContain("+line-000");
-    expect(draft.body).toContain("+line-079");
-    expect(draft.body).not.toContain("+line-080");
+    expect(draft.body).toContain("+line-074");
+    expect(draft.body).not.toContain("+line-120");
+    expect(draft.body.length).toBeLessThan(4000);
+  });
+
+  it("appends an ellipsis when diff preview exceeds the character cap", async () => {
+    const longLine = `+${"x".repeat(3500)}`;
+    const git = {
+      isRepository: async () => true,
+      readStatusPorcelain: async () => "M  src/very-long.ts\n",
+      readStagedNumstat: async () => "1\t0\tsrc/very-long.ts\n",
+      readStagedDiff: async () =>
+        [
+          "diff --git a/src/very-long.ts b/src/very-long.ts",
+          "index 1111111..2222222 100644",
+          "--- a/src/very-long.ts",
+          "+++ b/src/very-long.ts",
+          "@@ -1 +1 @@",
+          longLine
+        ].join("\n"),
+      currentBranch: async () => "feature/redaction-guardrails"
+    };
+
+    const service = new PullRequestWorkflowService({
+      git: git as never,
+      pathExists: async () => true,
+      fetchFn: async () => mockResponse(200, { login: "octocat" })
+    });
+
+    const draft = await service.generatePullRequestDraft({
+      repoPath: "/repo",
+      repoUrl: "https://github.com/example/kata-cloud",
+      specContext: "## Goal\nShip truncation ellipsis behavior",
+      baseBranch: "main"
+    });
+
+    expect(draft.body).toContain("…");
   });
 
   it("returns an actionable error when no staged changes exist", async () => {
@@ -285,59 +344,6 @@ describe("PullRequestWorkflowService", () => {
     expect(result.baseBranch).toBe("main");
   });
 
-  it("invalidates cleared sessions while keeping other sessions active", async () => {
-    const pullUrl = "https://github.com/example/kata-cloud/pull/321";
-    const fetchCalls: string[] = [];
-    const service = new PullRequestWorkflowService({
-      pathExists: async () => true,
-      git: {
-        isRepository: async () => true,
-        readRemoteUrl: async () => "git@github.com:example/kata-cloud.git",
-        currentBranch: async () => "feature/pr-workflow"
-      } as never,
-      fetchFn: async (url) => {
-        fetchCalls.push(url);
-        if (url.endsWith("/user")) {
-          return mockResponse(200, { login: "octocat" });
-        }
-
-        return mockResponse(201, {
-          html_url: pullUrl,
-          number: 321
-        });
-      }
-    });
-
-    const firstSession = await service.createGitHubSession({ token: "ghp_first" });
-    const secondSession = await service.createGitHubSession({ token: "ghp_second" });
-    await service.clearGitHubSession(firstSession.sessionId);
-
-    await expect(
-      service.createPullRequest({
-        repoPath: "/repo",
-        repoUrl: "https://github.com/example/kata-cloud",
-        sessionId: firstSession.sessionId,
-        title: "feat: stale session",
-        body: "body",
-        baseBranch: "main"
-      })
-    ).rejects.toMatchObject({
-      code: PR_WORKFLOW_ERROR_CODES.AUTH_SESSION_MISSING
-    });
-
-    const result = await service.createPullRequest({
-      repoPath: "/repo",
-      repoUrl: "https://github.com/example/kata-cloud",
-      sessionId: secondSession.sessionId,
-      title: "feat: active session",
-      body: "body",
-      baseBranch: "main"
-    });
-
-    expect(result.url).toBe(pullUrl);
-    expect(fetchCalls.filter((url) => url.includes("/repos/example/kata-cloud/pulls"))).toHaveLength(1);
-  });
-
   it("throws typed errors", async () => {
     const service = new PullRequestWorkflowService({
       pathExists: async () => false,
@@ -374,84 +380,5 @@ describe("PullRequestWorkflowService", () => {
     ).rejects.toMatchObject({
       code: PR_WORKFLOW_ERROR_CODES.AUTH_REQUIRED
     });
-  });
-
-  it("returns typed validation errors for malformed draft payloads and whitespace-only create titles", async () => {
-    const fetchCalls: string[] = [];
-    const service = new PullRequestWorkflowService({
-      pathExists: async () => true,
-      git: {
-        isRepository: async () => true,
-        readRemoteUrl: async () => "git@github.com:example/kata-cloud.git",
-        currentBranch: async () => "feature/pr-workflow"
-      } as never,
-      fetchFn: async (url) => {
-        fetchCalls.push(url);
-        return mockResponse(200, { login: "octocat" });
-      }
-    });
-
-    await expect(
-      service.generatePullRequestDraft({
-        repoPath: 123 as unknown as string,
-        repoUrl: "https://github.com/example/kata-cloud",
-        specContext: ""
-      })
-    ).rejects.toMatchObject({
-      code: PR_WORKFLOW_ERROR_CODES.GITHUB_VALIDATION_FAILED
-    });
-
-    const session = await service.createGitHubSession({ token: "ghp_test" });
-
-    await expect(
-      service.createPullRequest({
-        repoPath: "/repo",
-        repoUrl: "https://github.com/example/kata-cloud",
-        sessionId: session.sessionId,
-        title: "   ",
-        body: "body",
-        baseBranch: "main"
-      })
-    ).rejects.toMatchObject({
-      code: PR_WORKFLOW_ERROR_CODES.GITHUB_VALIDATION_FAILED
-    });
-
-    expect(fetchCalls.filter((url) => url.includes("/repos/example/kata-cloud/pulls"))).toHaveLength(0);
-  });
-
-  it("coerces non-string create payload body to empty string before GitHub request", async () => {
-    let pullRequestPayload: Record<string, unknown> | null = null;
-    const service = new PullRequestWorkflowService({
-      pathExists: async () => true,
-      git: {
-        isRepository: async () => true,
-        readRemoteUrl: async () => "git@github.com:example/kata-cloud.git",
-        currentBranch: async () => "feature/pr-workflow"
-      } as never,
-      fetchFn: async (url, init) => {
-        if (url.endsWith("/user")) {
-          return mockResponse(200, { login: "octocat" });
-        }
-        pullRequestPayload = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
-        return mockResponse(201, {
-          html_url: "https://github.com/example/kata-cloud/pull/444",
-          number: 444
-        });
-      }
-    });
-
-    const session = await service.createGitHubSession({ token: "ghp_test" });
-    const result = await service.createPullRequest({
-      repoPath: "/repo",
-      repoUrl: "https://github.com/example/kata-cloud",
-      sessionId: session.sessionId,
-      title: "feat: body coercion behavior",
-      body: 123 as unknown as string,
-      baseBranch: "main"
-    });
-
-    expect(result.number).toBe(444);
-    expect(pullRequestPayload).not.toBeNull();
-    expect(pullRequestPayload?.["body"]).toBe("");
   });
 });

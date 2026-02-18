@@ -17,6 +17,7 @@ import {
   isUnstagedFileChange,
   toGitStatusLabel
 } from "./git/changes";
+import { DiffText } from "./git/changes-diff-text";
 import { toSpaceGitUiState } from "./git/space-git-ui-state";
 import { SpecNotePanel } from "./notes/spec-note-panel";
 import { loadSpecNote } from "./notes/store";
@@ -1664,7 +1665,10 @@ function App(): React.JSX.Element {
                     <div className="info-card pull-request-card">
                       <h3>Pull Request</h3>
                       <p>Generate a suggested title/body from staged diff + spec context, then submit to GitHub.</p>
-                      <p>Review generated diff snippets for sensitive content before submitting.</p>
+                      <p>
+                        Generated diff snippets apply basic redaction/suppression guardrails; review for sensitive
+                        content before submitting.
+                      </p>
                       <p>Repository: {activeSpace.repoUrl}</p>
                       <p>
                         GitHub session:{" "}
@@ -1877,17 +1881,15 @@ function App(): React.JSX.Element {
                             {isStagedFileChange(selectedChange) ? (
                               <article className="changes-diff__panel">
                                 <h4>Staged</h4>
-                                <pre>
-                                  {selectedFileDiff?.stagedDiff ?? "No staged diff for this file."}
-                                </pre>
+                                <DiffText value={selectedFileDiff?.stagedDiff ?? "No staged diff for this file."} />
                               </article>
                             ) : null}
                             {isUnstagedFileChange(selectedChange) ? (
                               <article className="changes-diff__panel">
                                 <h4>Unstaged</h4>
-                                <pre>
-                                  {selectedFileDiff?.unstagedDiff ?? "No unstaged diff for this file."}
-                                </pre>
+                                <DiffText
+                                  value={selectedFileDiff?.unstagedDiff ?? "No unstaged diff for this file."}
+                                />
                               </article>
                             ) : null}
                           </>
