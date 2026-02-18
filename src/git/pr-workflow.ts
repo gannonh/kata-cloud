@@ -52,7 +52,7 @@ const SENSITIVE_DIFF_FILE_PATH_PATTERNS = [
   /(^|\/)\.aws\/credentials$/i,
   /(^|\/)id_(?:rsa|dsa|ed25519)$/i,
   /\.(?:pem|p12|pfx|key|jks)$/i,
-  /(^|\/).*?(?:secret|secrets|credential|credentials)(?:\.|$)/i
+  /(^|\/)(?:secret|secrets|credential|credentials)(?:\/|\.|$)/i
 ];
 
 export const PR_WORKFLOW_ERROR_CODES = {
@@ -244,12 +244,12 @@ function parseDiffPreviewSections(stagedDiff: string): DiffPreviewSection[] {
 }
 
 function extractDiffSectionFilePath(headerLine: string): string | null {
-  const match = headerLine.match(/^diff --git a\/(.+?) b\/(.+)$/);
+  const match = headerLine.match(/^diff --git (?:"a\/(.+?)"|a\/(.+?)) (?:"b\/(.+?)"|b\/(.+?))$/);
   if (!match) {
     return null;
   }
 
-  return (match[2] ?? match[1] ?? "").replace(/^"|"$/g, "").trim() || null;
+  return (match[3] ?? match[4] ?? match[1] ?? match[2] ?? "").trim() || null;
 }
 
 function isSensitiveDiffFilePath(filePath: string): boolean {
@@ -292,7 +292,7 @@ function selectDiffPreview(stagedDiff: string): string {
   const sanitized = sanitizeDiffPreview(trimmed);
   const lines = sanitized.split("\n").slice(0, DIFF_PREVIEW_MAX_LINES);
   const preview = lines.join("\n");
-  return preview.length <= DIFF_PREVIEW_MAX_CHARS ? preview : preview.slice(0, DIFF_PREVIEW_MAX_CHARS);
+  return truncate(preview, DIFF_PREVIEW_MAX_CHARS);
 }
 
 function buildSuggestedBody(input: {
