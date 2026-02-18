@@ -235,7 +235,7 @@ async function assertPrRedaction(page, repoPath) {
     return Boolean(body && body.length > 0);
   });
 
-  const prBody = await page.$eval("#pr-body-input", (node) => node.value);
+  const prBody = await page.locator("#pr-body-input").inputValue();
   if (!prBody.includes("[diff preview suppressed: sensitive file path]")) {
     throw new Error("PR draft body did not include sensitive-path suppression marker.");
   }
@@ -247,39 +247,41 @@ async function assertPrRedaction(page, repoPath) {
 
 async function run() {
   const sandboxRoot = await mkdtemp(path.join(os.tmpdir(), "kata-cloud-electron-e2e-"));
-  const isolatedHome = path.join(sandboxRoot, "home");
-  const isolatedConfig = path.join(sandboxRoot, "config");
-  const repoPath = path.join(sandboxRoot, "repo");
-  const screenshotPath = path.join(
-    outputDir,
-    `electron-e2e-${new Date().toISOString().replace(/[:.]/g, "-")}.png`
-  );
-
-  await mkdir(isolatedHome, { recursive: true });
-  await mkdir(isolatedConfig, { recursive: true });
-
-  console.log("[electron-e2e] Building Electron main/preload bundle...");
-  await runProcess(pnpmCommand, ["run", "desktop:build-main"]);
-
-  console.log("[electron-e2e] Creating temporary git repository...");
-  await setupRepo(repoPath);
-
-  console.log(`[electron-e2e] Starting Vite on ${rendererUrl}...`);
-  startVite();
-  await waitForVite(rendererUrl);
-
-  console.log("[electron-e2e] Launching Electron through Playwright...");
-  const electronApp = await electron.launch({
-    args: ["dist/main/index.js"],
-    env: {
-      ...process.env,
-      HOME: isolatedHome,
-      XDG_CONFIG_HOME: isolatedConfig,
-      KATA_CLOUD_RENDERER_URL: rendererUrl
-    }
-  });
+  let electronApp;
 
   try {
+    const isolatedHome = path.join(sandboxRoot, "home");
+    const isolatedConfig = path.join(sandboxRoot, "config");
+    const repoPath = path.join(sandboxRoot, "repo");
+    const screenshotPath = path.join(
+      outputDir,
+      `electron-e2e-${new Date().toISOString().replace(/[:.]/g, "-")}.png`
+    );
+
+    await mkdir(isolatedHome, { recursive: true });
+    await mkdir(isolatedConfig, { recursive: true });
+
+    console.log("[electron-e2e] Building Electron main/preload bundle...");
+    await runProcess(pnpmCommand, ["run", "desktop:build-main"]);
+
+    console.log("[electron-e2e] Creating temporary git repository...");
+    await setupRepo(repoPath);
+
+    console.log(`[electron-e2e] Starting Vite on ${rendererUrl}...`);
+    startVite();
+    await waitForVite(rendererUrl);
+
+    console.log("[electron-e2e] Launching Electron through Playwright...");
+    electronApp = await electron.launch({
+      args: ["dist/main/index.js"],
+      env: {
+        ...process.env,
+        HOME: isolatedHome,
+        XDG_CONFIG_HOME: isolatedConfig,
+        KATA_CLOUD_RENDERER_URL: rendererUrl
+      }
+    });
+
     const page = await electronApp.firstWindow();
     await page.waitForLoadState("domcontentloaded");
 
@@ -300,7 +302,7 @@ async function run() {
     console.log("[electron-e2e] PASS");
     console.log(`[electron-e2e] Screenshot: ${screenshotPath}`);
   } finally {
-    await electronApp.close().catch(() => undefined);
+    await electronApp?.close().catch(() => undefined);
     stopVite();
     await rm(sandboxRoot, { recursive: true, force: true }).catch(() => undefined);
   }
