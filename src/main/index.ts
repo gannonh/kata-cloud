@@ -22,6 +22,7 @@ import type { ContextRetrievalRequest } from "../context/types";
 import { createProviderRuntimeRegistry } from "./provider-runtime/registry";
 import { ProviderRuntimeService } from "./provider-runtime/service";
 import { serializeProviderRuntimeError } from "./provider-runtime/errors";
+import { AnthropicApiKeyClient, AnthropicProviderAdapter } from "./providers/anthropic";
 
 let stateStore: PersistedStateStore | undefined;
 
@@ -211,8 +212,9 @@ async function bootstrap(): Promise<void> {
   });
   const gitLifecycleService = new SpaceGitLifecycleService();
   const pullRequestWorkflowService = new PullRequestWorkflowService();
-  // TODO(slice-3): register Anthropic and OpenAI adapters here.
-  const providerRegistry = createProviderRuntimeRegistry();
+  const providerRegistry = createProviderRuntimeRegistry([
+    new AnthropicProviderAdapter(new AnthropicApiKeyClient())
+  ]);
   const providerService = new ProviderRuntimeService(providerRegistry);
   await stateStore.initialize();
 
