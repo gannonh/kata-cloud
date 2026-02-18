@@ -30,6 +30,13 @@ Current focus is making orchestrator and context behavior deterministic before b
   2. Delegated task cards show accurate in-flight and terminal statuses with failure context.
   3. Failure paths do not leave runs in ambiguous terminal state.
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Shared deterministic run-lifecycle transition primitives
+- [ ] 05-02-PLAN.md — Shared run/task status projection + history selector tightening
+- [ ] 05-03-PLAN.md — Renderer lifecycle + status-panel wiring with regressions
+
 ### Phase 6: Delegation + Context Contract Hardening
 
 **Goal**: Stabilize delegated execution history and context adapter contracts with explicit typed error handling.
@@ -76,4 +83,4 @@ Current focus is making orchestrator and context behavior deterministic before b
 
 ---
 *Roadmap created: 2026-02-18*
-*Last updated: 2026-02-18 — initialized milestone v0.1.0 roadmap*
+*Last updated: 2026-02-18 — phase 05 planned*
