@@ -23,12 +23,12 @@ export interface ProviderStatusResult {
   reason: string | null;
 }
 
-export interface ProviderListModelsServiceRequest {
+export interface ProviderListModelsIpcRequest {
   providerId: ModelProviderId;
   auth: ProviderAuthInput;
 }
 
-export interface ProviderExecuteServiceRequest {
+export interface ProviderExecuteIpcRequest {
   providerId: ModelProviderId;
   auth: ProviderAuthInput;
   model: string;
@@ -58,7 +58,7 @@ export class ProviderRuntimeService {
     }
   }
 
-  async listModels(request: ProviderListModelsServiceRequest): Promise<ProviderModelDescriptor[]> {
+  async listModels(request: ProviderListModelsIpcRequest): Promise<ProviderModelDescriptor[]> {
     try {
       const adapter = this.registry.require(request.providerId);
       return await adapter.listModels({ auth: request.auth });
@@ -67,7 +67,7 @@ export class ProviderRuntimeService {
     }
   }
 
-  async execute(request: ProviderExecuteServiceRequest): Promise<ProviderExecuteResult> {
+  async execute(request: ProviderExecuteIpcRequest): Promise<ProviderExecuteResult> {
     try {
       const adapter = this.registry.require(request.providerId);
       return await adapter.execute({

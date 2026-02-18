@@ -15,13 +15,13 @@ import type {
   SpaceGitPullRequestDraftResult
 } from "../git/types";
 import type { ContextRetrievalRequest, ContextSnippet } from "../context/types";
+import type { ProviderModelDescriptor, ProviderExecuteResult } from "../main/provider-runtime/types";
 import type {
-  ModelProviderId,
-  ProviderAuthInput,
-  ProviderModelDescriptor,
-  ProviderExecuteResult
-} from "../main/provider-runtime/types";
-import type { ProviderStatusRequest, ProviderStatusResult } from "../main/provider-runtime/service";
+  ProviderStatusRequest,
+  ProviderStatusResult,
+  ProviderListModelsIpcRequest,
+  ProviderExecuteIpcRequest
+} from "../main/provider-runtime/service";
 
 export const IPC_CHANNELS = {
   getState: "kata-cloud/state:get",
@@ -44,22 +44,7 @@ export const IPC_CHANNELS = {
   openExternalUrl: "kata-cloud/system:open-external-url"
 } as const;
 
-export interface ProviderListModelsIpcRequest {
-  providerId: ModelProviderId;
-  auth: ProviderAuthInput;
-}
-
-export interface ProviderExecuteIpcRequest {
-  providerId: ModelProviderId;
-  auth: ProviderAuthInput;
-  model: string;
-  prompt: string;
-  systemPrompt?: string;
-  maxTokens?: number;
-  temperature?: number;
-}
-
-export type { ProviderStatusRequest, ProviderStatusResult, ProviderModelDescriptor, ProviderExecuteResult };
+export type { ProviderStatusRequest, ProviderStatusResult, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest, ProviderModelDescriptor, ProviderExecuteResult };
 
 export interface ShellApi {
   getState: () => Promise<AppState>;
