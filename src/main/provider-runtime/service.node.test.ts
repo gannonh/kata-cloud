@@ -36,6 +36,24 @@ function createMockAdapter(providerId: ModelProviderId): ProviderRuntimeAdapter 
   };
 }
 
+function createMockAdapterWithAuthCheck(providerId: ModelProviderId): ProviderRuntimeAdapter {
+  return {
+    ...createMockAdapter(providerId),
+    listModels: async (request) => {
+      if (!request.auth.apiKey) {
+        throw new ProviderRuntimeError({ providerId, code: "missing_auth", message: "API key required.", remediation: "Add API key.", retryable: false });
+      }
+      return [{ id: `${providerId}-model`, displayName: `${providerId} model` }];
+    },
+    execute: async (request) => {
+      if (!request.auth.apiKey) {
+        throw new ProviderRuntimeError({ providerId, code: "missing_auth", message: "API key required.", remediation: "Add API key.", retryable: false });
+      }
+      return { providerId, model: request.model, authMode: "api_key", text: "hello" };
+    }
+  };
+}
+
 describe("ProviderRuntimeService.resolveAuth", () => {
   it("returns authenticated status when adapter is registered and auth is valid", () => {
     const registry = createProviderRuntimeRegistry([createMockAdapter("anthropic")]);
@@ -80,6 +98,15 @@ describe("ProviderRuntimeService.listModels", () => {
     expect(models[0].id).toBe("claude-3");
   });
 
+  it("throws ProviderRuntimeError when adapter rejects missing auth", async () => {
+    const adapter = createMockAdapterWithAuthCheck("openai");
+    const registry = createProviderRuntimeRegistry([adapter]);
+    const service = new ProviderRuntimeService(registry);
+
+    await expect(service.listModels({ providerId: "openai", auth: MISSING_AUTH }))
+      .rejects.toBeInstanceOf(ProviderRuntimeError);
+  });
+
   it("throws ProviderRuntimeError when provider is not registered", async () => {
     const registry = createProviderRuntimeRegistry();
     const service = new ProviderRuntimeService(registry);
@@ -104,6 +131,19 @@ describe("ProviderRuntimeService.execute", () => {
     expect(result.providerId).toBe("anthropic");
     expect(result.text).toBe("hello");
     expect(result.authMode).toBe("api_key");
+  });
+
+  it("throws ProviderRuntimeError when adapter rejects missing auth", async () => {
+    const adapter = createMockAdapterWithAuthCheck("anthropic");
+    const registry = createProviderRuntimeRegistry([adapter]);
+    const service = new ProviderRuntimeService(registry);
+
+    await expect(service.execute({
+      providerId: "anthropic",
+      auth: MISSING_AUTH,
+      model: "claude-3",
+      prompt: "Hello"
+    })).rejects.toBeInstanceOf(ProviderRuntimeError);
   });
 
   it("throws ProviderRuntimeError when provider is not registered", async () => {
