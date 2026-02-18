@@ -1,42 +1,13 @@
 import { mapProviderRuntimeError } from "./errors";
 import type { ProviderRuntimeRegistry } from "./registry";
 import type {
-  ModelProviderId,
-  ProviderAuthInput,
-  ProviderAuthMode,
-  ProviderAuthFailureCode,
   ProviderModelDescriptor,
-  ProviderExecuteResult
+  ProviderExecuteResult,
+  ProviderStatusRequest,
+  ProviderStatusResult,
+  ProviderListModelsIpcRequest,
+  ProviderExecuteIpcRequest
 } from "./types";
-
-export interface ProviderStatusRequest {
-  providerId: ModelProviderId;
-  auth: ProviderAuthInput;
-}
-
-export interface ProviderStatusResult {
-  providerId: ModelProviderId;
-  resolvedMode: ProviderAuthMode | null;
-  status: "authenticated" | "error";
-  fallbackApplied: boolean;
-  failureCode: ProviderAuthFailureCode | null;
-  reason: string | null;
-}
-
-export interface ProviderListModelsIpcRequest {
-  providerId: ModelProviderId;
-  auth: ProviderAuthInput;
-}
-
-export interface ProviderExecuteIpcRequest {
-  providerId: ModelProviderId;
-  auth: ProviderAuthInput;
-  model: string;
-  prompt: string;
-  systemPrompt?: string;
-  maxTokens?: number;
-  temperature?: number;
-}
 
 export class ProviderRuntimeService {
   constructor(private readonly registry: ProviderRuntimeRegistry) {}
@@ -45,12 +16,22 @@ export class ProviderRuntimeService {
     try {
       const adapter = this.registry.require(request.providerId);
       const resolution = adapter.resolveAuth(request.auth);
+      if (resolution.status === "authenticated") {
+        return {
+          providerId: request.providerId,
+          status: "authenticated",
+          requestedMode: resolution.requestedMode,
+          resolvedMode: resolution.resolvedMode as NonNullable<typeof resolution.resolvedMode>,
+          fallbackApplied: resolution.fallbackApplied
+        };
+      }
       return {
         providerId: request.providerId,
-        resolvedMode: resolution.resolvedMode,
-        status: resolution.status,
+        status: "error",
+        requestedMode: resolution.requestedMode,
+        resolvedMode: null,
         fallbackApplied: resolution.fallbackApplied,
-        failureCode: resolution.failureCode,
+        failureCode: resolution.failureCode ?? "missing_auth",
         reason: resolution.reason
       };
     } catch (error) {

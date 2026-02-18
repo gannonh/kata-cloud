@@ -15,13 +15,14 @@ import type {
   SpaceGitPullRequestDraftResult
 } from "../git/types";
 import type { ContextRetrievalRequest, ContextSnippet } from "../context/types";
-import type { ProviderModelDescriptor, ProviderExecuteResult } from "../main/provider-runtime/types";
 import type {
+  ProviderModelDescriptor,
+  ProviderExecuteResult,
   ProviderStatusRequest,
   ProviderStatusResult,
   ProviderListModelsIpcRequest,
   ProviderExecuteIpcRequest
-} from "../main/provider-runtime/service";
+} from "../main/provider-runtime/types";
 
 export const IPC_CHANNELS = {
   getState: "kata-cloud/state:get",
@@ -44,6 +45,8 @@ export const IPC_CHANNELS = {
   openExternalUrl: "kata-cloud/system:open-external-url"
 } as const;
 
+// Re-exported so preload and renderer code can import all IPC types from the
+// shared layer without reaching into src/main/provider-runtime/ directly.
 export type { ProviderStatusRequest, ProviderStatusResult, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest, ProviderModelDescriptor, ProviderExecuteResult };
 
 export interface ShellApi {

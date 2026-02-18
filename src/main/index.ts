@@ -21,7 +21,7 @@ import { McpCompatibleStubContextProvider } from "../context/providers/mcp-conte
 import type { ContextRetrievalRequest } from "../context/types";
 import { createProviderRuntimeRegistry } from "./provider-runtime/registry";
 import { ProviderRuntimeService } from "./provider-runtime/service";
-import { ProviderRuntimeError } from "./provider-runtime/errors";
+import { serializeProviderRuntimeError } from "./provider-runtime/errors";
 
 let stateStore: PersistedStateStore | undefined;
 
@@ -67,20 +67,6 @@ function createMainWindow(): BrowserWindow {
   return mainWindow;
 }
 
-function serializeProviderError(error: unknown): never {
-  if (error instanceof ProviderRuntimeError) {
-    throw new Error(
-      JSON.stringify({
-        code: error.code,
-        message: error.message,
-        remediation: error.remediation,
-        retryable: error.retryable,
-        providerId: error.providerId
-      })
-    );
-  }
-  throw error instanceof Error ? error : new Error(String(error));
-}
 
 function registerStateHandlers(
   store: PersistedStateStore,
@@ -186,9 +172,10 @@ function registerStateHandlers(
     IPC_CHANNELS.providerResolveAuth,
     async (_event, request: ProviderStatusRequest) => {
       try {
-        return providerService.resolveAuth(request);
+        return await providerService.resolveAuth(request);
       } catch (error) {
-        throw serializeProviderError(error);
+        console.error("provider:resolve-auth failed", { providerId: request.providerId, error });
+        throw serializeProviderRuntimeError(error);
       }
     }
   );
@@ -198,7 +185,8 @@ function registerStateHandlers(
       try {
         return await providerService.listModels(request);
       } catch (error) {
-        throw serializeProviderError(error);
+        console.error("provider:list-models failed", { providerId: request.providerId, error });
+        throw serializeProviderRuntimeError(error);
       }
     }
   );
@@ -208,7 +196,8 @@ function registerStateHandlers(
       try {
         return await providerService.execute(request);
       } catch (error) {
-        throw serializeProviderError(error);
+        console.error("provider:execute failed", { providerId: request.providerId, error });
+        throw serializeProviderRuntimeError(error);
       }
     }
   );
@@ -222,7 +211,7 @@ async function bootstrap(): Promise<void> {
   });
   const gitLifecycleService = new SpaceGitLifecycleService();
   const pullRequestWorkflowService = new PullRequestWorkflowService();
-  // Empty registry in Slice 2; adapters (Anthropic, OpenAI) registered in later slices.
+  // TODO(slice-3): register Anthropic and OpenAI adapters here.
   const providerRegistry = createProviderRuntimeRegistry();
   const providerService = new ProviderRuntimeService(providerRegistry);
   await stateStore.initialize();

@@ -7,7 +7,8 @@ export type ProviderAuthFailureCode = "missing_auth" | "invalid_auth" | "session
 export type ProviderRuntimeErrorCode =
   | ProviderAuthFailureCode
   | "rate_limited"
-  | "provider_unavailable";
+  | "provider_unavailable"
+  | "unexpected_error";
 
 export interface ProviderTokenSession {
   id: string;
@@ -76,4 +77,37 @@ export interface ProviderRuntimeAdapter {
   resolveAuth(auth: ProviderAuthInput): ProviderAuthResolution;
   listModels(request: ProviderListModelsRequest): Promise<ProviderModelDescriptor[]>;
   execute(request: ProviderExecuteRequest): Promise<ProviderExecuteResult>;
+}
+
+// IPC request/response types — shared between the main-process service and the preload bridge.
+
+export interface ProviderStatusRequest {
+  providerId: ModelProviderId;
+  auth: ProviderAuthInput;
+}
+
+export type ProviderStatusResult =
+  | {
+      providerId: ModelProviderId;
+      status: "authenticated";
+      requestedMode: ProviderAuthMode;
+      resolvedMode: ProviderAuthMode;
+      fallbackApplied: boolean;
+    }
+  | {
+      providerId: ModelProviderId;
+      status: "error";
+      requestedMode: ProviderAuthMode;
+      resolvedMode: null;
+      fallbackApplied: boolean;
+      failureCode: ProviderAuthFailureCode;
+      reason: string | null;
+    };
+
+export interface ProviderListModelsIpcRequest extends ProviderListModelsRequest {
+  providerId: ModelProviderId;
+}
+
+export interface ProviderExecuteIpcRequest extends ProviderExecuteRequest {
+  providerId: ModelProviderId;
 }
