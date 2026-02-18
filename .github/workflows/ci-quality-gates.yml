@@ -72,7 +72,7 @@ jobs:
           sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
 
       - name: Electron binary sanity check
-        run: pnpm exec electron --version
+        run: pnpm exec electron --no-sandbox --version
 
       - name: Electron E2E smoke
         run: xvfb-run -a pnpm run e2e:electron:smoke
@@ -121,7 +121,7 @@ jobs:
           sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
 
       - name: Electron binary sanity check
-        run: pnpm exec electron --version
+        run: pnpm exec electron --no-sandbox --version
 
       - name: Electron E2E full suite
         run: xvfb-run -a pnpm run e2e
