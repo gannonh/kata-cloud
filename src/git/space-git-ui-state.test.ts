@@ -6,7 +6,8 @@ describe("toSpaceGitUiState", () => {
   it("returns unlinked state when git status is missing", () => {
     const uiState = toSpaceGitUiState(undefined);
 
-    expect(uiState.title).toBe("Git not linked");
+    expect(uiState.title).toBe("Git not initialized");
+    expect(uiState.detail).toContain("Workspace is available");
     expect(uiState.isError).toBe(false);
   });
 
