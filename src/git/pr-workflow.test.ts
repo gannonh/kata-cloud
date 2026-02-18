@@ -62,6 +62,159 @@ describe("PullRequestWorkflowService", () => {
     expect(draft.body).toContain("Verify build/typecheck status");
   });
 
+  it("redacts sensitive values and suppresses previews for sensitive file paths", async () => {
+    const git = {
+      isRepository: async () => true,
+      readStatusPorcelain: async () => "A  .env\nM  src/config.ts\n",
+      readStagedNumstat: async () => "1\t0\t.env\n3\t1\tsrc/config.ts\n",
+      readStagedDiff: async () =>
+        [
+          "diff --git a/.env b/.env",
+          "new file mode 100644",
+          "index 0000000..1111111",
+          "--- /dev/null",
+          "+++ b/.env",
+          "@@ -0,0 +1 @@",
+          "+API_KEY=sk-live-super-secret",
+          "diff --git a/src/config.ts b/src/config.ts",
+          "index 1111111..2222222 100644",
+          "--- a/src/config.ts",
+          "+++ b/src/config.ts",
+          "@@ -1 +1,2 @@",
+          '-const token = "old-token"',
+          '+const token = "ghp_abcdefghijklmnopqrstuvwxyz123456"',
+          '+const password = "ultra-secret-password"'
+        ].join("\n"),
+      currentBranch: async () => "feature/redaction-guardrails"
+    };
+
+    const service = new PullRequestWorkflowService({
+      git: git as never,
+      pathExists: async () => true,
+      fetchFn: async () => mockResponse(200, { login: "octocat" })
+    });
+
+    const draft = await service.generatePullRequestDraft({
+      repoPath: "/repo",
+      repoUrl: "https://github.com/example/kata-cloud",
+      specContext: "## Goal\nShip redaction guardrails",
+      baseBranch: "main"
+    });
+
+    expect(draft.body).toContain("[diff preview suppressed: sensitive file path]");
+    expect(draft.body).toContain('const token = "[REDACTED]"');
+    expect(draft.body).toContain('const password = "[REDACTED]"');
+    expect(draft.body).not.toContain("ghp_abcdefghijklmnopqrstuvwxyz123456");
+    expect(draft.body).not.toContain("ultra-secret-password");
+    expect(draft.body).not.toContain("sk-live-super-secret");
+  });
+
+  it("suppresses sensitive files when diff headers use quoted paths", async () => {
+    const git = {
+      isRepository: async () => true,
+      readStatusPorcelain: async () => 'A  "config dir/.env"\n',
+      readStagedNumstat: async () => '1\t0\t"config dir/.env"\n',
+      readStagedDiff: async () =>
+        [
+          'diff --git "a/config dir/.env" "b/config dir/.env"',
+          "new file mode 100644",
+          "index 0000000..1111111",
+          "--- /dev/null",
+          '+++ "b/config dir/.env"',
+          "@@ -0,0 +1 @@",
+          "+TOKEN=quoted-path-secret"
+        ].join("\n"),
+      currentBranch: async () => "feature/redaction-guardrails"
+    };
+
+    const service = new PullRequestWorkflowService({
+      git: git as never,
+      pathExists: async () => true,
+      fetchFn: async () => mockResponse(200, { login: "octocat" })
+    });
+
+    const draft = await service.generatePullRequestDraft({
+      repoPath: "/repo",
+      repoUrl: "https://github.com/example/kata-cloud",
+      specContext: "## Goal\nSupport quoted diff path suppression",
+      baseBranch: "main"
+    });
+
+    expect(draft.body).toContain('diff --git "a/config dir/.env" "b/config dir/.env"');
+    expect(draft.body).toContain("[diff preview suppressed: sensitive file path]");
+    expect(draft.body).not.toContain("quoted-path-secret");
+  });
+
+  it("keeps diff preview truncated to fixed line and character limits", async () => {
+    const largeDiffBody = Array.from({ length: 150 }, (_value, index) => `+line-${index.toString().padStart(3, "0")}`).join("\n");
+    const git = {
+      isRepository: async () => true,
+      readStatusPorcelain: async () => "M  src/large.ts\n",
+      readStagedNumstat: async () => "150\t0\tsrc/large.ts\n",
+      readStagedDiff: async () =>
+        [
+          "diff --git a/src/large.ts b/src/large.ts",
+          "index 1111111..2222222 100644",
+          "--- a/src/large.ts",
+          "+++ b/src/large.ts",
+          "@@ -1 +1,150 @@",
+          largeDiffBody
+        ].join("\n"),
+      currentBranch: async () => "feature/redaction-guardrails"
+    };
+
+    const service = new PullRequestWorkflowService({
+      git: git as never,
+      pathExists: async () => true,
+      fetchFn: async () => mockResponse(200, { login: "octocat" })
+    });
+
+    const draft = await service.generatePullRequestDraft({
+      repoPath: "/repo",
+      repoUrl: "https://github.com/example/kata-cloud",
+      specContext: "## Goal\nShip diff truncation guardrails",
+      baseBranch: "main"
+    });
+
+    expect(draft.body).toContain("+line-074");
+    expect(draft.body).not.toContain("+line-120");
+    expect(draft.body.length).toBeLessThan(4000);
+  });
+
+  it("appends an ellipsis when diff preview exceeds the character cap", async () => {
+    const longLine = `+${"x".repeat(3500)}`;
+    const git = {
+      isRepository: async () => true,
+      readStatusPorcelain: async () => "M  src/very-long.ts\n",
+      readStagedNumstat: async () => "1\t0\tsrc/very-long.ts\n",
+      readStagedDiff: async () =>
+        [
+          "diff --git a/src/very-long.ts b/src/very-long.ts",
+          "index 1111111..2222222 100644",
+          "--- a/src/very-long.ts",
+          "+++ b/src/very-long.ts",
+          "@@ -1 +1 @@",
+          longLine
+        ].join("\n"),
+      currentBranch: async () => "feature/redaction-guardrails"
+    };
+
+    const service = new PullRequestWorkflowService({
+      git: git as never,
+      pathExists: async () => true,
+      fetchFn: async () => mockResponse(200, { login: "octocat" })
+    });
+
+    const draft = await service.generatePullRequestDraft({
+      repoPath: "/repo",
+      repoUrl: "https://github.com/example/kata-cloud",
+      specContext: "## Goal\nShip truncation ellipsis behavior",
+      baseBranch: "main"
+    });
+
+    expect(draft.body).toContain("…");
+  });
+
   it("returns an actionable error when no staged changes exist", async () => {
     const git = {
       isRepository: async () => true,

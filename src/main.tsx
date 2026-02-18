@@ -1665,7 +1665,10 @@ function App(): React.JSX.Element {
                     <div className="info-card pull-request-card">
                       <h3>Pull Request</h3>
                       <p>Generate a suggested title/body from staged diff + spec context, then submit to GitHub.</p>
-                      <p>Review generated diff snippets for sensitive content before submitting.</p>
+                      <p>
+                        Generated diff snippets apply basic redaction/suppression guardrails; review for sensitive
+                        content before submitting.
+                      </p>
                       <p>Repository: {activeSpace.repoUrl}</p>
                       <p>
                         GitHub session:{" "}
