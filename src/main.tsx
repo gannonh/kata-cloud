@@ -17,6 +17,7 @@ import {
   isUnstagedFileChange,
   toGitStatusLabel
 } from "./git/changes";
+import { highlightDiff } from "./git/changes-diff-highlighting";
 import { toSpaceGitUiState } from "./git/space-git-ui-state";
 import { SpecNotePanel } from "./notes/spec-note-panel";
 import { loadSpecNote } from "./notes/store";
@@ -217,6 +218,28 @@ function toChangePathLabel(change: SpaceGitChangeFile): string {
   }
 
   return `${change.previousPath} -> ${change.path}`;
+}
+
+function DiffText({ value }: { value: string }): React.JSX.Element {
+  const highlightedDiff = useMemo(() => highlightDiff(value), [value]);
+
+  if (highlightedDiff.mode === "plain") {
+    return <pre className="changes-diff__code">{highlightedDiff.text}</pre>;
+  }
+
+  return (
+    <pre className="changes-diff__code">
+      {highlightedDiff.lines.map((line, index) => (
+        <span
+          key={`${line.kind}:${index}`}
+          className={`changes-diff__line changes-diff__line--${line.kind}`}
+        >
+          {line.text}
+          {index < highlightedDiff.lines.length - 1 ? "\n" : null}
+        </span>
+      ))}
+    </pre>
+  );
 }
 
 function App(): React.JSX.Element {
@@ -1877,17 +1900,15 @@ function App(): React.JSX.Element {
                             {isStagedFileChange(selectedChange) ? (
                               <article className="changes-diff__panel">
                                 <h4>Staged</h4>
-                                <pre>
-                                  {selectedFileDiff?.stagedDiff ?? "No staged diff for this file."}
-                                </pre>
+                                <DiffText value={selectedFileDiff?.stagedDiff ?? "No staged diff for this file."} />
                               </article>
                             ) : null}
                             {isUnstagedFileChange(selectedChange) ? (
                               <article className="changes-diff__panel">
                                 <h4>Unstaged</h4>
-                                <pre>
-                                  {selectedFileDiff?.unstagedDiff ?? "No unstaged diff for this file."}
-                                </pre>
+                                <DiffText
+                                  value={selectedFileDiff?.unstagedDiff ?? "No unstaged diff for this file."}
+                                />
                               </article>
                             ) : null}
                           </>
