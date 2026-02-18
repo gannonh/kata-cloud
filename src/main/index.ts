@@ -18,6 +18,10 @@ import { createContextAdapter } from "../context/context-adapter";
 import { FilesystemContextProvider } from "../context/providers/filesystem-context-provider";
 import { McpCompatibleStubContextProvider } from "../context/providers/mcp-context-provider";
 import type { ContextRetrievalRequest } from "../context/types";
+import { createProviderRuntimeRegistry } from "./provider-runtime/registry";
+import { ProviderRuntimeService } from "./provider-runtime/service";
+import { ProviderRuntimeError } from "./provider-runtime/errors";
+import type { ModelProviderId, ProviderAuthInput } from "./provider-runtime/types";
 
 let stateStore: PersistedStateStore | undefined;
 
@@ -63,10 +67,26 @@ function createMainWindow(): BrowserWindow {
   return mainWindow;
 }
 
+function serializeProviderError(error: unknown): never {
+  if (error instanceof ProviderRuntimeError) {
+    throw new Error(
+      JSON.stringify({
+        code: error.code,
+        message: error.message,
+        remediation: error.remediation,
+        retryable: error.retryable,
+        providerId: error.providerId
+      })
+    );
+  }
+  throw error instanceof Error ? error : new Error(String(error));
+}
+
 function registerStateHandlers(
   store: PersistedStateStore,
   gitLifecycleService: SpaceGitLifecycleService,
-  pullRequestWorkflowService: PullRequestWorkflowService
+  pullRequestWorkflowService: PullRequestWorkflowService,
+  providerService: ProviderRuntimeService
 ): void {
   const contextAdapter = createContextAdapter({
     providers: [new FilesystemContextProvider(), new McpCompatibleStubContextProvider()],
@@ -162,6 +182,47 @@ function registerStateHandlers(
       return contextAdapter.retrieve({ ...request, rootPath: requestRootPath }, request.providerId);
     }
   );
+  ipcMain.handle(
+    IPC_CHANNELS.providerResolveAuth,
+    (_event, request: { providerId: ModelProviderId; auth: ProviderAuthInput }) => {
+      try {
+        return providerService.resolveAuth(request);
+      } catch (error) {
+        serializeProviderError(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.providerListModels,
+    async (_event, request: { providerId: ModelProviderId; auth: ProviderAuthInput }) => {
+      try {
+        return await providerService.listModels(request);
+      } catch (error) {
+        serializeProviderError(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.providerExecute,
+    async (
+      _event,
+      request: {
+        providerId: ModelProviderId;
+        auth: ProviderAuthInput;
+        model: string;
+        prompt: string;
+        systemPrompt?: string;
+        maxTokens?: number;
+        temperature?: number;
+      }
+    ) => {
+      try {
+        return await providerService.execute(request);
+      } catch (error) {
+        serializeProviderError(error);
+      }
+    }
+  );
 }
 
 async function bootstrap(): Promise<void> {
@@ -172,9 +233,11 @@ async function bootstrap(): Promise<void> {
   });
   const gitLifecycleService = new SpaceGitLifecycleService();
   const pullRequestWorkflowService = new PullRequestWorkflowService();
+  const providerRegistry = createProviderRuntimeRegistry();
+  const providerService = new ProviderRuntimeService(providerRegistry);
   await stateStore.initialize();
 
-  registerStateHandlers(stateStore, gitLifecycleService, pullRequestWorkflowService);
+  registerStateHandlers(stateStore, gitLifecycleService, pullRequestWorkflowService, providerService);
   createMainWindow();
 
   app.on("activate", () => {
