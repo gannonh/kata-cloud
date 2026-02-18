@@ -5,7 +5,7 @@ tags: [spec]
 pinned: true
 created: "2026-02-16T13:56:39.341Z"
 task:
-  status: not_started
+  status: in_progress
 ---
 
 > NOTE: `intent://local/task/[uuid]` resolves to a local markdown file with the specified UUID:
@@ -23,6 +23,10 @@ This section is the current source of truth for handoff. Historical sections bel
    - PR `#33`: context retrieval contract v1 docs.
    - PR `#35`: responsive changes-panel heights.
    - PR `#36`: provider runtime Slice 2 IPC/main/preload wiring.
+   - PR `#38`: changes diff syntax highlighting.
+   - PR `#39`: PR workflow edge-case test expansion.
+   - PR `#40`: provider runtime Slice 3 Anthropic API-key path.
+   - PR `#41`: PR diff redaction/suppression guardrails.
 2. Coordination worktree baseline is clean and synced to `origin/main`.
 3. Branch strategy remains enforced:
    - Start each new task branch from updated `origin/main`.
@@ -37,23 +41,27 @@ This section is the current source of truth for handoff. Historical sections bel
 4. Context Engine interface guidance is documented in `docs/context-retrieval-contract-v1.md` via PR `#33`.
 5. Changes panel responsive height remediation is complete via PR `#35`.
 6. Provider runtime Slice 2 plumbing is complete via PR `#36`.
+7. Changes diff syntax highlighting is complete via PR `#38`.
+8. PR workflow edge-case coverage expansion is complete via PR `#39`.
+9. Provider runtime Slice 3 (Anthropic API-key execution path) is complete via PR `#40`.
+10. PR diff snippet redaction/suppression guardrails are complete via PR `#41`.
 
 ### Active Tasks
 1. [Implement real model provider runtime and authentication](intent://local/task/dfb65dc8-1eb9-47f1-b95f-e22c99005ddb)
-   - Status: `in_progress` (Slices 1 and 2 merged).
-   - Next gate: Slice 3 Anthropic API-key runtime path (adapter registration + execution through IPC service path).
+   - Status: `in_progress` (Slices 1, 2, and 3 merged).
+   - Next gate: Slice 4 OpenAI API-key runtime path.
 2. Spec/task hygiene
    - Status: `in_progress`.
    - Next gate: keep `notes/spec.md` top snapshot aligned after each merged PR and enforce context-first, repo-relative dispatch prompts.
-3. Backlog execution lanes (GitHub issues `#13-#21`)
-   - Status: `open`.
-   - Next gate: dispatch low-overlap issue work in parallel with provider-runtime slices (recommended next: `#16` syntax highlighting).
+3. Full-cycle UAT for newly merged changes (`#38-#41`)
+   - Status: `ready`.
+   - Next gate: execute coordinated UAT and capture pass/fail + regressions.
 
 ### Exact Next Steps
-1. Dispatch Provider Runtime Slice 3 (Anthropic API key execution) from fresh `origin/main` with strict non-overlap guardrails and a required context pre-read list.
-2. In parallel, run one low-overlap backlog issue (recommended: `#16` syntax highlighting for changes diff viewer).
-3. After Slice 3 merges, dispatch Slice 4 (OpenAI API key execution), then Slice 5 (token-session mode/fallback), then Slice 6 (renderer settings/status UX).
-4. Run coordinated UAT after each provider slice merge and full MVP sweep after provider runtime is fully wired.
+1. Merge this spec/docs refresh PR to preserve current source-of-truth state.
+2. Run coordinated UAT cycle for merged PRs `#38-#41` (diff highlighting, PR workflow coverage/guardrails, Anthropic runtime path).
+3. Dispatch Provider Runtime Slice 4 (OpenAI API-key execution).
+4. After Slice 4 merges, dispatch Slice 5 (token-session mode/fallback), then Slice 6 (renderer settings/status UX), followed by full MVP sweep.
 
 ### Next Steps After Open Tasks Complete
 1. Execute full E2E MVP verification: space creation, orchestrator run lifecycle, spec draft/apply, changes-tab diff/staging, PR creation flow, browser preview, context retrieval, provider runtime.
