@@ -3,7 +3,7 @@ import { ProviderRuntimeError } from "../../provider-runtime/errors";
 import { OpenAiProviderAdapter, type OpenAiProviderClient } from "./adapter";
 
 describe("OpenAiProviderAdapter", () => {
-  it("uses token_session mode when an active token session is available", async () => {
+  it("falls back to api_key when token_session is requested", async () => {
     const client = createClient();
     client.execute.mockResolvedValue({ text: "openai says hi" });
     const adapter = new OpenAiProviderAdapter(client);
@@ -11,18 +11,19 @@ describe("OpenAiProviderAdapter", () => {
     const result = await adapter.execute({
       auth: {
         preferredMode: "token_session",
-        tokenSession: { id: "session-openai", status: "active" }
+        tokenSession: { id: "session-openai", status: "active" },
+        apiKey: "sk-openai"
       },
       model: "gpt-4.1",
       prompt: "Say hi"
     });
 
-    expect(result.authMode).toBe("token_session");
+    expect(result.authMode).toBe("api_key");
     expect(client.execute).toHaveBeenCalledTimes(1);
     expect(client.execute.mock.calls[0]?.[0].auth).toEqual({
-      authMode: "token_session",
-      apiKey: undefined,
-      tokenSessionId: "session-openai"
+      authMode: "api_key",
+      apiKey: "sk-openai",
+      tokenSessionId: undefined
     });
   });
 
@@ -45,7 +46,7 @@ describe("OpenAiProviderAdapter", () => {
     } satisfies Partial<ProviderRuntimeError>);
   });
 
-  it("maps session-expired auth failures when token mode cannot fall back", async () => {
+  it("returns missing_auth when token_session is requested without api key", async () => {
     const client = createClient();
     const adapter = new OpenAiProviderAdapter(client);
 
@@ -60,7 +61,7 @@ describe("OpenAiProviderAdapter", () => {
       })
     ).rejects.toMatchObject({
       name: "ProviderRuntimeError",
-      code: "session_expired",
+      code: "missing_auth",
       providerId: "openai"
     } satisfies Partial<ProviderRuntimeError>);
     expect(client.execute).not.toHaveBeenCalled();
@@ -84,7 +85,7 @@ describe("OpenAiProviderAdapter", () => {
     ]);
   });
 
-  it("enforces session_expired in listModels when token session has expired", async () => {
+  it("returns missing_auth in listModels when token_session is requested without api key", async () => {
     const client = createClient();
     const adapter = new OpenAiProviderAdapter(client);
 
@@ -97,7 +98,7 @@ describe("OpenAiProviderAdapter", () => {
       })
     ).rejects.toMatchObject({
       name: "ProviderRuntimeError",
-      code: "session_expired",
+      code: "missing_auth",
       providerId: "openai"
     } satisfies Partial<ProviderRuntimeError>);
     expect(client.listModels).not.toHaveBeenCalled();
