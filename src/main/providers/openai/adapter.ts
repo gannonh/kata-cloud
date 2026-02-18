@@ -42,7 +42,7 @@ export class OpenAiProviderAdapter implements ProviderRuntimeAdapter {
   readonly providerId = "openai" as const;
   readonly capabilities: ProviderCapabilities = {
     supportsApiKey: true,
-    supportsTokenSession: true,
+    supportsTokenSession: false,
     supportsModelListing: true
   };
 

@@ -42,7 +42,7 @@ export class AnthropicProviderAdapter implements ProviderRuntimeAdapter {
   readonly providerId = "anthropic" as const;
   readonly capabilities: ProviderCapabilities = {
     supportsApiKey: true,
-    supportsTokenSession: true,
+    supportsTokenSession: false,
     supportsModelListing: true
   };
 

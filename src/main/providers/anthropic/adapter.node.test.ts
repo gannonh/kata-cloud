@@ -3,7 +3,7 @@ import { ProviderRuntimeError } from "../../provider-runtime/errors";
 import { AnthropicProviderAdapter, type AnthropicProviderClient } from "./adapter";
 
 describe("AnthropicProviderAdapter", () => {
-  it("uses token_session mode when an active token session id is available", async () => {
+  it("falls back to api_key when token_session is requested and api key is available", async () => {
     const client = createClient();
     client.execute.mockResolvedValue({ text: "hello from anthropic" });
     const adapter = new AnthropicProviderAdapter(client);
@@ -11,19 +11,20 @@ describe("AnthropicProviderAdapter", () => {
     const result = await adapter.execute({
       auth: {
         preferredMode: "token_session",
-        tokenSession: { id: "session-1", status: "active" }
+        tokenSession: { id: "session-1", status: "active" },
+        apiKey: "sk-ant"
       },
       model: "claude-3-5-sonnet",
       prompt: "Say hello"
     });
 
-    expect(result.authMode).toBe("token_session");
-    expect(adapter.capabilities.supportsTokenSession).toBe(true);
+    expect(result.authMode).toBe("api_key");
+    expect(adapter.capabilities.supportsTokenSession).toBe(false);
     expect(client.execute).toHaveBeenCalledTimes(1);
     expect(client.execute.mock.calls[0]?.[0].auth).toEqual({
-      authMode: "token_session",
-      apiKey: undefined,
-      tokenSessionId: "session-1"
+      authMode: "api_key",
+      apiKey: "sk-ant",
+      tokenSessionId: undefined
     });
   });
 
@@ -51,7 +52,7 @@ describe("AnthropicProviderAdapter", () => {
     });
   });
 
-  it("returns session_expired when token session is expired and fallback is disabled", async () => {
+  it("returns invalid_auth when token session is requested and fallback is disabled", async () => {
     const client = createClient();
     const adapter = new AnthropicProviderAdapter(client);
 
@@ -68,7 +69,7 @@ describe("AnthropicProviderAdapter", () => {
       })
     ).rejects.toMatchObject({
       name: "ProviderRuntimeError",
-      code: "session_expired",
+      code: "invalid_auth",
       providerId: "anthropic"
     } satisfies Partial<ProviderRuntimeError>);
     expect(client.execute).not.toHaveBeenCalled();
