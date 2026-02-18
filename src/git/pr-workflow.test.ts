@@ -451,6 +451,7 @@ describe("PullRequestWorkflowService", () => {
     });
 
     expect(result.number).toBe(444);
-    expect(pullRequestPayload?.body).toBe("");
+    expect(pullRequestPayload).not.toBeNull();
+    expect(pullRequestPayload?.["body"]).toBe("");
   });
 });
