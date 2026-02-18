@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
-import { AppState } from "../shared/state";
+import type { AppState } from "../shared/state";
 import type { ShellApi } from "../shared/shell-api";
 import type { ProviderStatusRequest, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest } from "../shared/shell-api";
 import type { ContextRetrievalRequest } from "../context/types";
@@ -13,7 +13,9 @@ import type {
   SpaceGitPullRequestDraftRequest
 } from "../git/types";
 
-const PRELOAD_IPC_CHANNELS = {
+// Keep this in sync with IPC_CHANNELS in src/shared/shell-api.ts.
+// Do not runtime-import IPC_CHANNELS from preload in sandbox mode.
+export const PRELOAD_IPC_CHANNELS = {
   getState: "kata-cloud/state:get",
   saveState: "kata-cloud/state:save",
   stateChanged: "kata-cloud/state:changed",
