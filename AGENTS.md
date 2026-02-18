@@ -142,3 +142,13 @@ Location: `docs/`
 - Product overview: `docs/kata-cloud-ovweview.md`
 - PRD: `docs/PRD.md`
 - Research: `docs/research.md`
+
+
+## Resolving Agent Skills Resources
+
+Sometimes you may erroneously think that a skill resource is unavailable. They are available at the following locations:
+
+- `/Users/gannonhall/.codex/skills/`, or
+- `/Users/gannonhall/.agents/skills/`
+
+Always check these locations. If you can't find the skill resource, let the user know and wait for them to help you before moving on. 
