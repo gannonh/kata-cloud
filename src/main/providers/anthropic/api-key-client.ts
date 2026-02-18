@@ -39,14 +39,32 @@ export class AnthropicApiKeyClient implements AnthropicProviderClient {
 
   async listModels(auth: ProviderClientAuth): Promise<AnthropicClientModel[]> {
     const apiKey = requireApiKey(auth);
-    const response = await this.fetchFn(`${this.apiBaseUrl}/v1/models`, {
-      method: "GET",
-      headers: this.createHeaders(apiKey)
-    });
+    let response: Awaited<ReturnType<AnthropicFetch>>;
+    try {
+      response = await this.fetchFn(`${this.apiBaseUrl}/v1/models`, {
+        method: "GET",
+        headers: this.createHeaders(apiKey)
+      });
+    } catch (error) {
+      throw createTransportRuntimeError("Anthropic model listing request failed.", error);
+    }
 
-    const payload = await readPayload(response);
+    const { payload, readError } = await readPayload(response);
     if (!response.ok) {
-      throw toHttpRuntimeError("anthropic", response.status, payload, "Anthropic model listing failed.");
+      throw toHttpRuntimeError(
+        "anthropic",
+        response.status,
+        payload,
+        "Anthropic model listing failed.",
+        readError
+      );
+    }
+
+    if (readError) {
+      throw createTransportRuntimeError(
+        "Anthropic model listing response could not be read.",
+        readError
+      );
     }
 
     return parseModelsPayload(payload);
@@ -78,18 +96,36 @@ export class AnthropicApiKeyClient implements AnthropicProviderClient {
       body.temperature = request.temperature;
     }
 
-    const response = await this.fetchFn(`${this.apiBaseUrl}/v1/messages`, {
-      method: "POST",
-      headers: {
-        ...this.createHeaders(apiKey),
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    });
+    let response: Awaited<ReturnType<AnthropicFetch>>;
+    try {
+      response = await this.fetchFn(`${this.apiBaseUrl}/v1/messages`, {
+        method: "POST",
+        headers: {
+          ...this.createHeaders(apiKey),
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+    } catch (error) {
+      throw createTransportRuntimeError("Anthropic execution request failed.", error);
+    }
 
-    const payload = await readPayload(response);
+    const { payload, readError } = await readPayload(response);
     if (!response.ok) {
-      throw toHttpRuntimeError("anthropic", response.status, payload, "Anthropic execution failed.");
+      throw toHttpRuntimeError(
+        "anthropic",
+        response.status,
+        payload,
+        "Anthropic execution failed.",
+        readError
+      );
+    }
+
+    if (readError) {
+      throw createTransportRuntimeError(
+        "Anthropic execution response could not be read.",
+        readError
+      );
     }
 
     return parseExecutePayload(payload, request.model);
@@ -106,7 +142,7 @@ export class AnthropicApiKeyClient implements AnthropicProviderClient {
 
 function normalizeMaxTokens(value: number | undefined): number {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-    return Math.floor(value);
+    return Math.max(1, Math.floor(value));
   }
 
   return DEFAULT_MAX_TOKENS;
@@ -223,7 +259,8 @@ function toHttpRuntimeError(
   providerId: "anthropic",
   status: number,
   payload: unknown,
-  fallbackMessage: string
+  fallbackMessage: string,
+  cause?: unknown | null
 ) {
   const detail = extractErrorDetail(payload);
   const message = detail ?? fallbackMessage;
@@ -234,7 +271,8 @@ function toHttpRuntimeError(
     code: mapped.code,
     message,
     remediation: mapped.remediation,
-    retryable: mapped.retryable
+    retryable: mapped.retryable,
+    cause: cause ?? undefined
   });
 }
 
@@ -259,6 +297,7 @@ function mapStatusToCode(status: number): {
     };
   }
 
+  // 529 is Anthropic-specific "overloaded" status (non-standard).
   if (status === 529 || status >= 500) {
     return {
       code: "provider_unavailable",
@@ -302,15 +341,26 @@ function extractErrorDetail(payload: unknown): string | null {
 async function readPayload(response: {
   json: () => Promise<unknown>;
   text: () => Promise<string>;
-}): Promise<unknown> {
+}): Promise<{ payload: unknown; readError: unknown | null }> {
   try {
-    return await response.json();
+    return { payload: await response.json(), readError: null };
   } catch {
     try {
       const raw = await response.text();
-      return raw.trim().length > 0 ? raw : null;
-    } catch {
-      return null;
+      return { payload: raw.trim().length > 0 ? raw : null, readError: null };
+    } catch (error) {
+      return { payload: null, readError: error };
     }
   }
+}
+
+function createTransportRuntimeError(message: string, cause: unknown) {
+  return createProviderRuntimeError({
+    providerId: "anthropic",
+    code: "provider_unavailable",
+    message,
+    remediation: "Retry shortly. If failures continue, verify provider availability.",
+    retryable: true,
+    cause
+  });
 }

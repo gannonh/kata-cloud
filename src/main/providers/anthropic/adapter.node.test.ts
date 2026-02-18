@@ -69,6 +69,34 @@ describe("AnthropicProviderAdapter", () => {
     expect(client.execute).not.toHaveBeenCalled();
   });
 
+  it("throws unexpected_error when auth resolution is inconsistent", async () => {
+    const client = createClient();
+    const adapter = new AnthropicProviderAdapter(client);
+    vi.spyOn(adapter, "resolveAuth").mockReturnValue({
+      requestedMode: "api_key",
+      resolvedMode: null,
+      status: "authenticated",
+      fallbackApplied: false,
+      failureCode: null,
+      reason: null,
+      apiKey: "sk-ant",
+      tokenSessionId: null
+    });
+
+    await expect(
+      adapter.execute({
+        auth: { preferredMode: "api_key", apiKey: "sk-ant" },
+        model: "claude-3-5-sonnet",
+        prompt: "Say hello"
+      })
+    ).rejects.toMatchObject({
+      name: "ProviderRuntimeError",
+      code: "unexpected_error",
+      providerId: "anthropic"
+    } satisfies Partial<ProviderRuntimeError>);
+    expect(client.execute).not.toHaveBeenCalled();
+  });
+
   it("maps upstream unauthorized failures to invalid_auth", async () => {
     const client = createClient();
     client.execute.mockRejectedValue(new Error("401 unauthorized"));

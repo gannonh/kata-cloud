@@ -22,7 +22,8 @@ import type { ContextRetrievalRequest } from "../context/types";
 import { createProviderRuntimeRegistry } from "./provider-runtime/registry";
 import { ProviderRuntimeService } from "./provider-runtime/service";
 import { serializeProviderRuntimeError } from "./provider-runtime/errors";
-import { AnthropicApiKeyClient, AnthropicProviderAdapter } from "./providers/anthropic";
+import { AnthropicProviderAdapter } from "./providers/anthropic/adapter";
+import { AnthropicApiKeyClient } from "./providers/anthropic/api-key-client";
 
 let stateStore: PersistedStateStore | undefined;
 

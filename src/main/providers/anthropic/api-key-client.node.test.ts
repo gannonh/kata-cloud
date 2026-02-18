@@ -34,7 +34,7 @@ describe("AnthropicApiKeyClient", () => {
 
     expect(result).toEqual([
       { id: "claude-3-5-sonnet", displayName: "Claude 3.5 Sonnet" },
-      { id: "claude-3-haiku", displayName: undefined }
+      { id: "claude-3-haiku" }
     ]);
     expect(fetchFn).toHaveBeenCalledTimes(1);
     expect(fetchFn.mock.calls[0]?.[0]).toBe("https://api.anthropic.com/v1/models");
@@ -196,6 +196,65 @@ describe("AnthropicApiKeyClient", () => {
       name: "ProviderRuntimeError",
       code: "unexpected_error",
       retryable: false,
+      providerId: "anthropic"
+    });
+  });
+
+  it("enforces a minimum max_tokens of 1 for positive fractional values", async () => {
+    const fetchFn = vi.fn<MockFetch>().mockResolvedValue(
+      createResponse({
+        ok: true,
+        status: 200,
+        jsonBody: {
+          model: "claude-3-5-sonnet-20241022",
+          content: [{ type: "text", text: "ok" }]
+        }
+      })
+    );
+    const client = new AnthropicApiKeyClient({ fetchFn });
+
+    await client.execute({
+      auth: { authMode: "api_key", apiKey: "sk-ant" },
+      model: "claude-3-5-sonnet",
+      prompt: "Hi",
+      maxTokens: 0.5
+    });
+
+    const request = fetchFn.mock.calls[0]?.[1];
+    expect(JSON.parse((request?.body as string) ?? "{}")).toMatchObject({ max_tokens: 1 });
+  });
+
+  it("maps transport failures to provider_unavailable", async () => {
+    const transportError = new Error("connect ECONNRESET");
+    const fetchFn = vi.fn<MockFetch>().mockRejectedValue(transportError);
+    const client = new AnthropicApiKeyClient({ fetchFn });
+
+    await expect(
+      client.listModels({ authMode: "api_key", apiKey: "sk-ant" })
+    ).rejects.toMatchObject({
+      name: "ProviderRuntimeError",
+      code: "provider_unavailable",
+      retryable: true,
+      providerId: "anthropic",
+      cause: transportError
+    });
+  });
+
+  it("returns unexpected_error for malformed model list payloads", async () => {
+    const fetchFn = vi.fn<MockFetch>().mockResolvedValue(
+      createResponse({
+        ok: true,
+        status: 200,
+        jsonBody: { data: "not-an-array" }
+      })
+    );
+    const client = new AnthropicApiKeyClient({ fetchFn });
+
+    await expect(
+      client.listModels({ authMode: "api_key", apiKey: "sk-ant" })
+    ).rejects.toMatchObject({
+      name: "ProviderRuntimeError",
+      code: "unexpected_error",
       providerId: "anthropic"
     });
   });
