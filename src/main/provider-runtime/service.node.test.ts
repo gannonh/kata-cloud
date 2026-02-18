@@ -1,0 +1,120 @@
+import { describe, expect, it } from "vitest";
+import { ProviderRuntimeService } from "./service";
+import { ProviderRuntimeError } from "./errors";
+import { createProviderRuntimeRegistry } from "./registry";
+import type {
+  ModelProviderId,
+  ProviderAuthInput,
+  ProviderAuthResolution,
+  ProviderRuntimeAdapter
+} from "./types";
+
+const MOCK_API_KEY_AUTH: ProviderAuthInput = { preferredMode: "api_key", apiKey: "test-key" };
+const MISSING_AUTH: ProviderAuthInput = { preferredMode: "api_key", apiKey: null };
+
+function createMockAdapter(providerId: ModelProviderId): ProviderRuntimeAdapter {
+  return {
+    providerId,
+    capabilities: { supportsApiKey: true, supportsTokenSession: true, supportsModelListing: true },
+    resolveAuth: (auth: ProviderAuthInput): ProviderAuthResolution => ({
+      requestedMode: auth.preferredMode ?? "api_key",
+      resolvedMode: auth.apiKey ? "api_key" : null,
+      status: auth.apiKey ? "authenticated" : "error",
+      fallbackApplied: false,
+      failureCode: auth.apiKey ? null : "missing_auth",
+      reason: auth.apiKey ? null : "anthropic API key is required.",
+      apiKey: auth.apiKey ?? null,
+      tokenSessionId: null
+    }),
+    listModels: async () => [{ id: "claude-3", displayName: "Claude 3" }],
+    execute: async (request) => ({
+      providerId,
+      model: request.model,
+      authMode: "api_key",
+      text: "hello"
+    })
+  };
+}
+
+describe("ProviderRuntimeService.resolveAuth", () => {
+  it("returns authenticated status when adapter is registered and auth is valid", () => {
+    const registry = createProviderRuntimeRegistry([createMockAdapter("anthropic")]);
+    const service = new ProviderRuntimeService(registry);
+
+    const result = service.resolveAuth({ providerId: "anthropic", auth: MOCK_API_KEY_AUTH });
+
+    expect(result.providerId).toBe("anthropic");
+    expect(result.status).toBe("authenticated");
+    expect(result.resolvedMode).toBe("api_key");
+    expect(result.failureCode).toBeNull();
+  });
+
+  it("returns error status when auth is missing", () => {
+    const registry = createProviderRuntimeRegistry([createMockAdapter("anthropic")]);
+    const service = new ProviderRuntimeService(registry);
+
+    const result = service.resolveAuth({ providerId: "anthropic", auth: MISSING_AUTH });
+
+    expect(result.status).toBe("error");
+    expect(result.failureCode).toBe("missing_auth");
+    expect(result.resolvedMode).toBeNull();
+  });
+
+  it("throws ProviderRuntimeError when provider is not registered", () => {
+    const registry = createProviderRuntimeRegistry();
+    const service = new ProviderRuntimeService(registry);
+
+    expect(() => service.resolveAuth({ providerId: "anthropic", auth: MOCK_API_KEY_AUTH }))
+      .toThrow(ProviderRuntimeError);
+  });
+});
+
+describe("ProviderRuntimeService.listModels", () => {
+  it("returns model descriptors from the registered adapter", async () => {
+    const registry = createProviderRuntimeRegistry([createMockAdapter("openai")]);
+    const service = new ProviderRuntimeService(registry);
+
+    const models = await service.listModels({ providerId: "openai", auth: MOCK_API_KEY_AUTH });
+
+    expect(models).toHaveLength(1);
+    expect(models[0].id).toBe("claude-3");
+  });
+
+  it("throws ProviderRuntimeError when provider is not registered", async () => {
+    const registry = createProviderRuntimeRegistry();
+    const service = new ProviderRuntimeService(registry);
+
+    await expect(service.listModels({ providerId: "openai", auth: MOCK_API_KEY_AUTH }))
+      .rejects.toBeInstanceOf(ProviderRuntimeError);
+  });
+});
+
+describe("ProviderRuntimeService.execute", () => {
+  it("returns execute result from the registered adapter", async () => {
+    const registry = createProviderRuntimeRegistry([createMockAdapter("anthropic")]);
+    const service = new ProviderRuntimeService(registry);
+
+    const result = await service.execute({
+      providerId: "anthropic",
+      auth: MOCK_API_KEY_AUTH,
+      model: "claude-3",
+      prompt: "Hello"
+    });
+
+    expect(result.providerId).toBe("anthropic");
+    expect(result.text).toBe("hello");
+    expect(result.authMode).toBe("api_key");
+  });
+
+  it("throws ProviderRuntimeError when provider is not registered", async () => {
+    const registry = createProviderRuntimeRegistry();
+    const service = new ProviderRuntimeService(registry);
+
+    await expect(service.execute({
+      providerId: "anthropic",
+      auth: MOCK_API_KEY_AUTH,
+      model: "claude-3",
+      prompt: "Hello"
+    })).rejects.toBeInstanceOf(ProviderRuntimeError);
+  });
+});
