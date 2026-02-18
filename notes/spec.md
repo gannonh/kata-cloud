@@ -11,7 +11,7 @@ task:
 > NOTE: `intent://local/task/[uuid]` resolves to a local markdown file with the specified UUID:
 > Example: `intent://local/task/10a48d6c-9fd1-452f-aa99-3120bf23641c` → `notes/10a48d6c-9fd1-452f-aa99-3120bf23641c.md`
 
-## Handoff Snapshot (2026-02-17)
+## Handoff Snapshot (2026-02-18)
 
 This section is the current source of truth for handoff. Historical sections below are retained for audit trail but are superseded by this snapshot.
 
@@ -21,35 +21,38 @@ This section is the current source of truth for handoff. Historical sections bel
    - PR `#31`: in-app browser preview implementation.
    - PR `#32`: provider runtime Slice 1 foundation.
    - PR `#33`: context retrieval contract v1 docs.
+   - PR `#35`: responsive changes-panel heights.
+   - PR `#36`: provider runtime Slice 2 IPC/main/preload wiring.
 2. Coordination worktree baseline is clean and synced to `origin/main`.
 3. Branch strategy remains enforced:
    - Start each new task branch from updated `origin/main`.
    - Keep scope isolated to one task per PR.
    - Avoid absolute worktree paths in notes/prompts; use repo-relative paths only.
+   - Include explicit "Context to read first" sections in all implementation prompts.
 
 ### Completed Since Last Handoff
 1. [Integrate context engine adapter and initial providers](intent://local/task/302fcffa-863d-4d90-b017-08369fad3f73) is complete and merged via PR `#30`.
 2. [Add in-app browser preview for local development](intent://local/task/22770f24-a79b-4d14-9add-14ffd1447b2f) is complete and merged via PR `#31`.
 3. [Implement real model provider runtime and authentication](intent://local/task/dfb65dc8-1eb9-47f1-b95f-e22c99005ddb) Slice 1 foundation is complete and merged via PR `#32`.
 4. Context Engine interface guidance is documented in `docs/context-retrieval-contract-v1.md` via PR `#33`.
+5. Changes panel responsive height remediation is complete via PR `#35`.
+6. Provider runtime Slice 2 plumbing is complete via PR `#36`.
 
 ### Active Tasks
 1. [Implement real model provider runtime and authentication](intent://local/task/dfb65dc8-1eb9-47f1-b95f-e22c99005ddb)
-   - Status: `in_progress` (Slice 1 merged).
-   - Next gate: Slice 2 runtime plumbing (main/preload/shared IPC contract integration, no renderer UX scope).
+   - Status: `in_progress` (Slices 1 and 2 merged).
+   - Next gate: Slice 3 Anthropic API-key runtime path (adapter registration + execution through IPC service path).
 2. Spec/task hygiene
    - Status: `in_progress`.
-   - Next gate: keep `notes/spec.md` top snapshot aligned after each merged PR.
+   - Next gate: keep `notes/spec.md` top snapshot aligned after each merged PR and enforce context-first, repo-relative dispatch prompts.
 3. Backlog execution lanes (GitHub issues `#13-#21`)
    - Status: `open`.
-   - Next gate: dispatch low-overlap issue work in parallel with provider-runtime slices.
+   - Next gate: dispatch low-overlap issue work in parallel with provider-runtime slices (recommended next: `#16` syntax highlighting).
 
 ### Exact Next Steps
-1. Dispatch Provider Runtime Slice 2 from fresh `origin/main` with strict non-overlap guardrails:
-   - include `src/main/provider-runtime/**`, `src/main/index.ts`, `src/preload/index.ts`, `src/shared/shell-api.ts`.
-   - exclude renderer UX/settings work in `src/main.tsx`.
-2. In parallel, run one low-overlap backlog issue (recommended: `#17` responsive changes-panel heights).
-3. After Slice 2 merges, dispatch provider adapter execution slices (Anthropic API key path, then OpenAI API key path).
+1. Dispatch Provider Runtime Slice 3 (Anthropic API key execution) from fresh `origin/main` with strict non-overlap guardrails and a required context pre-read list.
+2. In parallel, run one low-overlap backlog issue (recommended: `#16` syntax highlighting for changes diff viewer).
+3. After Slice 3 merges, dispatch Slice 4 (OpenAI API key execution), then Slice 5 (token-session mode/fallback), then Slice 6 (renderer settings/status UX).
 4. Run coordinated UAT after each provider slice merge and full MVP sweep after provider runtime is fully wired.
 
 ### Next Steps After Open Tasks Complete
