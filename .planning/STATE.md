@@ -2,10 +2,15 @@
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-18 — Milestone v0.1.0 started
+Phase: 6 — Delegation + Context Contract Hardening (next)
+Plan: Phase 5 completed; Phase 6 planning/execution pending
+Status: Phase 5 complete and verified
+Last activity: 2026-02-18 — Phase 5 completed and moved to completed/
+
+## Milestone Progress
+
+Progress: 1/4 phases complete (25%)
+Bar: [#####---------------]
 
 ## Project Reference
 
@@ -21,8 +26,10 @@ No backlog issues selected yet for this milestone scope.
 ## Accumulated Context
 
 - Provider runtime and PR workflow foundations are already present and validated.
-- Orchestrator lifecycle + context adapter baseline exist and need reliability/depth expansion.
+- Phase 5 delivered deterministic run lifecycle transitions, shared run/task projections, and renderer wiring for lifecycle/status display.
+- ORCH-01 and ORCH-02 are now complete and reflected in requirements traceability.
+- Orchestrator lifecycle + context adapter baseline now has deterministic status semantics; next work is delegated history + context contract hardening.
 - UAT-to-E2E policy remains active: manual UAT outcomes must be codified into Playwright coverage.
 
 ---
-Last updated: 2026-02-18 after milestone initialization
+Last updated: 2026-02-18 after Phase 5 completion

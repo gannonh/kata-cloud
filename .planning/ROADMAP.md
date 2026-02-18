@@ -14,28 +14,10 @@ Current focus is making orchestrator and context behavior deterministic before b
 
 **Goal:** Strengthen orchestrator execution reliability and context quality so agent runs are predictable, observable, and resume-safe.
 
-- [ ] Phase 5: Orchestrator Lifecycle Determinism
+- [x] Phase 5: Orchestrator Lifecycle Determinism (3/3 plans) — completed 2026-02-18
 - [ ] Phase 6: Delegation + Context Contract Hardening
 - [ ] Phase 7: Resume Integrity and Context Consistency
 - [ ] Phase 8: Verification Sweep and Guardrail Codification
-
-### Phase 5: Orchestrator Lifecycle Determinism
-
-**Goal**: Ensure run lifecycle transitions are deterministic and user-visible from trigger through terminal state.
-
-**Requirements**: ORCH-01, ORCH-02
-
-**Success Criteria** (what must be TRUE):
-  1. User can trigger a run and always observe deterministic status progression to a terminal state.
-  2. Delegated task cards show accurate in-flight and terminal statuses with failure context.
-  3. Failure paths do not leave runs in ambiguous terminal state.
-
-**Plans:** 3 plans
-
-Plans:
-- [ ] 05-01-PLAN.md — Shared deterministic run-lifecycle transition primitives
-- [ ] 05-02-PLAN.md — Shared run/task status projection + history selector tightening
-- [ ] 05-03-PLAN.md — Renderer lifecycle + status-panel wiring with regressions
 
 ### Phase 6: Delegation + Context Contract Hardening
 
@@ -83,4 +65,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-18*
-*Last updated: 2026-02-18 — phase 05 planned*
+*Last updated: 2026-02-18 — phase 05 completed*
