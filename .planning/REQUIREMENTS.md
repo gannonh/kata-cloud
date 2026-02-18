@@ -5,80 +5,74 @@ Core Value: The spec stays aligned with implementation while agent execution rel
 
 ## v1 Requirements
 
-Requirements for milestone v1.0 Desktop MVP Closure.
+Requirements for milestone v0.1.0 Orchestrator and Context Engine Expansion.
 
-### Provider UX
+### Orchestrator Reliability
 
-- [ ] **PROV-01**: User can select active model provider in renderer settings and see current provider selection reflected in app state.
-- [ ] **PROV-02**: User can configure provider auth inputs (API key and token-session preference metadata) from renderer settings.
-- [ ] **PROV-03**: User can view provider auth resolution state (requested mode, resolved mode, fallback applied) in renderer status UI.
-- [ ] **PROV-04**: User receives typed, actionable provider auth/runtime error feedback in renderer flows without crashing unrelated views.
+- [ ] **ORCH-01**: User can start an orchestrator run and always receive a deterministic run status transition from queued to terminal state.
+- [ ] **ORCH-02**: User can see delegated specialist task progress and terminal outcomes with actionable failure context.
+- [ ] **ORCH-03**: User can re-open prior orchestrator runs and inspect full lifecycle timelines without data loss.
+- [ ] **ORCH-04**: User can recover safely from orchestrator failures without corrupting existing spec content or active session state.
 
-### Runtime Hardening
+### Context Engine Depth
 
-- [ ] **HARD-01**: Provider runtime failures are normalized to structured error taxonomy with remediation and retryability semantics preserved.
-- [ ] **HARD-02**: Provider runtime calls enforce deterministic timeout/transport handling and avoid hanging execution paths.
-- [ ] **HARD-03**: Provider runtime regression tests cover auth fallback edge cases and error-classification boundaries.
-- [ ] **HARD-04**: Main/preload/provider runtime integration remains type-safe and passes strict typecheck after hardening changes.
+- [ ] **CTX-01**: User-triggered orchestration can retrieve relevant repository context through the adapter interface with stable request/response contracts.
+- [ ] **CTX-02**: User gets predictable context retrieval behavior when provider or filesystem lookups fail (typed error handling, no silent failure).
+- [ ] **CTX-03**: User can execute orchestrator flows with consistent context grounding across repeated runs in the same session.
+- [ ] **CTX-04**: User-visible orchestrator output reflects context-source provenance (what data source informed generated output).
 
-### MVP Verification
+### Session and Resume Integrity
 
-- [ ] **VERI-01**: End-to-end MVP journey (space -> spec -> orchestrator -> changes -> PR) is executed and documented as passing UAT.
-- [ ] **VERI-02**: Manual UAT scenarios discovered during v1.0 are codified into Playwright Electron tests.
-- [ ] **VERI-03**: CI smoke and full E2E workflows remain green with updated scenario coverage.
-- [ ] **VERI-04**: Provider runtime slices (1-7) have explicit GO/NO-GO evidence recorded after verification.
+- [ ] **SESS-01**: User can restart the app and find orchestrator run history, statuses, and delegated task summaries preserved.
+- [ ] **SESS-02**: User can continue an in-progress workflow after restart without losing active milestone/space/session linkage.
+- [ ] **SESS-03**: User can distinguish stale/expired run artifacts from current active workflow state.
 
-### Release Readiness
+### Verification and Guardrails
 
-- [ ] **RELS-01**: Final release handoff includes validated command matrix, residual risks, and mitigation plan.
-- [ ] **RELS-02**: Post-v1 backlog priorities are documented with recommended execution ordering.
-- [ ] **RELS-03**: Spec/task artifacts reflect final milestone outcomes and remaining deferred scope.
+- [ ] **VERI-01**: Targeted orchestrator/context automated tests cover normal flow, failure flow, and resume flow regressions.
+- [ ] **VERI-02**: Electron E2E scenarios verify at least one full orchestrator + context flow from prompt to reviewable status outcome.
+- [ ] **VERI-03**: Required quality gates (`pnpm test`, `pnpm run desktop:typecheck`, smoke E2E) remain green after milestone changes.
 
 ## v2 Requirements
 
 Deferred to future milestones.
 
-### Platform Expansion
+### Provider and Platform Expansion
 
+- **PROV-01**: Advanced provider settings UX and runtime controls beyond minimum orchestration dependencies.
 - **PLAT-01**: Cloud mode and multi-tenant orchestration support.
 - **PLAT-02**: Enterprise deployment variants (VPC/on-prem/air-gapped).
-
-### Context Engine Depth
-
-- **CTX-01**: Production-grade MCP provider integration beyond stub behavior.
-- **CTX-02**: Context indexing and retrieval performance optimization for large repositories.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Cloud billing/licensing/accounts | Deferred until local-first desktop MVP is stable |
-| Plugin marketplace ecosystem | Not required for MVP closure milestone |
-| Broad unrelated feature initiatives | Conflicts with slice-based closure focus and verification discipline |
+| New marketplace/plugin ecosystem | Not required to close orchestration reliability baseline |
+| Billing/accounts/subscriptions | Cloud phase concern, not local desktop milestone scope |
+| Broad UI redesign across all views | Would dilute reliability-focused delivery |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PROV-01 | Phase 1 | Pending |
-| PROV-02 | Phase 1 | Pending |
-| PROV-03 | Phase 1 | Pending |
-| PROV-04 | Phase 1 | Pending |
-| HARD-01 | Phase 2 | Pending |
-| HARD-02 | Phase 2 | Pending |
-| HARD-03 | Phase 2 | Pending |
-| HARD-04 | Phase 2 | Pending |
-| VERI-01 | Phase 3 | Pending |
-| VERI-02 | Phase 3 | Pending |
-| VERI-03 | Phase 3 | Pending |
-| VERI-04 | Phase 3 | Pending |
-| RELS-01 | Phase 4 | Pending |
-| RELS-02 | Phase 4 | Pending |
-| RELS-03 | Phase 4 | Pending |
+| ORCH-01 | Phase 5 | Pending |
+| ORCH-02 | Phase 5 | Pending |
+| ORCH-03 | Phase 6 | Pending |
+| ORCH-04 | Phase 6 | Pending |
+| CTX-01 | Phase 6 | Pending |
+| CTX-02 | Phase 6 | Pending |
+| CTX-03 | Phase 7 | Pending |
+| CTX-04 | Phase 7 | Pending |
+| SESS-01 | Phase 7 | Pending |
+| SESS-02 | Phase 7 | Pending |
+| SESS-03 | Phase 7 | Pending |
+| VERI-01 | Phase 8 | Pending |
+| VERI-02 | Phase 8 | Pending |
+| VERI-03 | Phase 8 | Pending |
 
 Coverage:
-- v1 requirements: 15 total
-- Mapped to phases: 15
+- v1 requirements: 14 total
+- Mapped to phases: 14
 - Unmapped: 0
 
 ---

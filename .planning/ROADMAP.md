@@ -1,67 +1,86 @@
-# Roadmap
+# Roadmap: Kata Cloud
 
-Current Milestone: v1.0 Desktop MVP Closure
+## Overview
 
-## Milestone Overview
+Milestone execution is tracked as globally ordered phases.
+Current focus is making orchestrator and context behavior deterministic before broader expansion.
 
-- 🔄 v1.0 Desktop MVP Closure (in progress)
-- ○ v1.1 Orchestrator and Context Engine Expansion (planned)
+## Milestones
 
-## Progress Summary
+- 🔄 **v0.1.0 Orchestrator and Context Engine Expansion** — Phases 5-8 (in progress)
+- ○ **v0.2.0 Desktop MVP Closure** — Phases TBD (planned)
 
-| Milestone | Status | Phases | Requirements | Notes |
-|-----------|--------|--------|--------------|-------|
-| v1.0 Desktop MVP Closure | In Progress | 4 | 15 | Slice 6/7 + MVP verification + release handoff |
-| v1.1 Orchestrator and Context Engine Expansion | Planned | — | — | Draft placeholder only |
+## Current Milestone: v0.1.0 Orchestrator and Context Engine Expansion
 
-## v1.0 Desktop MVP Closure
+**Goal:** Strengthen orchestrator execution reliability and context quality so agent runs are predictable, observable, and resume-safe.
 
-### Phase 1: Provider Runtime UX Wiring (Slice 6)
+- [ ] Phase 5: Orchestrator Lifecycle Determinism
+- [ ] Phase 6: Delegation + Context Contract Hardening
+- [ ] Phase 7: Resume Integrity and Context Consistency
+- [ ] Phase 8: Verification Sweep and Guardrail Codification
 
-Goal: Ship renderer-facing provider settings/status UX backed by existing typed IPC contracts.
+### Phase 5: Orchestrator Lifecycle Determinism
 
-Requirements: PROV-01, PROV-02, PROV-03, PROV-04
+**Goal**: Ensure run lifecycle transitions are deterministic and user-visible from trigger through terminal state.
 
-Success Criteria (what must be TRUE):
-  1. Renderer allows provider selection and persists the selected provider in app state.
-  2. Renderer exposes provider auth inputs and round-trips them through the existing shell API bridge.
-  3. Renderer shows auth resolution details including requested mode, resolved mode, and fallback application.
-  4. Typed provider IPC errors render actionable status messaging without breaking non-provider UI flows.
+**Requirements**: ORCH-01, ORCH-02
 
-### Phase 2: Provider Runtime Hardening (Slice 7)
+**Success Criteria** (what must be TRUE):
+  1. User can trigger a run and always observe deterministic status progression to a terminal state.
+  2. Delegated task cards show accurate in-flight and terminal statuses with failure context.
+  3. Failure paths do not leave runs in ambiguous terminal state.
 
-Goal: Strengthen provider-runtime reliability and error handling with deterministic semantics and regression coverage.
+**Plans:** 3 plans
 
-Requirements: HARD-01, HARD-02, HARD-03, HARD-04
+Plans:
+- [ ] 05-01-PLAN.md — Shared deterministic run-lifecycle transition primitives
+- [ ] 05-02-PLAN.md — Shared run/task status projection + history selector tightening
+- [ ] 05-03-PLAN.md — Renderer lifecycle + status-panel wiring with regressions
 
-Success Criteria (what must be TRUE):
-  1. Runtime errors map to structured taxonomy with remediation/retryability fields intact.
-  2. Timeout and transport failure handling is explicit, deterministic, and covered by tests.
-  3. Edge-case regression tests cover fallback policy and auth failure boundaries.
-  4. Main/preload/provider runtime paths pass strict typecheck and provider-focused test suites.
+### Phase 6: Delegation + Context Contract Hardening
 
-### Phase 3: MVP Verification and UAT Codification
+**Goal**: Stabilize delegated execution history and context adapter contracts with explicit typed error handling.
 
-Goal: Validate full MVP flows and convert manual UAT outcomes into automated Electron Playwright coverage.
+**Requirements**: ORCH-03, ORCH-04, CTX-01, CTX-02
 
-Requirements: VERI-01, VERI-02, VERI-03, VERI-04
+**Success Criteria** (what must be TRUE):
+  1. Historical runs retain complete lifecycle timelines and delegated outcomes after save/reload.
+  2. Context retrieval requests and responses follow stable typed contracts with explicit error handling.
+  3. Context/provider failures surface actionable diagnostics and do not silently degrade orchestration.
 
-Success Criteria (what must be TRUE):
-  1. Full MVP flow executes successfully in coordinated UAT with explicit pass/fail evidence.
-  2. New UAT scenarios are codified as Playwright tests in the same slice or immediate follow-up.
-  3. CI smoke (`e2e:electron:smoke`) and full (`e2e`) remain green after scenario additions.
-  4. Provider-runtime slices 1-7 have explicit GO/NO-GO verification outcomes recorded.
+### Phase 7: Resume Integrity and Context Consistency
 
-### Phase 4: Release Readiness and Handoff
+**Goal**: Guarantee restart/resume safety and stable context grounding across repeated orchestration runs.
 
-Goal: Close milestone with release packet, documented residual risks, and prioritized follow-up plan.
+**Requirements**: CTX-03, CTX-04, SESS-01, SESS-02, SESS-03
 
-Requirements: RELS-01, RELS-02, RELS-03
+**Success Criteria** (what must be TRUE):
+  1. App restart preserves orchestrator run history, delegated summaries, and active workflow linkage.
+  2. Repeated runs in the same session use consistent context grounding and clearly expose provenance.
+  3. Users can distinguish stale artifacts from active state and resume without corruption.
 
-Success Criteria (what must be TRUE):
-  1. Release handoff packet includes validated command matrix and known-risk mitigation guidance.
-  2. Deferred backlog is prioritized for post-v1 execution with rationale.
-  3. Spec/task records are synchronized to final milestone outcomes and deferred scope boundaries.
+### Phase 8: Verification Sweep and Guardrail Codification
+
+**Goal**: Lock reliability gains with deterministic automated regression coverage and milestone evidence.
+
+**Requirements**: VERI-01, VERI-02, VERI-03
+
+**Success Criteria** (what must be TRUE):
+  1. Targeted orchestrator/context automated suites cover normal, failure, and resume flows.
+  2. Electron E2E covers at least one full orchestrator + context scenario from prompt to reviewable result.
+  3. Required quality gates remain green with explicit evidence captured for milestone handoff.
+
+## Planned Milestones
+
+### ○ v0.2.0 Desktop MVP Closure
+
+**Goal:** Complete provider-runtime UX/hardening closure and finalize release-ready desktop MVP handoff.
+
+**Target features:**
+- Provider runtime UX polish and resiliency
+- Full MVP UAT/E2E final sweep
+- Release handoff packet and prioritized follow-up backlog
 
 ---
-Last updated: 2026-02-18 after milestone initialization
+*Roadmap created: 2026-02-18*
+*Last updated: 2026-02-18 — phase 05 planned*

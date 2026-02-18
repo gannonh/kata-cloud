@@ -18,3 +18,4 @@ coverage/
 *.tsbuildinfo
 .playwright-cli/
 output/playwright/
+.codex/environments/environment.toml

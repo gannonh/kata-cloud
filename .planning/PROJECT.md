@@ -8,16 +8,16 @@ Kata Cloud is a desktop app for spec-driven development where developers orchest
 
 The spec is the source of truth that stays aligned with real implementation while agents execute, so every workflow reliably produces a high-quality, reviewable pull request.
 
-## Current Milestone: v1.0 Desktop MVP Closure
+## Current Milestone: v0.1.0 Orchestrator and Context Engine Expansion
 
-**Goal:** Complete provider-runtime UX and hardening, then finish a full MVP validation sweep with explicit release handoff.
+**Goal:** Strengthen orchestrator execution reliability and context quality so agent runs are predictable, observable, and resume-safe.
 
 **Target features:**
 
-- Provider Runtime Slice 6: renderer settings and provider auth/status UX
-- Provider Runtime Slice 7: runtime hardening (timeouts, retries, error polish, regression expansion)
-- Full MVP UAT sweep with codified Playwright coverage for validated flows
-- Release-ready handoff packet with residual risk and backlog ordering
+- Deterministic orchestrator run controls and lifecycle visibility
+- Context engine depth improvements beyond filesystem baseline
+- Stronger delegation history, resume behavior, and failure diagnostics
+- End-to-end reliability gates for orchestrator plus context workflows
 
 ## Requirements
 
@@ -28,34 +28,33 @@ The spec is the source of truth that stays aligned with real implementation whil
 - ✓ Git lifecycle integration for spaces (branch/worktree init/switch, status, diffs, staging) — existing (`src/git/*`)
 - ✓ Living spec editing with autosave, task parsing, and threaded comments — existing (`src/features/spec-panel/*`, `src/notes/*`, `packages/task-parser/*`)
 - ✓ Orchestrator run lifecycle with specialist delegation and run-history/status modeling — existing (`src/shared/orchestrator-*.ts`, `src/main.tsx`)
-- ✓ Changes-to-PR workflow including draft generation and PR creation hardening — existing (`src/git/pr-workflow.ts`, merged spec baseline through PR #47)
+- ✓ Changes-to-PR workflow including draft generation and PR creation hardening — existing (`src/git/pr-workflow.ts`)
 - ✓ In-app localhost browser preview for iterative dev workflows — existing (`src/browser/local-dev-browser.ts`, `src/main.tsx`)
 - ✓ Context adapter foundation with filesystem provider and MCP-compatible stub — existing (`src/context/*`)
-- ✓ Provider runtime foundation + Anthropic/OpenAI API-key execution path slices — existing (`src/main/provider-runtime/*`, `src/main/providers/*`, through merged slices 1-4)
-- ✓ Provider runtime Slice 5 deterministic token-session fallback semantics — existing (merged PR #50)
+- ✓ Provider runtime foundation + Anthropic/OpenAI API-key execution path slices — existing (`src/main/provider-runtime/*`, `src/main/providers/*`)
 - ✓ UAT-to-E2E codification baseline with Electron Playwright smoke/full CI split — existing (`scripts/playwright-electron-*.mjs`, `.github/workflows/*`)
 
 ### Active
 
-- [ ] Complete Provider Runtime Slice 6: renderer settings/status UX for provider auth health, mode visibility, and execution wiring
-- [ ] Complete Provider Runtime Slice 7: hardening pass (timeouts/retries/error polish/regression expansion)
-- [ ] Run end-to-end MVP verification across full user journey (space -> spec -> delegate -> changes -> PR) and codify any remaining manual UAT scenarios into Playwright
-- [ ] Prepare first production-ready milestone packaging for local-first desktop MVP with explicit residual risk handoff
+- [ ] Improve orchestrator lifecycle reliability so run start, delegated execution, failure handling, and terminal outcomes are deterministic
+- [ ] Expand context engine retrieval quality and provider integration surfaces for better spec/task grounding
+- [ ] Harden restart/resume behavior so orchestration state and timelines persist predictably across app restarts
+- [ ] Codify reliability and regression validation for orchestrator/context flows in automated tests and E2E coverage
 
 ### Out of Scope
 
 - Cloud multi-tenant backend, billing, licensing, and account system in this milestone — deferred to future cloud mode phases
-- Full plugin/marketplace ecosystem — deferred until core workflow is stable and validated
-- Enterprise deployment variants (VPC/on-prem/air-gapped) in current MVP slice — deferred to later roadmap phases
-- Broad unrelated feature work during scoped provider-runtime slices — excluded to preserve atomic PR hygiene and deterministic validation
+- Full plugin/marketplace ecosystem — deferred until orchestrator/context reliability baseline is complete
+- Enterprise deployment variants (VPC/on-prem/air-gapped) in this milestone — deferred to later roadmap phases
+- Provider runtime UI expansion beyond minimum orchestration dependencies — deferred to a later milestone
 
 ## Context
 
-Kata Cloud consolidates prior Kata R&D into one product: spec-driven development + multi-agent orchestration + context-aware execution. The product direction and positioning are defined in `docs/kata-cloud-ovweview.md` and `docs/PRD.md`, with the living execution state tracked in `notes/spec.md`.
+Kata Cloud consolidates prior Kata R&D into one product: spec-driven development + multi-agent orchestration + context-aware execution. The product direction and positioning are defined in `docs/kata-cloud-ovweview.md` and `docs/PRD.md`, with execution baseline tracked in `notes/spec.md`.
 
-Current repository state is brownfield and active: core desktop workflows are already implemented and merged through a sequence of scoped PRs (including context integration, browser preview, provider-runtime slices 1-5, and Electron E2E codification). The immediate execution focus is milestone closure work: Provider Runtime Slice 6, Slice 7 hardening, and final MVP verification.
+Core workflows are implemented and merged through foundational slices (desktop shell, space/git lifecycle, spec panel, orchestration basics, context adapter foundation, provider-runtime base, and Playwright smoke/E2E baseline). This milestone focuses on reliability and depth in orchestration plus context retrieval so downstream delivery is stable.
 
-The team operates with strict branch hygiene and slice discipline: start from fresh `origin/main`, keep single-purpose PRs, avoid cross-scope edits, and require explicit validation artifacts (`test`, `typecheck`, and targeted UAT/E2E evidence). This workflow is central to how work is delegated and merged.
+The team operates with strict branch hygiene and slice discipline: start from fresh `origin/main`, keep single-purpose PRs, avoid cross-scope edits, and require explicit validation artifacts (`test`, `desktop:typecheck`, targeted E2E/UAT evidence).
 
 ## Constraints
 
@@ -63,20 +62,18 @@ The team operates with strict branch hygiene and slice discipline: start from fr
 - **Workflow**: Spec-driven, PR-centric delivery — every meaningful change must flow through auditable, scoped PRs.
 - **Git discipline**: Fresh `origin/main` branch starts, clean working tree, non-overlap scope guardrails — prevents cross-task contamination.
 - **Quality gates**: Lint, strict typecheck, coverage thresholds, and e2e smoke/full gates — required for merge confidence.
-- **Provider behavior**: Deterministic auth resolution and preserved error taxonomy (`missing_auth`, `invalid_auth`, `session_expired`, etc.) — required for reliable multi-provider execution.
-- **Scope control**: Provider runtime slices must not include renderer UX until designated slice — enforces atomicity and reduces regression surface.
+- **State integrity**: Orchestrator and context state persistence must remain deterministic across save/reload/restart boundaries.
+- **Scope control**: Milestone execution excludes broad unrelated feature expansions to preserve atomic PR hygiene and deterministic validation.
 
 ## Key Decisions
 
-| Decision                                                  | Rationale                                                               | Outcome   |
-| --------------------------------------------------------- | ----------------------------------------------------------------------- | --------- |
-| Keep spec-driven workflow as product center               | Maintains alignment between intent, execution, and reviewable output    | ✓ Good    |
-| Treat pull request as the core deliverable                | Makes agent work auditable and team-compatible                          | ✓ Good    |
-| Build desktop-first local mode before cloud mode          | Needed for filesystem/git control and rapid MVP iteration               | ✓ Good    |
-| Support both Anthropic and OpenAI provider runtimes       | Different models/providers fit different task profiles and risk posture | ✓ Good    |
-| Implement provider runtime via small deterministic slices | Limits blast radius and preserves clear validation per capability       | ✓ Good    |
-| Enforce non-overlap guardrails on active slices           | Prevents mixed-scope regressions and review ambiguity                   | ✓ Good    |
-| Defer renderer settings UX to dedicated Slice 6           | Keeps Slice 5 focused on auth semantics and fallback correctness        | — Pending |
+| Decision | Rationale | Outcome |
+| -------- | --------- | ------- |
+| Keep spec-driven workflow as product center | Maintains alignment between intent, execution, and reviewable output | ✓ Good |
+| Treat pull request as the core deliverable | Makes agent work auditable and team-compatible | ✓ Good |
+| Build desktop-first local mode before cloud mode | Needed for filesystem/git control and rapid MVP iteration | ✓ Good |
+| Support both Anthropic and OpenAI provider runtimes | Different models/providers fit different task profiles and risk posture | ✓ Good |
+| Prioritize orchestrator/context reliability before broader expansion | Stable execution core is prerequisite for scaling workflow depth | — Pending |
 
 ---
-*Last updated: 2026-02-18 after milestone v1.0 initialization*
+*Last updated: 2026-02-18 after milestone v0.1.0 initialization*

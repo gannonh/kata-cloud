@@ -2,9 +2,9 @@
 
 ## Active
 
-- 🔄 v1.0 Desktop MVP Closure
-  - Goal: Complete provider runtime UX/hardening and finalize MVP validation + handoff.
-  - Scope: Slice 6, Slice 7, full MVP UAT/E2E codification, release packet.
+- 🔄 v0.1.0 Orchestrator and Context Engine Expansion
+  - Goal: Strengthen orchestrator reliability and context depth for deterministic multi-agent execution.
+  - Scope: Run lifecycle hardening, context retrieval improvements, resume reliability, regression codification.
 
 ## Completed
 
@@ -12,7 +12,7 @@
 
 ## Planned
 
-- ○ v1.1 Orchestrator and Context Engine Expansion (tentative)
+- ○ v0.2.0 Desktop MVP Closure (tentative)
 
 ---
 Last updated: 2026-02-18 after milestone initialization
