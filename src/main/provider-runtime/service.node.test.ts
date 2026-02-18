@@ -23,7 +23,7 @@ function createMockAdapter(providerId: ModelProviderId): ProviderRuntimeAdapter 
       status: auth.apiKey ? "authenticated" : "error",
       fallbackApplied: false,
       failureCode: auth.apiKey ? null : "missing_auth",
-      reason: auth.apiKey ? null : "anthropic API key is required.",
+      reason: auth.apiKey ? null : `${providerId} API key is required.`,
       apiKey: auth.apiKey ?? null,
       tokenSessionId: null
     }),
