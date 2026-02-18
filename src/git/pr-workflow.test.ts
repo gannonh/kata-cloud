@@ -376,7 +376,7 @@ describe("PullRequestWorkflowService", () => {
     });
   });
 
-  it("returns typed validation errors for malformed draft and create payloads", async () => {
+  it("returns typed validation errors for malformed draft payloads and whitespace-only create titles", async () => {
     const fetchCalls: string[] = [];
     const service = new PullRequestWorkflowService({
       pathExists: async () => true,
@@ -409,7 +409,7 @@ describe("PullRequestWorkflowService", () => {
         repoUrl: "https://github.com/example/kata-cloud",
         sessionId: session.sessionId,
         title: "   ",
-        body: 123 as unknown as string,
+        body: "body",
         baseBranch: "main"
       })
     ).rejects.toMatchObject({
@@ -417,5 +417,40 @@ describe("PullRequestWorkflowService", () => {
     });
 
     expect(fetchCalls.filter((url) => url.includes("/repos/example/kata-cloud/pulls"))).toHaveLength(0);
+  });
+
+  it("coerces non-string create payload body to empty string before GitHub request", async () => {
+    let pullRequestPayload: Record<string, unknown> | null = null;
+    const service = new PullRequestWorkflowService({
+      pathExists: async () => true,
+      git: {
+        isRepository: async () => true,
+        readRemoteUrl: async () => "git@github.com:example/kata-cloud.git",
+        currentBranch: async () => "feature/pr-workflow"
+      } as never,
+      fetchFn: async (url, init) => {
+        if (url.endsWith("/user")) {
+          return mockResponse(200, { login: "octocat" });
+        }
+        pullRequestPayload = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+        return mockResponse(201, {
+          html_url: "https://github.com/example/kata-cloud/pull/444",
+          number: 444
+        });
+      }
+    });
+
+    const session = await service.createGitHubSession({ token: "ghp_test" });
+    const result = await service.createPullRequest({
+      repoPath: "/repo",
+      repoUrl: "https://github.com/example/kata-cloud",
+      sessionId: session.sessionId,
+      title: "feat: body coercion behavior",
+      body: 123 as unknown as string,
+      baseBranch: "main"
+    });
+
+    expect(result.number).toBe(444);
+    expect(pullRequestPayload?.body).toBe("");
   });
 });
