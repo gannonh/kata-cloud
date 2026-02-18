@@ -1,45 +1,17 @@
-name: CI Quality Gates
+name: Electron E2E Full
 
 on:
-  pull_request:
   push:
     branches:
       - main
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
 
 jobs:
-  quality-gates:
+  e2e-electron-full:
     runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.6.2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Typecheck
-        run: pnpm run desktop:typecheck
-
-      - name: Tests with coverage
-        run: pnpm run test --coverage
-
-  e2e-electron-smoke:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       KATA_CLOUD_ELECTRON_NO_SANDBOX: "1"
 
@@ -71,13 +43,13 @@ jobs:
       - name: Electron binary sanity check
         run: pnpm exec electron --no-sandbox --version
 
-      - name: Electron E2E smoke
-        run: xvfb-run -a pnpm run e2e:electron:smoke
+      - name: Electron E2E full suite
+        run: xvfb-run -a pnpm run e2e
 
-      - name: Upload Playwright artifacts (smoke)
+      - name: Upload Playwright artifacts (full)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-electron-smoke-artifacts
+          name: playwright-electron-full-artifacts
           path: output/playwright/
           if-no-files-found: ignore

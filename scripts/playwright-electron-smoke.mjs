@@ -130,9 +130,15 @@ async function run() {
   startVite();
   await waitForVite(rendererUrl);
 
+  const electronLaunchArgs = ["dist/main/index.js"];
+  if (process.platform === "linux" && (process.env.CI === "true" || process.env.KATA_CLOUD_ELECTRON_NO_SANDBOX === "1")) {
+    electronLaunchArgs.unshift("--disable-gpu");
+    electronLaunchArgs.unshift("--no-sandbox");
+  }
+
   console.log("[electron-smoke] Launching Electron through Playwright...");
   const electronApp = await electron.launch({
-    args: ["dist/main/index.js"],
+    args: electronLaunchArgs,
     env: {
       ...process.env,
       KATA_CLOUD_RENDERER_URL: rendererUrl
