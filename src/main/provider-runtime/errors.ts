@@ -61,7 +61,7 @@ export function mapProviderRuntimeError(
     return error;
   }
 
-  const message = getErrorMessage(error) ?? `${providerId} provider request failed.`;
+  const message = getErrorMessage(error) ?? String(error);
   const normalized = message.toLowerCase();
   const code = inferCode(normalized);
 
@@ -76,6 +76,8 @@ export function mapProviderRuntimeError(
 }
 
 function inferCode(normalizedMessage: string): ProviderRuntimeErrorCode {
+  // session_expired must be checked before invalid_auth: a "401 token expired"
+  // response matches both patterns but should resolve to session_expired.
   if (
     normalizedMessage.includes("session expired") ||
     normalizedMessage.includes("token expired")
@@ -103,7 +105,7 @@ function inferCode(normalizedMessage: string): ProviderRuntimeErrorCode {
     return "rate_limited";
   }
 
-  return "provider_unavailable";
+  return "unexpected_error";
 }
 
 function getRemediationForCode(code: ProviderRuntimeErrorCode): string {
@@ -118,6 +120,8 @@ function getRemediationForCode(code: ProviderRuntimeErrorCode): string {
       return "Retry after a backoff period or reduce request rate.";
     case "provider_unavailable":
       return "Retry shortly. If failures continue, verify provider availability.";
+    case "unexpected_error":
+      return "An unexpected error occurred. Report this issue if it persists.";
   }
 }
 
@@ -138,4 +142,25 @@ function getErrorMessage(error: unknown): string | null {
   }
 
   return null;
+}
+
+/**
+ * Electron strips custom Error subclass properties across the IPC boundary.
+ * Re-throw ProviderRuntimeError as a plain Error with a JSON-encoded message
+ * so the renderer can parse structured fields (code, remediation, retryable, providerId)
+ * via parseProviderIpcError from src/shared/provider-ipc.ts.
+ */
+export function serializeProviderRuntimeError(error: unknown): never {
+  if (error instanceof ProviderRuntimeError) {
+    throw new Error(
+      JSON.stringify({
+        code: error.code,
+        message: error.message,
+        remediation: error.remediation,
+        retryable: error.retryable,
+        providerId: error.providerId
+      })
+    );
+  }
+  throw error instanceof Error ? error : new Error(String(error));
 }

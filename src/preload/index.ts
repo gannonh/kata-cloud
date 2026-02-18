@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 import { AppState } from "../shared/state";
 import { IPC_CHANNELS, ShellApi } from "../shared/shell-api";
+import type { ProviderStatusRequest, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest } from "../shared/shell-api";
 import type { ContextRetrievalRequest } from "../context/types";
 import type {
   GitHubSessionRequest,
@@ -48,6 +49,12 @@ const shellApi: ShellApi = {
     ipcRenderer.invoke(IPC_CHANNELS.createPullRequest, request),
   retrieveContext: async (request: ContextRetrievalRequest) =>
     ipcRenderer.invoke(IPC_CHANNELS.retrieveContext, request),
+  providerResolveAuth: async (request: ProviderStatusRequest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.providerResolveAuth, request),
+  providerListModels: async (request: ProviderListModelsIpcRequest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.providerListModels, request),
+  providerExecute: async (request: ProviderExecuteIpcRequest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.providerExecute, request),
   openExternalUrl: async (url: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.openExternalUrl, url)
 };

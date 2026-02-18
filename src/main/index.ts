@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
 import { AppState } from "../shared/state";
 import { IPC_CHANNELS } from "../shared/shell-api";
+import type { ProviderStatusRequest, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest } from "../shared/shell-api";
 import { PersistedStateStore } from "./persisted-state-store";
 import { SpaceGitLifecycleService } from "../git/space-git-service";
 import { PullRequestWorkflowService } from "../git/pr-workflow";
@@ -18,6 +19,9 @@ import { createContextAdapter } from "../context/context-adapter";
 import { FilesystemContextProvider } from "../context/providers/filesystem-context-provider";
 import { McpCompatibleStubContextProvider } from "../context/providers/mcp-context-provider";
 import type { ContextRetrievalRequest } from "../context/types";
+import { createProviderRuntimeRegistry } from "./provider-runtime/registry";
+import { ProviderRuntimeService } from "./provider-runtime/service";
+import { serializeProviderRuntimeError } from "./provider-runtime/errors";
 
 let stateStore: PersistedStateStore | undefined;
 
@@ -63,10 +67,12 @@ function createMainWindow(): BrowserWindow {
   return mainWindow;
 }
 
+
 function registerStateHandlers(
   store: PersistedStateStore,
   gitLifecycleService: SpaceGitLifecycleService,
-  pullRequestWorkflowService: PullRequestWorkflowService
+  pullRequestWorkflowService: PullRequestWorkflowService,
+  providerService: ProviderRuntimeService
 ): void {
   const contextAdapter = createContextAdapter({
     providers: [new FilesystemContextProvider(), new McpCompatibleStubContextProvider()],
@@ -162,6 +168,39 @@ function registerStateHandlers(
       return contextAdapter.retrieve({ ...request, rootPath: requestRootPath }, request.providerId);
     }
   );
+  ipcMain.handle(
+    IPC_CHANNELS.providerResolveAuth,
+    async (_event, request: ProviderStatusRequest) => {
+      try {
+        return await providerService.resolveAuth(request);
+      } catch (error) {
+        console.error("provider:resolve-auth failed", { providerId: request.providerId, error });
+        throw serializeProviderRuntimeError(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.providerListModels,
+    async (_event, request: ProviderListModelsIpcRequest) => {
+      try {
+        return await providerService.listModels(request);
+      } catch (error) {
+        console.error("provider:list-models failed", { providerId: request.providerId, error });
+        throw serializeProviderRuntimeError(error);
+      }
+    }
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.providerExecute,
+    async (_event, request: ProviderExecuteIpcRequest) => {
+      try {
+        return await providerService.execute(request);
+      } catch (error) {
+        console.error("provider:execute failed", { providerId: request.providerId, error });
+        throw serializeProviderRuntimeError(error);
+      }
+    }
+  );
 }
 
 async function bootstrap(): Promise<void> {
@@ -172,9 +211,12 @@ async function bootstrap(): Promise<void> {
   });
   const gitLifecycleService = new SpaceGitLifecycleService();
   const pullRequestWorkflowService = new PullRequestWorkflowService();
+  // TODO(slice-3): register Anthropic and OpenAI adapters here.
+  const providerRegistry = createProviderRuntimeRegistry();
+  const providerService = new ProviderRuntimeService(providerRegistry);
   await stateStore.initialize();
 
-  registerStateHandlers(stateStore, gitLifecycleService, pullRequestWorkflowService);
+  registerStateHandlers(stateStore, gitLifecycleService, pullRequestWorkflowService, providerService);
   createMainWindow();
 
   app.on("activate", () => {
