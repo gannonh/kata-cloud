@@ -332,9 +332,7 @@ body {
   gap: 0.75rem;
   min-height: 0;
   --changes-file-list-max-height: clamp(14rem, 42vh, 38rem);
-  --changes-file-list-max-height-dvh: clamp(14rem, 42dvh, 38rem);
   --changes-diff-max-height: clamp(15rem, 48vh, 42rem);
-  --changes-diff-max-height-dvh: clamp(15rem, 48dvh, 42rem);
 }
 
 .changes-files,
@@ -366,7 +364,6 @@ body {
   display: grid;
   gap: 0.55rem;
   max-height: var(--changes-file-list-max-height);
-  max-height: var(--changes-file-list-max-height-dvh);
   overflow: auto;
 }
 
@@ -440,11 +437,17 @@ body {
   white-space: pre-wrap;
   overflow-wrap: break-word;
   max-height: var(--changes-diff-max-height);
-  max-height: var(--changes-diff-max-height-dvh);
   overflow: auto;
   font-size: 0.75rem;
   line-height: 1.4;
   font-family: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+}
+
+@supports (max-height: 1dvh) {
+  .changes-layout {
+    --changes-file-list-max-height: clamp(14rem, 42dvh, 38rem);
+    --changes-diff-max-height: clamp(15rem, 48dvh, 42rem);
+  }
 }
 
 .spec-panel {
@@ -679,8 +682,15 @@ body {
   .changes-layout {
     grid-template-columns: 1fr;
     --changes-file-list-max-height: clamp(10rem, 34vh, 22rem);
-    --changes-file-list-max-height-dvh: clamp(10rem, 34dvh, 22rem);
     --changes-diff-max-height: clamp(12rem, 40vh, 26rem);
-    --changes-diff-max-height-dvh: clamp(12rem, 40dvh, 26rem);
+  }
+}
+
+@media (max-width: 1180px) {
+  @supports (max-height: 1dvh) {
+    .changes-layout {
+      --changes-file-list-max-height: clamp(10rem, 34dvh, 22rem);
+      --changes-diff-max-height: clamp(12rem, 40dvh, 26rem);
+    }
   }
 }
