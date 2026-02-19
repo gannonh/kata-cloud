@@ -245,6 +245,104 @@ interface SpaceGitCreatePullRequestResult {
 }
 ```
 
+## Context Retrieval
+
+### `retrieveContext(request)`
+
+Retrieves ranked context snippets for an Orchestrator run.
+
+```typescript
+retrieveContext: (request: ContextRetrievalRequest) => Promise<ContextRetrievalResult>
+```
+
+**Request:**
+```typescript
+type ContextProviderId = "filesystem" | "mcp";
+
+interface ContextRetrievalRequest {
+  prompt: string;
+  spaceId: string;
+  sessionId: string;
+  rootPath: string;
+  providerId: ContextProviderId;
+  limit?: number;
+}
+```
+
+**Response (success):**
+```typescript
+interface ContextSnippet {
+  id: string;
+  provider: ContextProviderId;
+  path: string;
+  source: string;
+  content: string;
+  score: number;
+}
+
+interface ContextRetrievalSuccess {
+  ok: true;
+  providerId: ContextProviderId;
+  snippets: ContextSnippet[];
+  fallbackFromProviderId?: ContextProviderId;
+}
+```
+
+**Response (failure):**
+```typescript
+type ContextRetrievalErrorCode =
+  | "provider_unavailable"
+  | "unsupported_provider"
+  | "invalid_query"
+  | "invalid_root_path"
+  | "io_failure";
+
+interface ContextRetrievalFailure {
+  ok: false;
+  providerId: ContextProviderId;
+  snippets: ContextSnippet[];
+  fallbackFromProviderId?: ContextProviderId;
+  error: {
+    code: ContextRetrievalErrorCode;
+    message: string;
+    remediation: string;
+    retryable: boolean;
+    providerId: ContextProviderId;
+  };
+}
+```
+
+Contract notes:
+1. Snippets are returned in descending relevance order by `score`.
+2. Empty matches return `snippets: []` and are not an error.
+3. If fallback occurs, `fallbackFromProviderId` identifies the originally requested provider.
+
+## Provider Runtime
+
+### `providerResolveAuth(request)`
+
+Resolves and validates provider auth mode for a model provider.
+
+```typescript
+providerResolveAuth: (request: ProviderStatusRequest) => Promise<ProviderStatusResult>
+```
+
+### `providerListModels(request)`
+
+Lists models available to a provider for the provided auth context.
+
+```typescript
+providerListModels: (request: ProviderListModelsIpcRequest) => Promise<ProviderModelDescriptor[]>
+```
+
+### `providerExecute(request)`
+
+Executes a model prompt through the selected provider adapter.
+
+```typescript
+providerExecute: (request: ProviderExecuteIpcRequest) => Promise<ProviderExecuteResult>
+```
+
 ## System
 
 ### `openExternalUrl(url)`
@@ -276,6 +374,10 @@ All channels follow the pattern `kata-cloud/<domain>:<action>`:
 | `kata-cloud/github:session-clear` | `clearGitHubSession()` |
 | `kata-cloud/github:pr-draft` | `generatePullRequestDraft()` |
 | `kata-cloud/github:pr-create` | `createPullRequest()` |
+| `kata-cloud/context:retrieve` | `retrieveContext()` |
+| `kata-cloud/provider:resolve-auth` | `providerResolveAuth()` |
+| `kata-cloud/provider:list-models` | `providerListModels()` |
+| `kata-cloud/provider:execute` | `providerExecute()` |
 | `kata-cloud/system:open-external-url` | `openExternalUrl()` |
 
 ## Adding New API Methods

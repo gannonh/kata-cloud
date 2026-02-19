@@ -3,14 +3,14 @@
   "theme": "mint",
   "name": "Kata Cloud",
   "colors": {
-    "primary": "#6366f1",
-    "light": "#818cf8",
-    "dark": "#4f46e5"
+    "primary": "#d4a574",
+    "light": "#e8c49a",
+    "dark": "#b8956a"
   },
   "favicon": "/assets/favicon.svg",
   "logo": {
-    "light": "/assets/logo-light.svg",
-    "dark": "/assets/logo-dark.svg"
+    "light": "/assets/logo-header-light.svg",
+    "dark": "/assets/logo-header-dark.svg"
   },
   "navbar": {
     "links": [
