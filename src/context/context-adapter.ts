@@ -1,4 +1,13 @@
-import type { ContextAdapter, ContextProvider, ContextProviderId, ContextQuery, ContextSnippet } from "./types";
+import type {
+  ContextAdapter,
+  ContextProvider,
+  ContextProviderId,
+  ContextQuery,
+  ContextRetrievalFailure,
+  ContextRetrievalRequest,
+  ContextRetrievalResult,
+  ContextSnippet
+} from "./types";
 
 type CreateContextAdapterInput = {
   providers: ContextProvider[];
@@ -11,13 +20,76 @@ class DefaultContextAdapter implements ContextAdapter {
     private readonly defaultProvider: ContextProviderId
   ) {}
 
-  async retrieve(query: ContextQuery, providerId: ContextProviderId): Promise<ContextSnippet[]> {
-    const provider = this.providerMap.get(providerId) ?? this.providerMap.get(this.defaultProvider);
+  private toProviderUnavailableFailure(providerId: ContextProviderId): ContextRetrievalFailure {
+    return {
+      ok: false,
+      providerId,
+      snippets: [],
+      error: {
+        code: "provider_unavailable",
+        message: `Context provider '${providerId}' is not configured.`,
+        remediation: "Configure a supported context provider and retry.",
+        retryable: true,
+        providerId
+      }
+    };
+  }
+
+  private async retrieveResult(request: ContextRetrievalRequest): Promise<ContextRetrievalResult> {
+    const requestedProvider = this.providerMap.get(request.providerId);
+    const fallbackProvider = this.providerMap.get(this.defaultProvider);
+    const provider = requestedProvider ?? fallbackProvider;
+    const fallbackFromProviderId =
+      requestedProvider || request.providerId === this.defaultProvider
+        ? undefined
+        : request.providerId;
+
     if (!provider) {
-      return [];
+      return this.toProviderUnavailableFailure(request.providerId);
     }
 
-    return provider.retrieve(query);
+    try {
+      const result = await provider.retrieve(request);
+      if (!fallbackFromProviderId) {
+        return result;
+      }
+      return {
+        ...result,
+        fallbackFromProviderId
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected context provider failure.";
+      return {
+        ok: false,
+        providerId: provider.id,
+        snippets: [],
+        fallbackFromProviderId,
+        error: {
+          code: "io_failure",
+          message,
+          remediation: "Inspect provider logs and retry context retrieval.",
+          retryable: true,
+          providerId: provider.id
+        }
+      };
+    }
+  }
+
+  async retrieve(request: ContextRetrievalRequest): Promise<ContextRetrievalResult>;
+  async retrieve(query: ContextQuery, providerId: ContextProviderId): Promise<ContextSnippet[]>;
+  async retrieve(
+    requestOrQuery: ContextRetrievalRequest | ContextQuery,
+    providerId?: ContextProviderId
+  ): Promise<ContextRetrievalResult | ContextSnippet[]> {
+    if (providerId) {
+      const result = await this.retrieveResult({
+        ...requestOrQuery,
+        providerId
+      });
+      return result.ok ? result.snippets : [];
+    }
+
+    return this.retrieveResult(requestOrQuery);
   }
 }
 
