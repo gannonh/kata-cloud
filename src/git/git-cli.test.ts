@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { GitCli, type GitCommandResult } from "./git-cli";
-import { SpaceGitLifecycleError } from "./space-git-errors";
+import { GitCli, type GitCommandResult } from "./git-cli.js";
+import { SpaceGitLifecycleError } from "./space-git-errors.js";
 
 function ok(stdout = "", stderr = ""): GitCommandResult {
   return {

@@ -3,9 +3,9 @@ import os from "node:os";
 import path from "node:path";
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { createContextAdapter, resolveContextProviderId } from "./context-adapter";
-import { FilesystemContextProvider } from "./providers/filesystem-context-provider";
-import { McpCompatibleStubContextProvider } from "./providers/mcp-context-provider";
+import { createContextAdapter, resolveContextProviderId } from "./context-adapter.js";
+import { FilesystemContextProvider } from "./providers/filesystem-context-provider.js";
+import { McpCompatibleStubContextProvider } from "./providers/mcp-context-provider.js";
 
 test("filesystem provider returns typed success snippets for matching prompt terms", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "kata-context-"));

@@ -1,4 +1,4 @@
-import type { SpaceGitLifecycleStatus } from "./types";
+import type { SpaceGitLifecycleStatus } from "./types.js";
 
 export interface SpaceGitUiState {
   title: string;

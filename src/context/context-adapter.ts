@@ -7,7 +7,7 @@ import type {
   ContextRetrievalRequest,
   ContextRetrievalResult,
   ContextSnippet
-} from "./types";
+} from "./types.js";
 
 type CreateContextAdapterInput = {
   providers: ContextProvider[];

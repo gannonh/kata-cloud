@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { ProviderRuntimeError } from "./errors";
-import { createProviderRuntimeRegistry, resolveModelProviderId } from "./registry";
+import { ProviderRuntimeError } from "./errors.js";
+import { createProviderRuntimeRegistry, resolveModelProviderId } from "./registry.js";
 import type {
   ModelProviderId,
   ProviderAuthInput,
   ProviderAuthResolution,
   ProviderRuntimeAdapter
-} from "./types";
+} from "./types.js";
 
 describe("createProviderRuntimeRegistry", () => {
   it("registers and resolves provider adapters", () => {

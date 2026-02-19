@@ -1,9 +1,9 @@
-import type { CreateSpaceInput, SpaceMetadata } from "./types";
+import type { CreateSpaceInput, SpaceMetadata } from "./types.js";
 import {
   type SpaceValidationErrors,
   parseTags,
   validateCreateSpaceInput
-} from "./validation";
+} from "./validation.js";
 
 export const SPACES_STORAGE_KEY = "kata-cloud.spaces.v1";
 

@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import {
   ERROR_CODES,
   SpaceGitLifecycleError
-} from "./space-git-errors";
+} from "./space-git-errors.js";
 
 export type GitCommandResult = {
   exitCode: number;

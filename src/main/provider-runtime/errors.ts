@@ -2,7 +2,7 @@ import type {
   ModelProviderId,
   ProviderAuthResolution,
   ProviderRuntimeErrorCode
-} from "./types";
+} from "./types.js";
 
 interface ProviderRuntimeErrorInput {
   providerId: ModelProviderId;

@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import { describe, expect, it, vi } from "vitest";
-import { SpecNotePanel } from "./spec-note-panel";
-import { SPEC_NOTE_STORAGE_KEY } from "./store";
+import { SpecNotePanel } from "./spec-note-panel.js";
+import { SPEC_NOTE_STORAGE_KEY } from "./store.js";
 
 function createMemoryStorage(seed?: Record<string, string>): Storage {
   const memory = new Map<string, string>(seed ? Object.entries(seed) : []);

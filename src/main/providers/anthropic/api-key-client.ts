@@ -1,10 +1,10 @@
-import { createProviderRuntimeError } from "../../provider-runtime/errors";
-import type { ProviderClientAuth, ProviderRuntimeErrorCode } from "../../provider-runtime/types";
+import { createProviderRuntimeError } from "../../provider-runtime/errors.js";
+import type { ProviderClientAuth, ProviderRuntimeErrorCode } from "../../provider-runtime/types.js";
 import type {
   AnthropicClientExecuteResult,
   AnthropicClientModel,
   AnthropicProviderClient
-} from "./adapter";
+} from "./adapter.js";
 
 type AnthropicFetch = (
   input: string,

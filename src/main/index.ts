@@ -1,11 +1,12 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
-import { AppState } from "../shared/state";
-import { IPC_CHANNELS } from "../shared/shell-api";
-import type { ProviderStatusRequest, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest } from "../shared/shell-api";
-import { PersistedStateStore } from "./persisted-state-store";
-import { SpaceGitLifecycleService } from "../git/space-git-service";
-import { PullRequestWorkflowService } from "../git/pr-workflow";
+import { fileURLToPath } from "node:url";
+import { AppState } from "../shared/state.js";
+import { IPC_CHANNELS } from "../shared/shell-api.js";
+import type { ProviderStatusRequest, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest } from "../shared/shell-api.js";
+import { PersistedStateStore } from "./persisted-state-store.js";
+import { SpaceGitLifecycleService } from "../git/space-git-service.js";
+import { PullRequestWorkflowService } from "../git/pr-workflow.js";
 import type {
   GitHubSessionRequest,
   SpaceGitChangesRequest,
@@ -14,22 +15,24 @@ import type {
   SpaceGitFileRequest,
   SpaceGitLifecycleRequest,
   SpaceGitPullRequestDraftRequest
-} from "../git/types";
-import { createContextAdapter } from "../context/context-adapter";
-import { FilesystemContextProvider } from "../context/providers/filesystem-context-provider";
-import { McpCompatibleStubContextProvider } from "../context/providers/mcp-context-provider";
-import type { ContextRetrievalRequest } from "../context/types";
-import { createProviderRuntimeRegistry } from "./provider-runtime/registry";
-import { ProviderRuntimeService } from "./provider-runtime/service";
-import { serializeProviderRuntimeError } from "./provider-runtime/errors";
+} from "../git/types.js";
+import { createContextAdapter } from "../context/context-adapter.js";
+import { FilesystemContextProvider } from "../context/providers/filesystem-context-provider.js";
+import { McpCompatibleStubContextProvider } from "../context/providers/mcp-context-provider.js";
+import type { ContextRetrievalRequest } from "../context/types.js";
+import { createProviderRuntimeRegistry } from "./provider-runtime/registry.js";
+import { ProviderRuntimeService } from "./provider-runtime/service.js";
+import { serializeProviderRuntimeError } from "./provider-runtime/errors.js";
 import {
   createContextIpcErrorPayload,
   toContextRetrievalFailure
-} from "../shared/context-ipc";
-import { AnthropicProviderAdapter } from "./providers/anthropic/adapter";
-import { AnthropicApiKeyClient } from "./providers/anthropic/api-key-client";
-import { OpenAiProviderAdapter } from "./providers/openai/adapter";
-import { OpenAiApiKeyClient } from "./providers/openai/api-key-client";
+} from "../shared/context-ipc.js";
+import { AnthropicProviderAdapter } from "./providers/anthropic/adapter.js";
+import { AnthropicApiKeyClient } from "./providers/anthropic/api-key-client.js";
+import { OpenAiProviderAdapter } from "./providers/openai/adapter.js";
+import { OpenAiApiKeyClient } from "./providers/openai/api-key-client.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let stateStore: PersistedStateStore | undefined;
 
@@ -48,7 +51,7 @@ function createMainWindow(): BrowserWindow {
     title: "Kata Cloud",
     backgroundColor: "#0f1116",
     webPreferences: {
-      preload: path.join(__dirname, "../preload/index.js"),
+      preload: path.join(__dirname, "../preload/index.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true

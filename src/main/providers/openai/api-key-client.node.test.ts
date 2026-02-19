@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { OpenAiApiKeyClient } from "./api-key-client";
+import { OpenAiApiKeyClient } from "./api-key-client.js";
 
 type MockFetchResponse = {
   ok: boolean;

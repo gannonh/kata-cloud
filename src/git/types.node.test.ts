@@ -4,7 +4,7 @@ import {
   createSpaceGitRequest,
   createSpaceGitStatus,
   isSpaceGitLifecycleStatus
-} from "./types";
+} from "./types.js";
 
 test("createSpaceGitRequest builds deterministic branch/worktree names", () => {
   const request = createSpaceGitRequest({

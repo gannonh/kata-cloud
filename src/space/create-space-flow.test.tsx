@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { CreateSpaceFlow } from "./create-space-flow";
-import { SpaceStore } from "./store";
+import { CreateSpaceFlow } from "./create-space-flow.js";
+import { SpaceStore } from "./store.js";
 
 describe("CreateSpaceFlow", () => {
   it("creates a space from a prompt-driven workflow", async () => {

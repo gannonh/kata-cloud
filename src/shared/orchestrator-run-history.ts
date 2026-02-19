@@ -1,4 +1,4 @@
-import type { OrchestratorRunRecord } from "./state";
+import type { OrchestratorRunRecord } from "./state.js";
 
 export function getRunsForActiveSession(
   orchestratorRuns: OrchestratorRunRecord[],

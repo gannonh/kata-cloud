@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   transitionOrchestratorRunStatus
-} from "./orchestrator-run-lifecycle";
-import type { OrchestratorRunRecord } from "./state";
+} from "./orchestrator-run-lifecycle.js";
+import type { OrchestratorRunRecord } from "./state.js";
 
 function createQueuedRun(): OrchestratorRunRecord {
   return {

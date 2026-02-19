@@ -3,7 +3,7 @@ import {
   APP_STATE_VERSION,
   createInitialAppState,
   normalizeAppState
-} from "./state";
+} from "./state.js";
 
 describe("shared state helpers", () => {
   it("creates deterministic initial app state", () => {

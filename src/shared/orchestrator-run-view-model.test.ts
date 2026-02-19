@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   projectOrchestratorRunHistory,
   projectOrchestratorRunViewModel
-} from "./orchestrator-run-view-model";
-import type { OrchestratorRunRecord } from "./state";
+} from "./orchestrator-run-view-model.js";
+import type { OrchestratorRunRecord } from "./state.js";
 
 function createRun(overrides: Partial<OrchestratorRunRecord> = {}): OrchestratorRunRecord {
   return {

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   getRunHistoryForActiveSession,
   getRunsForActiveSession
-} from "./orchestrator-run-history";
-import type { OrchestratorRunRecord } from "./state";
+} from "./orchestrator-run-history.js";
+import type { OrchestratorRunRecord } from "./state.js";
 
 function createRunRecord(
   id: string,

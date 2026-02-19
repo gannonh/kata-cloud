@@ -4,7 +4,7 @@ import {
   isUnstagedFileChange,
   parseGitStatusPorcelain,
   summarizeStagedChanges
-} from "./changes";
+} from "./changes.js";
 
 describe("parseGitStatusPorcelain", () => {
   it("parses staged, unstaged, untracked, and rename entries", () => {

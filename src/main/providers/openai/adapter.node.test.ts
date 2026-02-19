@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { ProviderRuntimeError } from "../../provider-runtime/errors";
-import { OpenAiProviderAdapter, type OpenAiProviderClient } from "./adapter";
+import { ProviderRuntimeError } from "../../provider-runtime/errors.js";
+import { OpenAiProviderAdapter, type OpenAiProviderClient } from "./adapter.js";
 
 describe("OpenAiProviderAdapter", () => {
   it("falls back to api_key when token_session is requested and api key is available", async () => {

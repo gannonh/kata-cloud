@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyDiffLine, highlightDiff } from "./changes-diff-highlighting";
+import { classifyDiffLine, highlightDiff } from "./changes-diff-highlighting.js";
 
 describe("classifyDiffLine", () => {
   it("classifies metadata, hunks, additions, removals, and context lines", () => {

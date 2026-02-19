@@ -1,14 +1,14 @@
 import {
   isSpaceGitLifecycleStatus,
   type SpaceGitLifecycleStatus
-} from "../git/types";
+} from "../git/types.js";
 import type {
   ContextProviderId,
   ContextRetrievalError,
   ContextRetrievalErrorCode,
   ContextSnippet
-} from "../context/types";
-import { ALLOWED_RUN_TRANSITIONS } from "./orchestrator-run-lifecycle";
+} from "../context/types.js";
+import { ALLOWED_RUN_TRANSITIONS } from "./orchestrator-run-lifecycle.js";
 
 export const APP_STATE_VERSION = 1;
 

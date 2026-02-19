@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasDeterministicFailureTrigger, resolveRunFailure } from "./orchestrator-failure";
+import { hasDeterministicFailureTrigger, resolveRunFailure } from "./orchestrator-failure.js";
 
 describe("orchestrator deterministic failure trigger", () => {
   it("matches fail keyword case-insensitively", () => {

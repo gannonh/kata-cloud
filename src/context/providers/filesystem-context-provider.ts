@@ -7,7 +7,7 @@ import type {
   ContextRetrievalErrorCode,
   ContextRetrievalResult,
   ContextSnippet
-} from "../types";
+} from "../types.js";
 
 const DEFAULT_LIMIT = 5;
 const MAX_FILE_BYTES = 200_000;

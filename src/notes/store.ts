@@ -6,4 +6,4 @@ export {
   createDefaultSpecNote,
   loadSpecNote,
   saveSpecNote
-} from "../features/spec-panel/store";
+} from "../features/spec-panel/store.js";

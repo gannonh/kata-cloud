@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SpaceStore } from "./store";
+import { SpaceStore } from "./store.js";
 
 describe("SpaceStore", () => {
   it("creates a space and rehydrates it from storage", () => {

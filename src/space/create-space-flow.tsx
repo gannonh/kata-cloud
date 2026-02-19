@@ -1,8 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { parseTags, suggestSpaceNameFromPrompt, type SpaceValidationErrors } from "./validation";
-import type { SpaceMetadata } from "./types";
-import type { SpaceStore } from "./store";
+import { parseTags, suggestSpaceNameFromPrompt, type SpaceValidationErrors } from "./validation.js";
+import type { SpaceMetadata } from "./types.js";
+import type { SpaceStore } from "./store.js";
 
 type CreateSpaceFlowProps = {
   store: SpaceStore;

@@ -3,7 +3,7 @@ import {
   createSpaceGitRequest,
   createSpaceGitStatus,
   isSpaceGitLifecycleStatus
-} from "./types";
+} from "./types.js";
 
 describe("createSpaceGitRequest", () => {
   it("builds deterministic branch and worktree targets for a space", () => {

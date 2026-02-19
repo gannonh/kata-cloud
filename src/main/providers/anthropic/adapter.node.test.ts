@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { ProviderRuntimeError } from "../../provider-runtime/errors";
-import { AnthropicProviderAdapter, type AnthropicProviderClient } from "./adapter";
+import { ProviderRuntimeError } from "../../provider-runtime/errors.js";
+import { AnthropicProviderAdapter, type AnthropicProviderClient } from "./adapter.js";
 
 describe("AnthropicProviderAdapter", () => {
   it("falls back to api_key when token_session is requested and api key is available", async () => {

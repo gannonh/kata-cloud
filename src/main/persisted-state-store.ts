@@ -1,7 +1,7 @@
 import { app } from "electron";
 import path from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { AppState, createInitialAppState, normalizeAppState } from "../shared/state";
+import { AppState, createInitialAppState, normalizeAppState } from "../shared/state.js";
 
 const STATE_FILENAME = "kata-cloud-state.json";
 

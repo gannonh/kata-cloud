@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
-import type { AppState } from "../shared/state";
-import type { ShellApi } from "../shared/shell-api";
-import type { ProviderStatusRequest, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest } from "../shared/shell-api";
-import type { ContextRetrievalRequest, ContextRetrievalResult } from "../context/types";
+import type { AppState } from "../shared/state.js";
+import type { ShellApi } from "../shared/shell-api.js";
+import type { ProviderStatusRequest, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest } from "../shared/shell-api.js";
+import type { ContextRetrievalRequest, ContextRetrievalResult } from "../context/types.js";
 import type {
   GitHubSessionRequest,
   SpaceGitChangesRequest,
@@ -11,7 +11,7 @@ import type {
   SpaceGitFileRequest,
   SpaceGitLifecycleRequest,
   SpaceGitPullRequestDraftRequest
-} from "../git/types";
+} from "../git/types.js";
 
 // Keep this in sync with IPC_CHANNELS in src/shared/shell-api.ts.
 // Do not runtime-import IPC_CHANNELS from preload in sandbox mode.

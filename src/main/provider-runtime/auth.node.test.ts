@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveProviderAuth } from "./auth";
+import { resolveProviderAuth } from "./auth.js";
 
 describe("resolveProviderAuth", () => {
   it("uses token session mode when a valid token session is active", () => {

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { ProviderRuntimeService } from "./service";
-import { ProviderRuntimeError } from "./errors";
-import { createProviderRuntimeRegistry } from "./registry";
+import { ProviderRuntimeService } from "./service.js";
+import { ProviderRuntimeError } from "./errors.js";
+import { createProviderRuntimeRegistry } from "./registry.js";
 import type {
   ModelProviderId,
   ProviderAuthInput,
   ProviderAuthResolution,
   ProviderExecuteRequest,
   ProviderRuntimeAdapter
-} from "./types";
+} from "./types.js";
 
 const MOCK_API_KEY_AUTH: ProviderAuthInput = { preferredMode: "api_key", apiKey: "test-key" };
 const MISSING_AUTH: ProviderAuthInput = { preferredMode: "api_key", apiKey: null };

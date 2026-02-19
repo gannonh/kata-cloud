@@ -5,7 +5,7 @@ import type {
   ProviderAuthMode,
   ProviderAuthResolution,
   ProviderClientAuth
-} from "./types";
+} from "./types.js";
 
 interface ResolveProviderAuthInput {
   providerId: ModelProviderId;

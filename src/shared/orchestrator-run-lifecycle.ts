@@ -1,4 +1,4 @@
-import type { OrchestratorRunRecord, OrchestratorRunStatus } from "./state";
+import type { OrchestratorRunRecord, OrchestratorRunStatus } from "./state.js";
 
 export const ALLOWED_RUN_TRANSITIONS: Record<OrchestratorRunStatus, readonly OrchestratorRunStatus[]> = {
   queued: ["running", "interrupted"],

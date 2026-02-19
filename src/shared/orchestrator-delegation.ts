@@ -2,7 +2,7 @@ import type {
   OrchestratorDelegatedTaskRecord,
   OrchestratorTaskStatus,
   OrchestratorTaskType
-} from "./state";
+} from "./state.js";
 
 export const ORCHESTRATOR_SPECIALIST_BY_TASK_TYPE: Record<OrchestratorTaskType, string> = {
   implement: "implementor",

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { IPC_CHANNELS } from "../shared/shell-api";
+import { IPC_CHANNELS } from "../shared/shell-api.js";
 
 vi.mock("electron", () => ({
   contextBridge: { exposeInMainWorld: vi.fn() },
@@ -12,7 +12,7 @@ vi.mock("electron", () => ({
 
 describe("preload IPC channels", () => {
   it("stays aligned with shared IPC channel definitions", async () => {
-    const module = await import("./index");
+    const module = await import("./index.js");
     expect(module.PRELOAD_IPC_CHANNELS).toEqual(IPC_CHANNELS);
   });
 });

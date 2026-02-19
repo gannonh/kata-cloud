@@ -3,13 +3,13 @@ import {
   applyOrchestratorRunUpdate,
   completeOrchestratorRun,
   enqueueOrchestratorRun
-} from "./orchestrator-run-persistence";
+} from "./orchestrator-run-persistence.js";
 import type {
   OrchestratorDelegatedTaskRecord,
   OrchestratorRunRecord,
   OrchestratorRunStatus,
   OrchestratorSpecDraft
-} from "./state";
+} from "./state.js";
 
 function createRun(id: string, status: OrchestratorRunRecord["status"] = "queued"): OrchestratorRunRecord {
   const statusTimeline: OrchestratorRunStatus[] =
