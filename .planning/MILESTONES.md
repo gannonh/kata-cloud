@@ -30,7 +30,18 @@
 
 ## Planned
 
-- v0.2.0 Desktop MVP Closure (tentative)
+### v0.2.0 Desktop MVP Closure (tentative)
+
+**Input:** 7 UI specification documents (`docs/design/specs/`) derived from 29 design mocks, each containing component inventories, state matrices, data dependency maps, interaction tables, and implementation gap analysis.
+
+**Cross-cutting gaps to address:**
+- Chat-style conversation renderer (affects Coordinator Session, Build Session, Wave Execution)
+- Agent sidebar with status indicators (affects Coordinator Session, Build Session, Wave Execution, Completion)
+- Wave grouping model (affects Wave Execution, Completion)
+- Terminal and browser tab types (affects Create Space, Wave Execution)
+- Permission dialog system (affects Completion)
+- Commit interface with message input (affects Changes & Git, Completion)
+- Markdown rendering in spec panel (affects Spec & Notes Panel)
 
 ---
-Last updated: 2026-02-19 after v0.1.0 milestone completion
+Last updated: 2026-02-19 after UI spec generation
