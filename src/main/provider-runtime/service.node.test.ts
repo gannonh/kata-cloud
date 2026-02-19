@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProviderRuntimeService } from "./service.js";
 import { ProviderRuntimeError } from "./errors.js";
 import { createProviderRuntimeRegistry } from "./registry.js";
@@ -9,6 +9,16 @@ import type {
   ProviderExecuteRequest,
   ProviderRuntimeAdapter
 } from "./types.js";
+
+const piMocks = vi.hoisted(() => ({
+  complete: vi.fn(),
+  getModels: vi.fn()
+}));
+
+vi.mock("@mariozechner/pi-ai", () => ({
+  complete: piMocks.complete,
+  getModels: piMocks.getModels
+}));
 
 const MOCK_API_KEY_AUTH: ProviderAuthInput = { preferredMode: "api_key", apiKey: "test-key" };
 const MISSING_AUTH: ProviderAuthInput = { preferredMode: "api_key", apiKey: null };
@@ -36,6 +46,11 @@ function createMockAdapter(providerId: ModelProviderId): ProviderRuntimeAdapter 
     })
   };
 }
+
+beforeEach(() => {
+  piMocks.complete.mockReset();
+  piMocks.getModels.mockReset();
+});
 
 function createMockAdapterWithTokenSessionExpiry(providerId: ModelProviderId): ProviderRuntimeAdapter {
   return {
@@ -168,6 +183,20 @@ describe("ProviderRuntimeService.listModels", () => {
     await expect(service.listModels({ providerId: "openai", auth: MOCK_API_KEY_AUTH }))
       .rejects.toMatchObject({ code: "provider_unavailable" });
   });
+
+  it("returns PI catalog models when runtime mode is pi", async () => {
+    piMocks.getModels.mockReturnValue([
+      { id: "claude-3-5-sonnet-latest", name: "Claude Sonnet" }
+    ]);
+
+    const registry = createProviderRuntimeRegistry([createMockAdapter("anthropic")]);
+    const service = new ProviderRuntimeService(registry, { runtimeMode: "pi" });
+
+    const models = await service.listModels({ providerId: "anthropic", auth: MOCK_API_KEY_AUTH });
+    expect(models).toEqual([
+      { id: "claude-3-5-sonnet-latest", displayName: "Claude Sonnet" }
+    ]);
+  });
 });
 
 describe("ProviderRuntimeService.execute", () => {
@@ -185,6 +214,7 @@ describe("ProviderRuntimeService.execute", () => {
     expect(result.providerId).toBe("anthropic");
     expect(result.text).toBe("hello");
     expect(result.authMode).toBe("api_key");
+    expect(result.runtimeMode).toBe("native");
   });
 
   it("throws ProviderRuntimeError when adapter rejects missing auth", async () => {
@@ -237,5 +267,62 @@ describe("ProviderRuntimeService.execute", () => {
       model: "claude-3",
       prompt: "Hello"
     })).rejects.toMatchObject({ code: "provider_unavailable" });
+  });
+
+  it("routes execution through PI mode when configured", async () => {
+    piMocks.getModels.mockReturnValue([
+      { id: "claude-3-5-sonnet-latest", name: "Claude Sonnet" }
+    ]);
+    piMocks.complete.mockResolvedValue({
+      content: [{ type: "text", text: "Hello from PI mode." }]
+    });
+
+    const registry = createProviderRuntimeRegistry([createMockAdapter("anthropic")]);
+    const service = new ProviderRuntimeService(registry, { runtimeMode: "pi" });
+    const result = await service.execute({
+      providerId: "anthropic",
+      auth: MOCK_API_KEY_AUTH,
+      model: "claude-3-5-sonnet-latest",
+      prompt: "Hello"
+    });
+
+    expect(result.text).toBe("Hello from PI mode.");
+    expect(result.runtimeMode).toBe("pi");
+    expect(piMocks.complete).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws when the requested PI model is unavailable", async () => {
+    piMocks.getModels.mockReturnValue([
+      { id: "claude-3-5-sonnet-latest", name: "Claude Sonnet" }
+    ]);
+
+    const registry = createProviderRuntimeRegistry([createMockAdapter("anthropic")]);
+    const service = new ProviderRuntimeService(registry, { runtimeMode: "pi" });
+
+    await expect(
+      service.execute({
+        providerId: "anthropic",
+        auth: MOCK_API_KEY_AUTH,
+        model: "missing-model-id",
+        prompt: "Hello"
+      })
+    ).rejects.toMatchObject({ code: "provider_unavailable" });
+    expect(piMocks.complete).not.toHaveBeenCalled();
+  });
+
+  it("returns missing_auth in PI mode when credentials are absent", async () => {
+    piMocks.getModels.mockReturnValue([{ id: "claude-3-5-sonnet-latest", name: "Claude Sonnet" }]);
+
+    const registry = createProviderRuntimeRegistry([createMockAdapter("anthropic")]);
+    const service = new ProviderRuntimeService(registry, { runtimeMode: "pi" });
+
+    await expect(
+      service.execute({
+        providerId: "anthropic",
+        auth: MISSING_AUTH,
+        model: "claude-3-5-sonnet-latest",
+        prompt: "Hello"
+      })
+    ).rejects.toMatchObject({ code: "missing_auth" });
   });
 });

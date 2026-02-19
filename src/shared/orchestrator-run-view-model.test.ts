@@ -164,6 +164,54 @@ describe("orchestrator run view model projections", () => {
     expect(projection.contextDiagnostics?.remediation).toContain("filesystem");
   });
 
+  it("projects provider execution telemetry for successful runs", () => {
+    const projection = projectOrchestratorRunViewModel(
+      createRun({
+        providerExecution: {
+          providerId: "anthropic",
+          modelId: "claude-3-5-sonnet-latest",
+          runtimeMode: "native",
+          status: "succeeded"
+        }
+      })
+    );
+
+    expect(projection.providerExecution?.providerId).toBe("anthropic");
+    expect(projection.providerExecution?.modelId).toBe("claude-3-5-sonnet-latest");
+    expect(projection.providerExecution?.runtimeMode).toBe("native");
+    expect(projection.providerExecution?.status).toBe("succeeded");
+    expect(projection.providerExecution?.errorCode).toBeUndefined();
+  });
+
+  it("projects provider execution diagnostics for failures", () => {
+    const projection = projectOrchestratorRunViewModel(
+      createRun({
+        status: "failed",
+        statusTimeline: ["queued", "running", "failed"],
+        errorMessage: "Provider runtime failed.",
+        providerExecution: {
+          providerId: "openai",
+          modelId: "gpt-4o-mini",
+          runtimeMode: "pi",
+          status: "failed",
+          errorCode: "missing_auth",
+          remediation: "Configure provider credentials and retry.",
+          retryable: false
+        }
+      })
+    );
+
+    expect(projection.providerExecution?.providerId).toBe("openai");
+    expect(projection.providerExecution?.runtimeMode).toBe("pi");
+    expect(projection.providerExecution?.status).toBe("failed");
+    expect(projection.providerExecution?.errorCode).toBe("missing_auth");
+    expect(projection.providerExecution?.modelId).toBe("gpt-4o-mini");
+    expect(projection.providerExecution?.remediation).toBe(
+      "Configure provider credentials and retry."
+    );
+    expect(projection.providerExecution?.retryable).toBe(false);
+  });
+
   it("projects context provenance when resolvedProviderId is present", () => {
     const projection = projectOrchestratorRunViewModel(
       createRun({

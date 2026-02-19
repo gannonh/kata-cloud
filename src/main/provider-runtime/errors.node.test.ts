@@ -91,6 +91,27 @@ describe("serializeProviderRuntimeError", () => {
     expect(payload.providerId).toBe("anthropic");
   });
 
+  it("includes runtime mode in serialized payload when provided", () => {
+    const original = new ProviderRuntimeError({
+      providerId: "openai",
+      code: "provider_unavailable",
+      message: "Provider unavailable.",
+      remediation: "Retry shortly.",
+      retryable: true
+    });
+
+    let caught: unknown;
+    try {
+      serializeProviderRuntimeError(original, { runtimeMode: "pi" });
+    } catch (e) {
+      caught = e;
+    }
+
+    expect(caught).toBeInstanceOf(Error);
+    const payload = JSON.parse((caught as Error).message);
+    expect(payload.runtimeMode).toBe("pi");
+  });
+
   it("re-throws plain Error unchanged", () => {
     const original = new Error("connection failed");
 

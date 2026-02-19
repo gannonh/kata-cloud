@@ -1,7 +1,12 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 import type { AppState } from "../shared/state.js";
 import type { ShellApi } from "../shared/shell-api.js";
-import type { ProviderStatusRequest, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest } from "../shared/shell-api.js";
+import type {
+  ProviderStatusRequest,
+  ProviderListModelsIpcRequest,
+  ProviderExecuteIpcRequest,
+  ProviderRuntimeMode
+} from "../shared/shell-api.js";
 import type { ContextRetrievalRequest, ContextRetrievalResult } from "../context/types.js";
 import type {
   GitHubSessionRequest,
@@ -13,8 +18,6 @@ import type {
   SpaceGitPullRequestDraftRequest
 } from "../git/types.js";
 
-// Keep this in sync with IPC_CHANNELS in src/shared/shell-api.ts.
-// Do not runtime-import IPC_CHANNELS from preload in sandbox mode.
 export const PRELOAD_IPC_CHANNELS = {
   getState: "kata-cloud/state:get",
   saveState: "kata-cloud/state:save",
@@ -32,6 +35,7 @@ export const PRELOAD_IPC_CHANNELS = {
   retrieveContext: "kata-cloud/context:retrieve",
   providerResolveAuth: "kata-cloud/provider:resolve-auth",
   providerListModels: "kata-cloud/provider:list-models",
+  providerGetRuntimeMode: "kata-cloud/provider:get-runtime-mode",
   providerExecute: "kata-cloud/provider:execute",
   openExternalUrl: "kata-cloud/system:open-external-url"
 } as const;
@@ -76,6 +80,8 @@ const shellApi: ShellApi = {
     ipcRenderer.invoke(PRELOAD_IPC_CHANNELS.providerResolveAuth, request),
   providerListModels: async (request: ProviderListModelsIpcRequest) =>
     ipcRenderer.invoke(PRELOAD_IPC_CHANNELS.providerListModels, request),
+  providerGetRuntimeMode: async () =>
+    ipcRenderer.invoke(PRELOAD_IPC_CHANNELS.providerGetRuntimeMode) as Promise<ProviderRuntimeMode>,
   providerExecute: async (request: ProviderExecuteIpcRequest) =>
     ipcRenderer.invoke(PRELOAD_IPC_CHANNELS.providerExecute, request),
   openExternalUrl: async (url: string) =>

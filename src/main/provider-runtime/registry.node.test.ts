@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { ProviderRuntimeError } from "./errors.js";
-import { createProviderRuntimeRegistry, resolveModelProviderId } from "./registry.js";
+import {
+  createProviderRuntimeRegistry,
+  resolveModelProviderId,
+  resolveProviderRuntimeMode
+} from "./registry.js";
 import type {
   ModelProviderId,
   ProviderAuthInput,
@@ -51,6 +55,17 @@ describe("resolveModelProviderId", () => {
   it("falls back to default provider when no selection exists", () => {
     expect(resolveModelProviderId(undefined, undefined)).toBe("anthropic");
     expect(resolveModelProviderId(undefined, undefined, "openai")).toBe("openai");
+  });
+});
+
+describe("resolveProviderRuntimeMode", () => {
+  it("defaults to native when config is missing or invalid", () => {
+    expect(resolveProviderRuntimeMode(undefined)).toBe("native");
+    expect(resolveProviderRuntimeMode("invalid")).toBe("native");
+  });
+
+  it("returns pi when pi mode is explicitly configured", () => {
+    expect(resolveProviderRuntimeMode("pi")).toBe("pi");
   });
 });
 

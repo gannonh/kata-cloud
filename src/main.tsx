@@ -67,6 +67,12 @@ import {
 import type { ContextProviderId, ContextSnippet } from "./context/types.js";
 import type { ContextIpcErrorPayload } from "./shared/context-ipc.js";
 import { parseContextIpcError } from "./shared/context-ipc.js";
+import type {
+  ShellApi,
+  ModelProviderId,
+  ProviderAuthInput
+} from "./shared/shell-api.js";
+import { parseProviderIpcError, type ProviderIpcErrorPayload } from "./shared/provider-ipc.js";
 import "./styles.css";
 import { resolveRunFailure } from "./shared/orchestrator-failure.js";
 
@@ -77,8 +83,83 @@ if (!appRoot) {
 }
 
 const LOCAL_FALLBACK_KEY = "kata-cloud.local-state.v1";
+const DEFAULT_ORCHESTRATOR_PROVIDER_ID: ModelProviderId = "anthropic";
+const ORCHESTRATOR_PROVIDER_PRIORITY: ModelProviderId[] = ["anthropic", "openai"];
+const DEFAULT_ORCHESTRATOR_MODELS: Record<ModelProviderId, string> = {
+  anthropic: "claude-3-5-sonnet-latest",
+  openai: "gpt-4o-mini"
+};
+const PROVIDER_AUTH_FAILURE_CODES = new Set(["missing_auth", "invalid_auth", "session_expired"]);
 
 const viewOrder: NavigationView[] = ["explorer", "orchestrator", "spec", "changes", "browser"];
+
+function createProviderPrompt(prompt: string, contextSnippets: ContextSnippet[]): string {
+  const contextSection = contextSnippets.length > 0
+    ? [
+        "",
+        "Context snippets:",
+        ...contextSnippets.map((snippet) => `- ${snippet.path}: ${snippet.content}`)
+      ].join("\n")
+    : "";
+  return [
+    "You are generating a structured implementation spec draft.",
+    "Return markdown with sections: Goal, Tasks, Acceptance Criteria, Verification Plan.",
+    "",
+    `User request: ${prompt.trim()}`,
+    contextSection
+  ].join("\n");
+}
+
+function toDraftContent(providerText: string, run: OrchestratorRunRecord, contextSnippets: ContextSnippet[]): string {
+  const normalized = providerText.trim();
+  if (normalized.length > 0) {
+    return normalized;
+  }
+
+  return createSpecDraft(run, new Date().toISOString(), contextSnippets).content;
+}
+
+async function resolveOrchestratorProviderId(shellApi: ShellApi | undefined): Promise<ModelProviderId> {
+  if (!shellApi) {
+    return DEFAULT_ORCHESTRATOR_PROVIDER_ID;
+  }
+
+  const auth: ProviderAuthInput = { preferredMode: "api_key" };
+  for (const providerId of ORCHESTRATOR_PROVIDER_PRIORITY) {
+    try {
+      const status = await shellApi.providerResolveAuth({
+        providerId,
+        auth
+      });
+      if (status.status === "authenticated") {
+        return providerId;
+      }
+    } catch (error) {
+      console.warn(`Failed to resolve auth for provider "${providerId}".`, error);
+    }
+  }
+
+  return DEFAULT_ORCHESTRATOR_PROVIDER_ID;
+}
+
+function createProviderExecutionFailure(input: {
+  parsedProviderError: ProviderIpcErrorPayload | null;
+  providerId: ModelProviderId;
+  modelId: string;
+  runtimeMode?: "native" | "pi";
+}): NonNullable<OrchestratorRunRecord["providerExecution"]> {
+  return {
+    providerId: input.parsedProviderError?.providerId ?? input.providerId,
+    modelId: input.modelId,
+    runtimeMode: input.parsedProviderError?.runtimeMode ?? input.runtimeMode ?? "native",
+    status: "failed",
+    errorCode: input.parsedProviderError?.code ?? "unexpected_error",
+    remediation:
+      input.parsedProviderError?.remediation ??
+      "Configure a valid provider API key and retry the orchestrator run.",
+    retryable: input.parsedProviderError?.retryable ?? false
+  };
+}
 
 function readLocalFallbackState(): AppState {
   try {
@@ -977,18 +1058,130 @@ function App(): React.JSX.Element {
       }
     }
     const endedAt = new Date().toISOString();
+    const shellApi = window.kataShell;
+    const providerId = await resolveOrchestratorProviderId(shellApi);
+    let providerModelId = DEFAULT_ORCHESTRATOR_MODELS[providerId];
+    let runtimeModeHint: "native" | "pi" | undefined;
+    let providerText: string | undefined;
+    let providerExecution: OrchestratorRunRecord["providerExecution"];
 
-    const runFailureMessage = resolveRunFailure(prompt);
-    const delegationOutcome = runFailureMessage
-      ? { tasks: undefined, failureMessage: runFailureMessage }
+    let failureMessage = resolveRunFailure(prompt) ?? undefined;
+    if (!failureMessage && shellApi) {
+      try {
+        runtimeModeHint = await shellApi.providerGetRuntimeMode();
+      } catch (error) {
+        console.warn("Failed to resolve provider runtime mode before execution.", error);
+      }
+      const auth: ProviderAuthInput = {
+        preferredMode: "api_key"
+      };
+      try {
+        const result = await shellApi.providerExecute({
+          providerId,
+          auth,
+          model: providerModelId,
+          prompt: createProviderPrompt(prompt, contextSnippets)
+        });
+        providerModelId = result.model;
+        const runtimeMode = result.runtimeMode ?? "native";
+        runtimeModeHint = runtimeMode;
+        providerText = result.text;
+        providerExecution = {
+          providerId: result.providerId,
+          modelId: result.model,
+          runtimeMode,
+          status: "succeeded"
+        };
+        if (providerText.trim().length === 0) {
+          failureMessage = "Provider execution completed with an empty response.";
+          providerExecution = {
+            providerId: result.providerId,
+            modelId: result.model,
+            runtimeMode,
+            status: "failed",
+            errorCode: "unexpected_error",
+            remediation: "Retry execution with additional context or adjust provider settings.",
+            retryable: true
+          };
+        }
+      } catch (error) {
+        const parsedProviderError = parseProviderIpcError(error);
+        const providerErrorMessage = parsedProviderError?.message ?? toErrorMessage(error);
+        failureMessage = parsedProviderError
+          ? `Provider execution failed (${parsedProviderError.code}): ${providerErrorMessage}`
+          : `Provider execution failed: ${providerErrorMessage}`;
+        const runtimeMode = parsedProviderError?.runtimeMode ?? runtimeModeHint;
+        const shouldRetryWithAlternateProvider =
+          parsedProviderError &&
+          PROVIDER_AUTH_FAILURE_CODES.has(parsedProviderError.code) &&
+          providerId !== "openai";
+        if (shouldRetryWithAlternateProvider) {
+          const fallbackProviderId: ModelProviderId = "openai";
+          const fallbackModelId = DEFAULT_ORCHESTRATOR_MODELS[fallbackProviderId];
+          try {
+            const fallbackResult = await shellApi.providerExecute({
+              providerId: fallbackProviderId,
+              auth,
+              model: fallbackModelId,
+              prompt: createProviderPrompt(prompt, contextSnippets)
+            });
+            providerModelId = fallbackResult.model;
+            providerText = fallbackResult.text;
+            const fallbackRuntimeMode = fallbackResult.runtimeMode ?? "native";
+            runtimeModeHint = fallbackRuntimeMode;
+            providerExecution = {
+              providerId: fallbackResult.providerId,
+              modelId: fallbackResult.model,
+              runtimeMode: fallbackRuntimeMode,
+              status: "succeeded"
+            };
+            if (providerText.trim().length === 0) {
+              failureMessage = "Provider execution completed with an empty response.";
+              providerExecution = {
+                providerId: fallbackResult.providerId,
+                modelId: fallbackResult.model,
+                runtimeMode: fallbackRuntimeMode,
+                status: "failed",
+                errorCode: "unexpected_error",
+                remediation: "Retry execution with additional context or adjust provider settings.",
+                retryable: true
+              };
+            } else {
+              failureMessage = undefined;
+            }
+          } catch (fallbackError) {
+            const fallbackProviderError = parseProviderIpcError(fallbackError);
+            const fallbackProviderMessage =
+              fallbackProviderError?.message ?? toErrorMessage(fallbackError);
+            failureMessage = fallbackProviderError
+              ? `Provider execution failed (${fallbackProviderError.code}): ${fallbackProviderMessage}`
+              : `Provider execution failed: ${fallbackProviderMessage}`;
+            providerExecution = createProviderExecutionFailure({
+              parsedProviderError: fallbackProviderError,
+              providerId: fallbackProviderId,
+              modelId: fallbackModelId
+            });
+          }
+        } else {
+          providerExecution = createProviderExecutionFailure({
+            parsedProviderError,
+            providerId,
+            modelId: providerModelId,
+            runtimeMode
+          });
+        }
+      }
+    }
+
+    const delegationOutcome = failureMessage
+      ? { tasks: undefined, failureMessage }
       : buildDelegatedTaskTimeline(runId, prompt, endedAt);
-    const failureMessage = delegationOutcome.failureMessage;
     const endedStatus: OrchestratorRunStatus = failureMessage ? "failed" : "completed";
     const endedTransition = transitionOrchestratorRunStatus(
       runningRun,
       endedStatus,
       endedAt,
-      failureMessage ?? undefined
+      failureMessage
     );
     if (!endedTransition.ok) {
       console.error(endedTransition.reason);
@@ -1004,6 +1197,7 @@ function App(): React.JSX.Element {
         resolvedProviderId: contextRunProviderId,
         fallbackFromProviderId,
         contextRetrievalError,
+        providerExecution,
         delegatedTasks: delegationOutcome.tasks
       };
       await persistState({
@@ -1015,18 +1209,27 @@ function App(): React.JSX.Element {
     }
 
     const endedRun = endedTransition.run;
-    const draft = failureMessage ? undefined : createSpecDraft(endedRun, endedAt, contextSnippets);
+    const draft = failureMessage
+      ? undefined
+      : {
+          runId: endedRun.id,
+          generatedAt: endedAt,
+          content: shellApi
+            ? toDraftContent(providerText ?? "", endedRun, contextSnippets)
+            : createSpecDraft(endedRun, endedAt, contextSnippets).content
+        };
     const runsWithTerminalUpdate = applyOrchestratorRunUpdate(runningState.orchestratorRuns, {
       ...endedRun,
       resolvedProviderId: contextRunProviderId,
       fallbackFromProviderId,
-      contextRetrievalError
+      contextRetrievalError,
+      providerExecution
     });
     const endedState: AppState = {
       ...runningState,
       orchestratorRuns: completeOrchestratorRun(runsWithTerminalUpdate, runId, {
         contextRetrievalError,
-        contextSnippets: failureMessage ? undefined : contextSnippets,
+        contextSnippets: contextSnippets.length > 0 ? contextSnippets : undefined,
         draft,
         draftAppliedAt: undefined,
         draftApplyError: undefined,
@@ -1579,6 +1782,14 @@ function App(): React.JSX.Element {
                   <p>Prompt: {latestRunViewModel.prompt}</p>
                   <p>Lifecycle: {latestRunViewModel.lifecycleText}</p>
                   <p>Context preview: {latestRunViewModel.contextPreview}</p>
+                  {latestRunViewModel.providerExecution ? (
+                    <p>
+                      Provider: {latestRunViewModel.providerExecution.providerId} /{" "}
+                      {latestRunViewModel.providerExecution.modelId} (
+                      {latestRunViewModel.providerExecution.runtimeMode}){" "}
+                      {latestRunViewModel.providerExecution.status}
+                    </p>
+                  ) : null}
                   {latestRunProvenanceLine ? <p>{latestRunProvenanceLine}</p> : null}
                   {latestRunViewModel.delegatedTasks.length > 0 ? (
                     <div>
@@ -1606,6 +1817,21 @@ function App(): React.JSX.Element {
                   ) : null}
                   {latestRunViewModel.errorMessage ? (
                     <p className="field-error">{latestRunViewModel.errorMessage}</p>
+                  ) : null}
+                  {latestRunViewModel.providerExecution?.status === "failed" ? (
+                    <>
+                      {latestRunViewModel.providerExecution.errorCode ? (
+                        <p className="field-error">
+                          Provider error ({latestRunViewModel.providerExecution.errorCode})
+                        </p>
+                      ) : null}
+                      {latestRunViewModel.providerExecution.remediation ? (
+                        <p>
+                          Remediation: {latestRunViewModel.providerExecution.remediation}{" "}
+                          {latestRunViewModel.providerExecution.retryable ? "(retryable)" : "(not retryable)"}
+                        </p>
+                      ) : null}
+                    </>
                   ) : null}
                   {latestRunViewModel.contextDiagnostics ? (
                     <>
@@ -1648,6 +1874,12 @@ function App(): React.JSX.Element {
                         <p>Prompt: {run.prompt}</p>
                         <p>Lifecycle: {run.lifecycleText}</p>
                         <p>Context preview: {run.contextPreview}</p>
+                        {run.providerExecution ? (
+                          <p>
+                            Provider: {run.providerExecution.providerId} / {run.providerExecution.modelId} (
+                            {run.providerExecution.runtimeMode}) {run.providerExecution.status}
+                          </p>
+                        ) : null}
                         {runProvenanceLine ? <p>{runProvenanceLine}</p> : null}
                         {run.delegatedTasks.length > 0 ? (
                           <div>
@@ -1668,6 +1900,21 @@ function App(): React.JSX.Element {
                           </div>
                         ) : null}
                         {run.errorMessage ? <p className="field-error">{run.errorMessage}</p> : null}
+                        {run.providerExecution?.status === "failed" ? (
+                          <>
+                            {run.providerExecution.errorCode ? (
+                              <p className="field-error">
+                                Provider error ({run.providerExecution.errorCode})
+                              </p>
+                            ) : null}
+                            {run.providerExecution.remediation ? (
+                              <p>
+                                Remediation: {run.providerExecution.remediation}{" "}
+                                {run.providerExecution.retryable ? "(retryable)" : "(not retryable)"}
+                              </p>
+                            ) : null}
+                          </>
+                        ) : null}
                         {run.contextDiagnostics ? (
                           <>
                             <p className="field-error">

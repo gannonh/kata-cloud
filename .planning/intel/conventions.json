@@ -1,16 +1,16 @@
 {
   "version": 2,
-  "generated": "2026-02-19T16:12:40.080Z",
-  "commitHash": "9ca1077",
+  "generated": "2026-02-19T20:21:24.113Z",
+  "commitHash": "e08fdac",
   "naming": {
     "exports": {
       "pattern": "mixed",
-      "confidence": 0.57,
-      "sampleSize": 63,
+      "confidence": 0.66,
+      "sampleSize": 89,
       "breakdown": {
         "SCREAMING_SNAKE": 4,
-        "PascalCase": 36,
-        "camelCase": 23
+        "PascalCase": 59,
+        "camelCase": 26
       }
     }
   },
@@ -24,7 +24,7 @@
     "bin/": {
       "purpose": "CLI entry points",
       "detectedBy": "name-lookup",
-      "fileCount": 6,
+      "fileCount": 7,
       "dominantSuffix": ".mjs"
     },
     "src/context/providers/": {
@@ -37,7 +37,7 @@
   "fileSuffixes": {
     ".test.ts": {
       "purpose": "test files",
-      "count": 8
+      "count": 10
     },
     ".config.mjs": {
       "purpose": "configuration",

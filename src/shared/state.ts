@@ -15,6 +15,8 @@ export const APP_STATE_VERSION = 1;
 export type NavigationView = "explorer" | "orchestrator" | "spec" | "changes" | "browser";
 export type OrchestratorRunStatus = "queued" | "running" | "completed" | "failed" | "interrupted";
 export type OrchestratorTaskType = "implement" | "verify" | "debug";
+export type OrchestratorProviderRuntimeMode = "native" | "pi";
+export type OrchestratorProviderExecutionStatus = "succeeded" | "failed";
 export type OrchestratorTaskStatus =
   | "queued"
   | "delegating"
@@ -40,6 +42,16 @@ export interface OrchestratorDelegatedTaskRecord {
   updatedAt: string;
   completedAt?: string;
   errorMessage?: string;
+}
+
+export interface OrchestratorProviderExecutionRecord {
+  providerId: string;
+  modelId: string;
+  runtimeMode: OrchestratorProviderRuntimeMode;
+  status: OrchestratorProviderExecutionStatus;
+  errorCode?: string;
+  remediation?: string;
+  retryable?: boolean;
 }
 
 export interface SpaceRecord {
@@ -79,6 +91,7 @@ export interface OrchestratorRunRecord {
   resolvedProviderId?: ContextProviderId;
   fallbackFromProviderId?: ContextProviderId;
   contextRetrievalError?: ContextRetrievalError;
+  providerExecution?: OrchestratorProviderExecutionRecord;
   contextSnippets?: ContextSnippet[];
   draft?: OrchestratorSpecDraft;
   draftAppliedAt?: string;
@@ -187,6 +200,38 @@ function isOrchestratorTaskStatus(value: unknown): value is OrchestratorTaskStat
     value === "running" ||
     value === "completed" ||
     value === "failed"
+  );
+}
+
+function isOrchestratorProviderRuntimeMode(value: unknown): value is OrchestratorProviderRuntimeMode {
+  return value === "native" || value === "pi";
+}
+
+function isOrchestratorProviderExecutionStatus(
+  value: unknown
+): value is OrchestratorProviderExecutionStatus {
+  return value === "succeeded" || value === "failed";
+}
+
+function isOrchestratorProviderExecutionRecord(
+  value: unknown
+): value is OrchestratorProviderExecutionRecord {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  const errorCodeIsValid = value.errorCode === undefined || isString(value.errorCode);
+  const remediationIsValid = value.remediation === undefined || isString(value.remediation);
+  const retryableIsValid = value.retryable === undefined || typeof value.retryable === "boolean";
+
+  return (
+    isString(value.providerId) &&
+    isString(value.modelId) &&
+    isOrchestratorProviderRuntimeMode(value.runtimeMode) &&
+    isOrchestratorProviderExecutionStatus(value.status) &&
+    errorCodeIsValid &&
+    remediationIsValid &&
+    retryableIsValid
   );
 }
 
@@ -349,6 +394,9 @@ function normalizeOrchestratorRunRecord(value: unknown): OrchestratorRunRecord |
   const delegatedTasks = Array.isArray(value.delegatedTasks)
     ? value.delegatedTasks.filter(isOrchestratorDelegatedTaskRecord)
     : undefined;
+  const providerExecution = isOrchestratorProviderExecutionRecord(value.providerExecution)
+    ? value.providerExecution
+    : undefined;
 
   return {
     id: value.id,
@@ -367,6 +415,7 @@ function normalizeOrchestratorRunRecord(value: unknown): OrchestratorRunRecord |
     contextRetrievalError: isContextRetrievalError(value.contextRetrievalError)
       ? value.contextRetrievalError
       : undefined,
+    providerExecution,
     contextSnippets,
     draft,
     draftAppliedAt,

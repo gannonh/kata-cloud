@@ -12,7 +12,7 @@ Current focus is executing v0.2.0 Desktop MVP Closure after shipping orchestrato
 
 ## Current Milestone: v0.2.0 Desktop MVP Closure
 
-**Status:** Active (Phase 09 planned, execution pending)
+**Status:** Active (Phase 09 complete, Phase 10 pending planning/execution)
 
 **Goal:** Deliver MVP UX parity with the design specs and make orchestrator execution visibly real (agent deployment + provider-backed generation) while preserving v0.1 reliability guarantees.
 
@@ -20,12 +20,6 @@ Current focus is executing v0.2.0 Desktop MVP Closure after shipping orchestrato
 - Existing planned v0.2 scope from roadmap/milestones
 - PI package integration opportunity (`pi-mono`) with ESM compatibility
 - Front-end spec corpus (`docs/design/specs/README.md` and specs 01-07)
-
-### Phase 09: Runtime Integration and ESM Consolidation
-
-**Goal:** Switch orchestrator generation from local draft synthesis to provider-backed execution, introduce PI adapter mode safely, and consolidate module pathways to ESM-first.
-**Depends on:** v0.1.0 shipped foundation
-**Plans:** 3 planned (`09-01`, `09-02`, `09-03`)
 
 ### Phase 10: Coordinator Shell and Sidebar Semantics
 
@@ -81,7 +75,7 @@ No additional milestones planned yet. Next milestone definition starts after v0.
 | 6. Delegation + Context Contract Hardening | v0.1.0 | 3/3 | Complete | 2026-02-19 |
 | 7. Resume Integrity and Context Consistency | v0.1.0 | 2/2 | Complete | 2026-02-19 |
 | 8. Verification Sweep and Guardrail Codification | v0.1.0 | 3/3 | Complete | 2026-02-19 |
-| 9. Runtime Integration and ESM Consolidation | v0.2.0 | 0/3 | Pending | — |
+| 9. Runtime Integration and ESM Consolidation | v0.2.0 | 3/3 | Complete | 2026-02-19 |
 | 10. Coordinator Shell and Sidebar Semantics | v0.2.0 | 0/TBD | Pending | — |
 | 11. Agent Deployment, Waves, and Tab Expansion | v0.2.0 | 0/TBD | Pending | — |
 | 12. Completion Workflow and Safety UX | v0.2.0 | 0/TBD | Pending | — |
@@ -89,4 +83,4 @@ No additional milestones planned yet. Next milestone definition starts after v0.
 
 ---
 *Roadmap created: 2026-02-18*
-*Last updated: 2026-02-19 — Phase 09 planning artifacts created and roadmap phase headings normalized*
+*Last updated: 2026-02-19 — Phase 09 completed (plans 09-01, 09-02, 09-03)*

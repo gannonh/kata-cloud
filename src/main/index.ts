@@ -20,9 +20,10 @@ import { createContextAdapter } from "../context/context-adapter.js";
 import { FilesystemContextProvider } from "../context/providers/filesystem-context-provider.js";
 import { McpCompatibleStubContextProvider } from "../context/providers/mcp-context-provider.js";
 import type { ContextRetrievalRequest } from "../context/types.js";
-import { createProviderRuntimeRegistry } from "./provider-runtime/registry.js";
+import { createProviderRuntimeRegistry, resolveProviderRuntimeMode } from "./provider-runtime/registry.js";
 import { ProviderRuntimeService } from "./provider-runtime/service.js";
 import { serializeProviderRuntimeError } from "./provider-runtime/errors.js";
+import type { ModelProviderId, ProviderRuntimeAdapter, ProviderAuthInput } from "./provider-runtime/types.js";
 import {
   createContextIpcErrorPayload,
   toContextRetrievalFailure
@@ -35,6 +36,47 @@ import { OpenAiApiKeyClient } from "./providers/openai/api-key-client.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let stateStore: PersistedStateStore | undefined;
+
+function createE2EProviderRuntimeAdapter(providerId: ModelProviderId): ProviderRuntimeAdapter {
+  return {
+    providerId,
+    capabilities: {
+      supportsApiKey: true,
+      supportsTokenSession: false,
+      supportsModelListing: true
+    },
+    resolveAuth(auth: ProviderAuthInput) {
+      return {
+        requestedMode: auth.preferredMode ?? "api_key",
+        resolvedMode: "api_key",
+        status: "authenticated",
+        fallbackApplied: false,
+        failureCode: null,
+        reason: null,
+        apiKey: auth.apiKey?.trim() || "kata-e2e-stub-key",
+        tokenSessionId: null
+      };
+    },
+    async listModels() {
+      return [
+        {
+          id: providerId === "anthropic" ? "claude-e2e-stub" : "gpt-e2e-stub",
+          displayName: providerId === "anthropic" ? "Claude E2E Stub" : "GPT E2E Stub"
+        }
+      ];
+    },
+    async execute(request) {
+      const trimmedPrompt = request.prompt.trim();
+      const summary = trimmedPrompt.length > 0 ? trimmedPrompt.slice(0, 120) : "No prompt provided.";
+      return {
+        providerId,
+        model: request.model,
+        authMode: "api_key",
+        text: `E2E stub response (${providerId}): ${summary}`
+      };
+    }
+  };
+}
 
 function broadcastState(nextState: AppState): void {
   for (const browserWindow of BrowserWindow.getAllWindows()) {
@@ -74,10 +116,15 @@ function createMainWindow(): BrowserWindow {
       mainWindow.webContents.send(IPC_CHANNELS.stateChanged, stateStore.getState());
     }
   });
+  mainWindow.webContents.on("preload-error", (_event, preloadPath, error) => {
+    console.error("Failed to execute preload script.", {
+      preloadPath,
+      error
+    });
+  });
 
   return mainWindow;
 }
-
 
 function registerStateHandlers(
   store: PersistedStateStore,
@@ -206,7 +253,7 @@ function registerStateHandlers(
         return await providerService.resolveAuth(request);
       } catch (error) {
         console.error("provider:resolve-auth failed", { providerId: request.providerId, error });
-        throw serializeProviderRuntimeError(error);
+        throw serializeProviderRuntimeError(error, { runtimeMode: providerService.getMode() });
       }
     }
   );
@@ -217,9 +264,13 @@ function registerStateHandlers(
         return await providerService.listModels(request);
       } catch (error) {
         console.error("provider:list-models failed", { providerId: request.providerId, error });
-        throw serializeProviderRuntimeError(error);
+        throw serializeProviderRuntimeError(error, { runtimeMode: providerService.getMode() });
       }
     }
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.providerGetRuntimeMode,
+    async () => providerService.getMode()
   );
   ipcMain.handle(
     IPC_CHANNELS.providerExecute,
@@ -228,7 +279,7 @@ function registerStateHandlers(
         return await providerService.execute(request);
       } catch (error) {
         console.error("provider:execute failed", { providerId: request.providerId, error });
-        throw serializeProviderRuntimeError(error);
+        throw serializeProviderRuntimeError(error, { runtimeMode: providerService.getMode() });
       }
     }
   );
@@ -242,11 +293,34 @@ async function bootstrap(): Promise<void> {
   });
   const gitLifecycleService = new SpaceGitLifecycleService();
   const pullRequestWorkflowService = new PullRequestWorkflowService();
-  const providerRegistry = createProviderRuntimeRegistry([
-    new AnthropicProviderAdapter(new AnthropicApiKeyClient()),
-    new OpenAiProviderAdapter(new OpenAiApiKeyClient())
-  ]);
-  const providerService = new ProviderRuntimeService(providerRegistry);
+  const wantsE2EProviderStub = process.env.KATA_CLOUD_E2E_PROVIDER_STUB === "1";
+  const useE2EProviderStub = !app.isPackaged && wantsE2EProviderStub;
+  const providerRuntimeMode = resolveProviderRuntimeMode(process.env.KATA_CLOUD_PROVIDER_RUNTIME_MODE);
+  const providerStubConflict = useE2EProviderStub && providerRuntimeMode === "pi";
+  const enableE2EProviderStub = useE2EProviderStub && !providerStubConflict;
+  if (wantsE2EProviderStub && app.isPackaged) {
+    console.warn("Ignoring KATA_CLOUD_E2E_PROVIDER_STUB=1 in packaged builds.");
+  }
+  if (providerStubConflict) {
+    console.warn(
+      "KATA_CLOUD_E2E_PROVIDER_STUB=1 is incompatible with KATA_CLOUD_PROVIDER_RUNTIME_MODE=pi; disabling provider stubs."
+    );
+  }
+  const providerRegistry = createProviderRuntimeRegistry(
+    enableE2EProviderStub
+      ? [createE2EProviderRuntimeAdapter("anthropic"), createE2EProviderRuntimeAdapter("openai")]
+      : [
+          new AnthropicProviderAdapter(new AnthropicApiKeyClient()),
+          new OpenAiProviderAdapter(new OpenAiApiKeyClient())
+        ]
+  );
+  const providerService = new ProviderRuntimeService(providerRegistry, {
+    runtimeMode: providerRuntimeMode
+  });
+  console.log(`Provider runtime mode: ${providerService.getMode()}`);
+  if (enableE2EProviderStub) {
+    console.log("Provider runtime adapters: e2e stubs");
+  }
   await stateStore.initialize();
 
   registerStateHandlers(stateStore, gitLifecycleService, pullRequestWorkflowService, providerService);
