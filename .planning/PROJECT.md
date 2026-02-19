@@ -50,7 +50,7 @@ The spec is the source of truth that stays aligned with real implementation whil
 
 ## Context
 
-Kata Cloud consolidates prior Kata R&D into one product: spec-driven development + multi-agent orchestration + context-aware execution. The product direction and positioning are defined in `docs/kata-cloud-ovweview.md` and `docs/PRD.md`, with execution baseline tracked in `notes/spec.md`.
+Kata Cloud consolidates prior Kata R&D into one product: spec-driven development + multi-agent orchestration + context-aware execution. The product direction and positioning are defined in `docs/kata-cloud-ovweview.md` and `.planning/PRD.md`, with execution baseline tracked in `notes/spec.md`.
 
 Core workflows are implemented and merged through foundational slices (desktop shell, space/git lifecycle, spec panel, orchestration basics, context adapter foundation, provider-runtime base, and Playwright smoke/E2E baseline). This milestone focuses on reliability and depth in orchestration plus context retrieval so downstream delivery is stable.
 

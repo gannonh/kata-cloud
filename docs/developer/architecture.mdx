@@ -102,6 +102,7 @@ Kata Cloud uses a centralized state model:
 Main Process
   └── PersistedStateStore
         ├── reads ~/.config/kata-cloud/kata-cloud-state.json on startup
+        ├── recovers in-flight runs (queued/running) to interrupted before UI hydration
         ├── writes on every saveState() call
         └── broadcasts stateChanged event to all windows
 

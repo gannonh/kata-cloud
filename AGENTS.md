@@ -157,10 +157,10 @@ Location: `notes/`
 - Each task includes: title, scope, inputs, definition of done, verification steps, and completion record.
 
 ### Product Management & Design
-Location: `docs/`
+Location: `docs/` and `.planning/`
 - Product overview: `docs/kata-cloud-ovweview.md`
-- PRD: `docs/PRD.md`
-- Research: `docs/research.md`
+- PRD: `.planning/PRD.md`
+- Research: `.planning/research.md`
 
 
 ## Skill Resource Resolution (Non-Negotiable)
