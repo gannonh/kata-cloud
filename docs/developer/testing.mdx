@@ -29,7 +29,12 @@ pnpm test -- git
 
 # Filter by test name
 pnpm test -- -t "normalizeAppState"
+
+# Focused orchestrator/context guardrail
+pnpm run test:orchestrator-context
 ```
+
+Use `pnpm run test:orchestrator-context` as a targeted regression gate before opening PRs that touch orchestrator lifecycle, persisted run recovery, or context provider behavior. It is also the first command in Phase 8 verification.
 
 ### E2E Tests
 
