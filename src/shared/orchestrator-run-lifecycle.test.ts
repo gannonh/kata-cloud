@@ -61,7 +61,7 @@ describe("orchestrator run lifecycle transitions", () => {
     const duplicate = transitionOrchestratorRunStatus(
       first.run,
       "running",
-      "2026-02-18T00:00:01.000Z"
+      "2026-02-18T00:00:02.000Z"
     );
     expect(duplicate.ok).toBe(true);
     if (!duplicate.ok) {
@@ -70,6 +70,33 @@ describe("orchestrator run lifecycle transitions", () => {
 
     expect(duplicate.run.status).toBe("running");
     expect(duplicate.run.statusTimeline).toEqual(["queued", "running"]);
+    expect(duplicate.run.updatedAt).toBe("2026-02-18T00:00:02.000Z");
+  });
+
+  it("clears stale errorMessage when idempotent non-failed transition occurs", () => {
+    const runWithStaleError: OrchestratorRunRecord = {
+      id: "run-1",
+      spaceId: "space-1",
+      sessionId: "session-1",
+      prompt: "Build lifecycle primitives",
+      status: "running",
+      statusTimeline: ["queued", "running"],
+      createdAt: "2026-02-18T00:00:00.000Z",
+      updatedAt: "2026-02-18T00:00:01.000Z",
+      errorMessage: "Stale error from previous attempt."
+    };
+
+    const result = transitionOrchestratorRunStatus(
+      runWithStaleError,
+      "running",
+      "2026-02-18T00:00:02.000Z"
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.run.errorMessage).toBeUndefined();
+    expect(result.run.updatedAt).toBe("2026-02-18T00:00:02.000Z");
   });
 
   it("rejects invalid lifecycle jumps", () => {
