@@ -1,6 +1,6 @@
 # Codebase Intelligence Summary
 
-Generated: 2026-02-18 | Source: code-scan (brownfield enrichment)
+Generated: 2026-02-19 | Source: code-scan (brownfield enrichment)
 
 ## Stack
 - 17 source files indexed
@@ -17,7 +17,7 @@ Generated: 2026-02-18 | Source: code-scan (brownfield enrichment)
 
 ## Conventions
 - Export naming: mixed (confidence: 0.62)
-- src/shared/ — test files
+- src/shared/ — shared domain logic and colocated tests
 
 ## Key Patterns
 - File types: undefined: 7

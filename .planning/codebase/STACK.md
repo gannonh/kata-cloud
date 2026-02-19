@@ -6,7 +6,7 @@
 
 **Primary:**
 - TypeScript (strict mode) - application code across `src/` including Electron main (`src/main/index.ts`), preload (`src/preload/index.ts`), and renderer (`src/main.tsx`)
-- JavaScript (ESM/CJS mix) - automation scripts in `scripts/*.mjs` and parser package in `packages/task-parser/src/*.js`
+- JavaScript (ESM/CJS mix) - automation scripts in `bin/*.mjs` and parser package in `packages/task-parser/src/*.js`
 
 **Secondary:**
 - TSX - React UI in `src/main.tsx`, `src/space/create-space-flow.tsx`, `src/features/spec-panel/spec-note-panel.tsx`
@@ -31,11 +31,11 @@
 **Testing:**
 - Vitest `^3.0.5` with jsdom (`vitest.config.ts`)
 - Testing Library (`@testing-library/react`, `@testing-library/user-event`) for UI behavior tests (`src/**/*.test.tsx`)
-- Playwright Core for Electron end-to-end scripts (`scripts/playwright-electron-*.mjs`)
+- Playwright Core for Electron end-to-end scripts (`bin/playwright-electron-*.mjs`)
 
 **Build/Dev:**
 - TypeScript compiler (`tsc`) with split configs (`tsconfig.main.json`, `tsconfig.renderer.json`)
-- Vite 6 for renderer dev/build (`package.json`, `scripts/dev-desktop.mjs`)
+- Vite 6 for renderer dev/build (`package.json`, `bin/dev-desktop.mjs`)
 - ESLint 9 flat config (`eslint.config.mjs`)
 
 ## Key Dependencies
@@ -53,7 +53,7 @@
 ## Configuration
 
 **Environment:**
-- Dev renderer URL configured by `KATA_CLOUD_RENDERER_URL` (`scripts/dev-desktop.mjs`, `src/main/index.ts`)
+- Dev renderer URL configured by `KATA_CLOUD_RENDERER_URL` (`bin/dev-desktop.mjs`, `src/main/index.ts`)
 - Electron sandbox toggles used by CI for Linux runtime (`KATA_CLOUD_ELECTRON_NO_SANDBOX` in `.github/workflows/*.yml`)
 
 **Build:**

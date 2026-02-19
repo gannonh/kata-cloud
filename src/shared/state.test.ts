@@ -195,11 +195,30 @@ describe("shared state helpers", () => {
           id: "run-4",
           spaceId: "space-1",
           sessionId: "session-1",
-          prompt: "invalid delegated task",
+          prompt: "recoverable nested payload",
           status: "completed",
           statusTimeline: ["queued", "running", "completed"],
           createdAt: "2026-02-16T00:00:00.000Z",
           updatedAt: "2026-02-16T00:00:00.000Z",
+          completedAt: "2026-02-16T00:00:00.000Z",
+          contextSnippets: [
+            {
+              id: "broken-snippet",
+              provider: "filesystem",
+              path: "/tmp/space-1/src/main.tsx",
+              source: "filesystem",
+              content: "valid context payload",
+              score: 0.8
+            },
+            {
+              id: "invalid-snippet",
+              provider: "filesystem",
+              path: "/tmp/space-1/src/invalid.tsx",
+              source: "filesystem",
+              content: null,
+              score: "nope"
+            }
+          ],
           delegatedTasks: [
             {
               id: "run-4-plan",
@@ -222,7 +241,7 @@ describe("shared state helpers", () => {
     expect(state.lastOpenedAt).toBe("2026-02-16T00:00:00.000Z");
     expect(state.spaces).toHaveLength(1);
     expect(state.sessions).toHaveLength(1);
-    expect(state.orchestratorRuns).toHaveLength(2);
+    expect(state.orchestratorRuns).toHaveLength(3);
     expect(state.spaces[0]?.id).toBe("space-1");
     expect(state.spaces[0]?.contextProvider).toBe("mcp");
     expect(state.sessions[0]?.id).toBe("session-1");
@@ -232,6 +251,10 @@ describe("shared state helpers", () => {
     expect(state.orchestratorRuns[1]?.id).toBe("run-5");
     expect(state.orchestratorRuns[1]?.status).toBe("failed");
     expect(state.orchestratorRuns[1]?.delegatedTasks?.[0]?.status).toBe("failed");
+    expect(state.orchestratorRuns[2]?.id).toBe("run-4");
+    expect(state.orchestratorRuns[2]?.delegatedTasks).toEqual([]);
+    expect(state.orchestratorRuns[2]?.contextSnippets).toHaveLength(1);
+    expect(state.orchestratorRuns[2]?.contextSnippets?.[0]?.id).toBe("broken-snippet");
   });
 
   it("falls back when active ids and view are invalid", () => {
@@ -290,6 +313,77 @@ describe("shared state helpers", () => {
     });
 
     expect(state.activeView).toBe("browser");
+  });
+
+  it("normalizes context retrieval errors with strict code validation", () => {
+    const state = normalizeAppState({
+      activeView: "orchestrator",
+      activeSpaceId: "space-1",
+      activeSessionId: "session-1",
+      lastOpenedAt: "2026-02-16T00:00:00.000Z",
+      spaces: [
+        {
+          id: "space-1",
+          name: "Space 1",
+          rootPath: "/tmp/space-1",
+          description: "",
+          tags: [],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        }
+      ],
+      sessions: [
+        {
+          id: "session-1",
+          spaceId: "space-1",
+          label: "Session 1",
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        }
+      ],
+      orchestratorRuns: [
+        {
+          id: "run-valid",
+          spaceId: "space-1",
+          sessionId: "session-1",
+          prompt: "valid context retrieval error code",
+          status: "failed",
+          statusTimeline: ["queued", "running", "failed"],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z",
+          completedAt: "2026-02-16T00:00:00.000Z",
+          contextRetrievalError: {
+            code: "io_failure",
+            message: "Could not read context files.",
+            remediation: "Retry and inspect filesystem permissions.",
+            retryable: true,
+            providerId: "filesystem"
+          }
+        },
+        {
+          id: "run-invalid",
+          spaceId: "space-1",
+          sessionId: "session-1",
+          prompt: "invalid context retrieval error code",
+          status: "failed",
+          statusTimeline: ["queued", "running", "failed"],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z",
+          completedAt: "2026-02-16T00:00:00.000Z",
+          contextRetrievalError: {
+            code: "",
+            message: "Could not read context files.",
+            remediation: "Retry and inspect filesystem permissions.",
+            retryable: true,
+            providerId: "filesystem"
+          }
+        }
+      ]
+    });
+
+    expect(state.orchestratorRuns).toHaveLength(2);
+    expect(state.orchestratorRuns[0]?.contextRetrievalError?.code).toBe("io_failure");
+    expect(state.orchestratorRuns[1]?.contextRetrievalError).toBeUndefined();
   });
 
   it("drops persisted runs with inconsistent lifecycle timeline metadata", () => {

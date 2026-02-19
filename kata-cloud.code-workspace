@@ -1,9 +1,15 @@
 {
 	"folders": [
 		{
+			"name": "kata-cloud",
 			"path": "."
 		},
 		{
+			"name": "kata-cloud.worktrees",
+			"path": "../kata-cloud.worktrees"
+		},
+		{
+			"name": "intent",
 			"path": "../../../intent"
 		}
 	],

@@ -100,7 +100,7 @@ pnpm run test -- --coverage
 - Node-oriented service behavior tests (`src/main/provider-runtime/*.node.test.ts`, `src/git/space-git-service.node.test.ts`)
 
 **E2E Tests:**
-- Electron flow suites run via tagged Playwright runner (`scripts/playwright-electron-runner.mjs`) with `smoke`, `uat`, and `full` suite selectors.
+- Electron flow suites run via tagged Playwright runner (`bin/playwright-electron-runner.mjs`) with `smoke`, `uat`, and `full` suite selectors.
 
 ## Common Patterns
 

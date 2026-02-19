@@ -22,6 +22,10 @@ import type { ContextRetrievalRequest } from "../context/types";
 import { createProviderRuntimeRegistry } from "./provider-runtime/registry";
 import { ProviderRuntimeService } from "./provider-runtime/service";
 import { serializeProviderRuntimeError } from "./provider-runtime/errors";
+import {
+  createContextIpcErrorPayload,
+  toContextRetrievalFailure
+} from "../shared/context-ipc";
 import { AnthropicProviderAdapter } from "./providers/anthropic/adapter";
 import { AnthropicApiKeyClient } from "./providers/anthropic/api-key-client";
 import { OpenAiProviderAdapter } from "./providers/openai/adapter";
@@ -166,10 +170,30 @@ function registerStateHandlers(
           spaceId: request.spaceId,
           sessionId: request.sessionId
         });
-        throw new Error("Context retrieval root path is not associated with a known space.");
+        return toContextRetrievalFailure(
+          createContextIpcErrorPayload({
+            code: "invalid_root_path",
+            message: "Context retrieval root path is not associated with a known space.",
+            remediation: "Select a known space root path before running orchestration.",
+            retryable: false,
+            providerId: request.providerId
+          })
+        );
       }
-
-      return contextAdapter.retrieve({ ...request, rootPath: requestRootPath }, request.providerId);
+      try {
+        return await contextAdapter.retrieve({ ...request, rootPath: requestRootPath });
+      } catch (error) {
+        console.error("Context retrieval failed with unexpected runtime error.", error);
+        return toContextRetrievalFailure(
+          createContextIpcErrorPayload({
+            code: "io_failure",
+            message: "Context retrieval failed due to an unexpected runtime error.",
+            remediation: "Retry context retrieval and inspect main-process logs if failure persists.",
+            retryable: true,
+            providerId: request.providerId
+          })
+        );
+      }
     }
   );
   ipcMain.handle(

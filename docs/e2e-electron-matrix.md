@@ -11,12 +11,13 @@ This matrix defines how Playwright Electron scenarios map to suite tags.
 
 ## Scenario Matrix
 
-| Scenario ID | Purpose | Included in `smoke` | Included in `uat` | Included in `full` |
-| --- | --- | --- | --- | --- |
-| `bridge-smoke` | Validate Electron preload bridge wiring and Changes view shell availability. | Yes | No | Yes |
-| `orchestrator-uat-lifecycle-persistence` | Validate orchestrator completed/failed/completed lifecycle transitions, failure diagnostics, and persistence after restart. | No | Yes | Yes |
-| `changes-no-repo-link-uat` | Validate Changes flow works without repo URL metadata once root path is configured. | No | Yes | Yes |
-| `pr-redaction-uat` | Validate PR draft redacts sensitive-file diff contents. | No | Yes | Yes |
+| Scenario ID                              | Purpose                                                                                                                                                | Included in `smoke` | Included in `uat` | Included in `full` |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------- | ----------------- | ------------------ |
+| `bridge-smoke`                           | Validate Electron preload bridge wiring and Changes view shell availability.                                                                           | Yes                 | No                | Yes                |
+| `orchestrator-uat-lifecycle-persistence` | Validate orchestrator completed/failed/completed lifecycle transitions, failure diagnostics, and persistence after restart.                            | No                  | Yes               | Yes                |
+| `orchestrator-context-diagnostics-uat`   | Validate typed context retrieval diagnostics (provider/code/remediation/retryable) appear in latest run, move into history, and persist after restart. | No                  | Yes               | Yes                |
+| `changes-no-repo-link-uat`               | Validate Changes flow works without repo URL metadata once root path is configured.                                                                    | No                  | Yes               | Yes                |
+| `pr-redaction-uat`                       | Validate PR draft redacts sensitive-file diff contents.                                                                                                | No                  | Yes               | Yes                |
 
 ## Policy
 

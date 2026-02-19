@@ -132,6 +132,25 @@ describe("orchestrator run view model projections", () => {
     );
   });
 
+  it("projects actionable context retrieval diagnostics", () => {
+    const projection = projectOrchestratorRunViewModel(
+      createRun({
+        contextRetrievalError: {
+          code: "provider_unavailable",
+          message: "MCP runtime is unavailable.",
+          remediation: "Retry with filesystem provider or configure MCP runtime.",
+          retryable: true,
+          providerId: "mcp"
+        }
+      })
+    );
+
+    expect(projection.contextDiagnostics?.code).toBe("provider_unavailable");
+    expect(projection.contextDiagnostics?.providerId).toBe("mcp");
+    expect(projection.contextDiagnostics?.retryable).toBe(true);
+    expect(projection.contextDiagnostics?.remediation).toContain("filesystem");
+  });
+
   it("projects run history arrays without reordering", () => {
     const runHistory = projectOrchestratorRunHistory([
       createRun({ id: "run-a", prompt: "First" }),

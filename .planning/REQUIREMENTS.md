@@ -11,13 +11,13 @@ Requirements for milestone v0.1.0 Orchestrator and Context Engine Expansion.
 
 - [x] **ORCH-01**: User can start an orchestrator run and always receive a deterministic run status transition from queued to terminal state.
 - [x] **ORCH-02**: User can see delegated specialist task progress and terminal outcomes with actionable failure context.
-- [ ] **ORCH-03**: User can re-open prior orchestrator runs and inspect full lifecycle timelines without data loss.
-- [ ] **ORCH-04**: User can recover safely from orchestrator failures without corrupting existing spec content or active session state.
+- [x] **ORCH-03**: User can re-open prior orchestrator runs and inspect full lifecycle timelines without data loss.
+- [x] **ORCH-04**: User can recover safely from orchestrator failures without corrupting existing spec content or active session state.
 
 ### Context Engine Depth
 
-- [ ] **CTX-01**: User-triggered orchestration can retrieve relevant repository context through the adapter interface with stable request/response contracts.
-- [ ] **CTX-02**: User gets predictable context retrieval behavior when provider or filesystem lookups fail (typed error handling, no silent failure).
+- [x] **CTX-01**: User-triggered orchestration can retrieve relevant repository context through the adapter interface with stable request/response contracts.
+- [x] **CTX-02**: User gets predictable context retrieval behavior when provider or filesystem lookups fail (typed error handling, no silent failure).
 - [ ] **CTX-03**: User can execute orchestrator flows with consistent context grounding across repeated runs in the same session.
 - [ ] **CTX-04**: User-visible orchestrator output reflects context-source provenance (what data source informed generated output).
 
@@ -57,10 +57,10 @@ Deferred to future milestones.
 |-------------|-------|--------|
 | ORCH-01 | Phase 5 | Complete |
 | ORCH-02 | Phase 5 | Complete |
-| ORCH-03 | Phase 6 | Pending |
-| ORCH-04 | Phase 6 | Pending |
-| CTX-01 | Phase 6 | Pending |
-| CTX-02 | Phase 6 | Pending |
+| ORCH-03 | Phase 6 | Complete |
+| ORCH-04 | Phase 6 | Complete |
+| CTX-01 | Phase 6 | Complete |
+| CTX-02 | Phase 6 | Complete |
 | CTX-03 | Phase 7 | Pending |
 | CTX-04 | Phase 7 | Pending |
 | SESS-01 | Phase 7 | Pending |
@@ -77,4 +77,4 @@ Coverage:
 
 ---
 Requirements defined: 2026-02-18
-Last updated: 2026-02-18 after Phase 5 completion
+Last updated: 2026-02-19 after Phase 6 completion

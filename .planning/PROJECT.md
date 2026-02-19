@@ -32,7 +32,7 @@ The spec is the source of truth that stays aligned with real implementation whil
 - ✓ In-app localhost browser preview for iterative dev workflows — existing (`src/browser/local-dev-browser.ts`, `src/main.tsx`)
 - ✓ Context adapter foundation with filesystem provider and MCP-compatible stub — existing (`src/context/*`)
 - ✓ Provider runtime foundation + Anthropic/OpenAI API-key execution path slices — existing (`src/main/provider-runtime/*`, `src/main/providers/*`)
-- ✓ UAT-to-E2E codification baseline with Electron Playwright smoke/full CI split — existing (`scripts/playwright-electron-*.mjs`, `.github/workflows/*`)
+- ✓ UAT-to-E2E codification baseline with Electron Playwright smoke/full CI split — existing (`bin/playwright-electron-*.mjs`, `.github/workflows/*`)
 
 ### Active
 
@@ -67,13 +67,13 @@ The team operates with strict branch hygiene and slice discipline: start from fr
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-| -------- | --------- | ------- |
-| Keep spec-driven workflow as product center | Maintains alignment between intent, execution, and reviewable output | ✓ Good |
-| Treat pull request as the core deliverable | Makes agent work auditable and team-compatible | ✓ Good |
-| Build desktop-first local mode before cloud mode | Needed for filesystem/git control and rapid MVP iteration | ✓ Good |
-| Support both Anthropic and OpenAI provider runtimes | Different models/providers fit different task profiles and risk posture | ✓ Good |
-| Prioritize orchestrator/context reliability before broader expansion | Stable execution core is prerequisite for scaling workflow depth | — Pending |
+| Decision                                                             | Rationale                                                               | Outcome   |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------- |
+| Keep spec-driven workflow as product center                          | Maintains alignment between intent, execution, and reviewable output    | ✓ Good    |
+| Treat pull request as the core deliverable                           | Makes agent work auditable and team-compatible                          | ✓ Good    |
+| Build desktop-first local mode before cloud mode                     | Needed for filesystem/git control and rapid MVP iteration               | ✓ Good    |
+| Support both Anthropic and OpenAI provider runtimes                  | Different models/providers fit different task profiles and risk posture | ✓ Good    |
+| Prioritize orchestrator/context reliability before broader expansion | Stable execution core is prerequisite for scaling workflow depth        | — Pending |
 
 ---
 *Last updated: 2026-02-18 after milestone v0.1.0 initialization*
