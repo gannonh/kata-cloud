@@ -1,0 +1,107 @@
+---
+title: "MCP Support"
+description: "Connect external tool servers to extend what Kata Cloud agents can access."
+---
+
+## What is MCP?
+
+**Model Context Protocol (MCP)** is an open standard for connecting AI models to external tools and data sources. It lets Kata Cloud agents access databases, documentation, APIs, and other resources without leaving the app.
+
+MCP is widely adopted — GitHub Copilot, Claude Code, Cursor, Cline, and dozens of other tools use MCP for tool integration. Apple adopted MCP in Xcode in early 2026. Kata Cloud implements MCP as a **client**, meaning it can consume any MCP server.
+
+## How MCP Works in Kata Cloud
+
+When agents run in Kata Cloud, they have access to:
+
+1. **Built-in coding tools**: Read, Write, Edit, Bash, Glob, Grep (provided by the Agent SDK)
+2. **MCP tool servers**: External tools you configure
+
+MCP servers provide additional capabilities — for example:
+- A database MCP server lets agents query your schema directly
+- A documentation MCP server gives agents access to your API docs
+- A filesystem MCP server exposes files outside the Space's worktree
+- A web search MCP server lets agents look up current information
+
+## Configuring MCP Servers
+
+MCP server configuration follows the standard MCP spec. In Kata Cloud:
+
+1. Open **Settings**
+2. Navigate to **MCP Servers**
+3. Add a server configuration
+
+Each MCP server entry includes:
+- **Name**: A label for this server
+- **Command**: The executable to run (e.g., `npx`, `uvx`, `python`)
+- **Arguments**: Command-line arguments for the server
+- **Environment**: Optional environment variables (e.g., API keys)
+
+### Example: Database MCP Server
+
+```json
+{
+  "name": "postgres",
+  "command": "npx",
+  "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/mydb"]
+}
+```
+
+### Example: Filesystem MCP Server
+
+```json
+{
+  "name": "filesystem",
+  "command": "npx",
+  "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/you/shared-docs"]
+}
+```
+
+### Example: GitHub MCP Server
+
+```json
+{
+  "name": "github",
+  "command": "npx",
+  "args": ["-y", "@modelcontextprotocol/server-github"],
+  "env": {
+    "GITHUB_TOKEN": "your-token-here"
+  }
+}
+```
+
+## Tool Discovery
+
+When an Orchestrator run starts, Kata Cloud:
+1. Connects to all configured MCP servers
+2. Discovers available tools from each server
+3. Makes those tools available to all agents in the run
+
+Agents can then call MCP tools the same way they use built-in tools.
+
+## Tool Annotations
+
+Kata Cloud respects MCP tool annotations:
+
+| Annotation | Meaning |
+|---|---|
+| `readOnlyHint` | The tool doesn't modify state — safe to run automatically |
+| `destructiveHint` | The tool may modify or delete data — may require confirmation |
+
+## Security Considerations
+
+- MCP servers run as subprocesses on your machine under your user account
+- Treat MCP server dependencies with the same care as any npm/pip package
+- Use environment variables for secrets — don't put API keys in command arguments
+- Agents with MCP tool access have the same filesystem and network permissions as any local process
+
+## Coming Soon: Kata as an MCP Server
+
+Future versions of Kata Cloud will expose the **Kata workflow engine as an MCP server** — allowing external tools like Claude Code, Cursor, and Copilot to invoke Kata workflows via MCP. This turns Kata from a standalone app into an orchestration layer that the entire agentic ecosystem can use.
+
+## Finding MCP Servers
+
+The MCP ecosystem is growing rapidly. Useful resources:
+
+- [MCP server repository](https://github.com/modelcontextprotocol/servers) — official reference implementations
+- [Smithery](https://smithery.ai) — curated MCP server registry
+- Community-maintained lists on the [MCP Discord](https://discord.gg/mcp)

@@ -1,0 +1,104 @@
+---
+title: "Spaces"
+description: "Isolated development environments with dedicated git branches and worktrees."
+---
+
+## What is a Space?
+
+A **Space** is Kata Cloud's core unit of work. Every Space has:
+
+- A dedicated **git branch** and **worktree** — agents work in isolation without affecting your main branch
+- A **Spec** — the living document driving all agent work
+- **Orchestrator run history** — a complete record of every agent session
+- **Metadata** — name, description, tags, and linked repository
+
+When you create a Space from a prompt, Kata Cloud automatically sets up the git worktree and hands off to the Orchestrator. When you're done, merge the PR and the Space has done its job.
+
+## Creating a Space
+
+### From the Prompt Box
+
+1. Type your intent in the **prompt box** on the home screen
+2. Press **Create Space** (or `Enter`)
+3. Set a name, choose a directory on your filesystem, and optionally link a Git repository
+4. Click **Create**
+
+### Space Metadata
+
+When creating or editing a Space, you can set:
+
+| Field | Description |
+|---|---|
+| **Name** | A short, descriptive label (e.g., "add-auth", "fix-dashboard-perf") |
+| **Description** | Longer context about the purpose of this Space |
+| **Root Path** | The local directory where the worktree lives |
+| **Repository URL** | Optional GitHub repository link for PR creation |
+| **Tags** | Custom labels for filtering and organization |
+
+## Managing Spaces
+
+The **Explorer** panel (left sidebar) lists all your Spaces. From here you can:
+
+- **Switch** between active Spaces
+- **Archive** completed Spaces
+- **Delete** Spaces you no longer need
+
+### Space Status
+
+Each Space displays a git lifecycle status:
+
+| Status | Meaning |
+|---|---|
+| `initializing` | Kata Cloud is creating the worktree and branch |
+| `switching` | The Space is loading after you selected it |
+| `ready` | The Space is active and agents can run |
+| `error` | Something went wrong — check the error message |
+
+## Git Worktrees
+
+Kata Cloud uses **git worktrees** to give every Space its own isolated filesystem. This is what makes parallel work possible:
+
+- Each Space has a separate directory on disk (the worktree)
+- Multiple Spaces can work on the same repository at the same time
+- There's no branch switching — each worktree always reflects its own branch
+- Cleanup is automatic when you delete a Space
+
+### Why Worktrees (Not Branches)?
+
+Traditional branch workflows require switching branches to see changes — which clears your working state and can be disruptive. Worktrees solve this by maintaining multiple physical copies of the repo at different branches simultaneously.
+
+When you have three Spaces for the same repo, you have three separate directories, each with its own branch, all open at once.
+
+## Sessions
+
+Within a Space, you can have multiple **Sessions** — named work contexts that preserve state across Orchestrator runs. Sessions let you:
+
+- Organize work thematically within a Space
+- Keep separate Orchestrator histories for different sub-tasks
+- Resume previous work exactly where you left off
+
+### Creating Sessions
+
+1. Open a Space from the Explorer
+2. Click **+ New Session** in the Orchestrator panel
+3. Give the session a label
+
+## Resumable Sessions
+
+Kata Cloud persists your entire Space state to disk (`~/.config/kata-cloud/kata-cloud-state.json`). When you close and reopen the app:
+
+- Your active Space, Session, and view are restored
+- Orchestrator run history is preserved
+- The Spec retains all content and comments
+
+You can pick up any agent workflow exactly where you left it.
+
+## Tags and Organization
+
+Tags let you categorize Spaces across projects. For example:
+
+- `frontend`, `backend`, `devops`
+- `feature`, `bugfix`, `refactor`
+- `v1.0`, `sprint-3`
+
+Filter your Space list by tag using the Explorer's search and filter controls.

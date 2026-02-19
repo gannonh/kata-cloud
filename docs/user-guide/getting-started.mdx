@@ -1,0 +1,93 @@
+---
+title: "Getting Started"
+description: "Download, install, and run your first agent workflow with Kata Cloud."
+---
+
+## Prerequisites
+
+Before installing Kata Cloud, you'll need an API key or subscription from at least one model provider:
+
+- **Anthropic**: [console.anthropic.com](https://console.anthropic.com) — API key, or a Claude Max subscription
+- **OpenAI**: [platform.openai.com](https://platform.openai.com) — API key, or a ChatGPT Plus/Pro subscription
+
+Kata Cloud is **free to use**. Your API key covers the model costs at published provider rates.
+
+## Download and Install
+
+1. Visit [kata.sh](https://kata.sh) and download the macOS installer
+2. Open the `.dmg` file and drag **Kata Cloud** to your Applications folder
+3. Launch Kata Cloud from Applications
+
+<Note>
+Linux support is coming soon. Windows support is on the roadmap.
+</Note>
+
+## Create Your First Space
+
+A **Space** is an isolated development environment with its own git branch and worktree. Every agent workflow starts by creating a Space.
+
+1. Open Kata Cloud — you'll see the **Explorer** panel on the left
+2. Click **New Space** (or type your intent in the prompt box)
+3. Describe what you want to build or change — for example:
+   > "Add user authentication with email and password to this Express app"
+4. Choose a **name** and **location** for the Space
+5. Optionally link a Git repository and add tags for organization
+6. Click **Create Space**
+
+Kata Cloud creates a new git branch and worktree for your Space, then opens the Orchestrator.
+
+## Your First Orchestrator Run
+
+When a Space opens, you'll see three panels:
+
+| Panel | What it shows |
+|---|---|
+| **Explorer** (left) | Your files and spaces |
+| **Orchestrator** (center) | Agent run status and activity |
+| **Spec** (right) | The living specification document |
+
+The Orchestrator automatically:
+1. Analyzes your codebase to understand the context
+2. Drafts a **Spec** — a structured document describing goals, tasks, and approach
+3. Proposes tasks for Specialist Agents
+
+### Review and Apply the Spec Draft
+
+Before agents start executing, you can:
+- **Review the Spec draft** to confirm the approach
+- **Edit the Spec** to adjust scope, add constraints, or clarify requirements
+- Click **Apply Draft** to accept the Spec and kick off agent execution
+
+<Tip>
+You can stop the Orchestrator at any time by clicking **Stop**. Edit the Spec manually, then resume — giving you full control over the direction of the work.
+</Tip>
+
+## Review Changes and Create a PR
+
+When agents complete their work, navigate to the **Changes** tab:
+
+1. Click **Changes** in the top navigation
+2. Inspect diffs — see exactly what each agent changed
+3. Stage the files you want to include
+4. Click **Create PR**
+5. The agent auto-generates a comprehensive PR description
+6. Review and submit to GitHub
+
+That's the complete Kata Cloud workflow: **Prompt → Space → Spec → Agents → Changes → PR**.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Spaces" icon="folder-open" href="/user-guide/spaces">
+    Learn how to organize and manage your development environments.
+  </Card>
+  <Card title="The Orchestrator" icon="diagram-project" href="/user-guide/orchestrator">
+    Understand how the Coordination Agent delegates work.
+  </Card>
+  <Card title="The Spec" icon="file-lines" href="/user-guide/the-spec">
+    Deep-dive into the self-maintaining specification document.
+  </Card>
+  <Card title="Changes Tab" icon="code-compare" href="/user-guide/changes-tab">
+    Master diff review, staging, and PR creation.
+  </Card>
+</CardGroup>

@@ -1,0 +1,111 @@
+---
+title: "GitHub Integration"
+description: "Connect Kata Cloud to GitHub for branch management, PR creation, and auto-generated descriptions."
+---
+
+## Overview
+
+Kata Cloud integrates with GitHub to complete the workflow from specification to merged pull request. The integration handles:
+
+- **Branch management** — creating and pushing Space branches
+- **PR creation** — opening pull requests with agent-generated content
+- **PR descriptions** — auto-generated from Spec and run history
+
+## Connecting GitHub
+
+Before creating your first pull request, authenticate with GitHub:
+
+1. Open the **Changes tab**
+2. Click **Create PR** on any Space with staged changes
+3. If not yet connected, click **Connect GitHub**
+4. You'll be redirected to GitHub's OAuth authorization page
+5. Authorize Kata Cloud to access your repositories
+6. Return to Kata Cloud — the connection is established
+
+<Note>
+Kata Cloud stores your GitHub session securely on your local machine. Your credentials are never sent to Kata Cloud servers — the connection is direct from your desktop to GitHub's API.
+</Note>
+
+## Creating a Pull Request
+
+Once connected to GitHub, creating a PR takes a few clicks:
+
+### 1. Stage Your Changes
+
+In the Changes tab, stage the files you want to include in the PR. See [Changes Tab](/user-guide/changes-tab) for staging details.
+
+### 2. Open the PR Workflow
+
+Click **Create PR** in the Changes tab toolbar.
+
+### 3. Generate a Description
+
+Click **Generate Description** to let Kata Cloud draft the PR description. The agent synthesizes:
+
+- The Spec's goal and requirements
+- The tasks that were completed
+- The implementation decisions recorded in the Spec
+- A summary of the key code changes
+
+You can edit the generated description freely before submitting.
+
+### 4. Submit
+
+Click **Submit PR** to:
+1. Commit your staged changes to the Space's branch
+2. Push the branch to the remote repository
+3. Open a GitHub pull request
+4. Return the PR URL for immediate review
+
+## Branch Naming
+
+Each Space maps to one git branch. By default, Kata Cloud names branches based on the Space name:
+
+```
+kata/add-user-authentication
+kata/fix-dashboard-performance
+kata/refactor-api-layer
+```
+
+You can rename a Space (and its branch) before pushing if you prefer a different naming convention.
+
+## Repository Setup
+
+For PR creation to work:
+
+- The Space's **Root Path** must point to a local git repository
+- The repository must have a **remote** configured (e.g., `origin`)
+- Your GitHub account must have **push access** to the remote repository
+
+If you're starting with a new repo, initialize it with `git init` and add a remote before creating your first Space:
+
+```bash
+git init
+git remote add origin https://github.com/your-org/your-repo.git
+```
+
+## Clearing the GitHub Session
+
+To disconnect from GitHub or switch accounts:
+
+1. Go to **Settings**
+2. Click **Clear GitHub Session**
+3. The next PR creation will prompt you to re-authenticate
+
+## Privacy and Security
+
+- OAuth tokens are stored locally using Electron's secure storage
+- No code or credentials are transmitted to Kata Cloud servers
+- API calls go directly from your machine to GitHub's API
+- Kata Cloud requests only the minimum GitHub permissions needed for PR creation
+
+## What's Not Yet Supported
+
+The following GitHub features are on the roadmap but not yet available:
+
+- **Reviewing PRs inside Kata Cloud** — you'll review on GitHub.com
+- **Linear integration** — connecting GitHub issues to Linear cycles
+- **PR review agents** — 6-agent parallel PR review suite (planned for Phase 2)
+- **CI status display** — showing GitHub Actions results in the Changes tab
+
+See [GitHub Issues](https://github.com/gannonh/kata-cloud/issues) to track progress or request features.

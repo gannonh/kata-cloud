@@ -1,0 +1,166 @@
+---
+title: "Contributing"
+description: "Guidelines for submitting issues, pull requests, and code to kata-cloud."
+---
+
+## Getting Started
+
+1. **Fork** the repository on GitHub
+2. **Clone** your fork locally
+3. Follow the [Development Setup](/developer/development-setup) guide to get the app running
+4. Create a **feature branch** from `main`: `git checkout -b feat/your-feature-name`
+
+## Opening Issues
+
+Before opening an issue:
+- Check the [existing issues](https://github.com/gannonh/kata-cloud/issues) to avoid duplicates
+- For bugs, include: OS version, app version, steps to reproduce, and what you expected to happen
+- For features, describe the use case and why the current behavior is insufficient
+
+## Pull Request Workflow
+
+### Before You Start
+
+For non-trivial changes, **open an issue first** to discuss the approach. This avoids wasted effort if the change doesn't fit the project direction.
+
+### Branch Naming
+
+Use a prefix that reflects the type of change:
+
+| Prefix | When to use |
+|---|---|
+| `feat/` | New feature |
+| `fix/` | Bug fix |
+| `chore/` | Tooling, dependencies, cleanup |
+| `docs/` | Documentation only |
+| `refactor/` | Code restructuring without behavior change |
+| `test/` | Adding or fixing tests |
+
+Examples:
+```
+feat/add-notes-tagging
+fix/git-worktree-cleanup-on-delete
+chore/upgrade-electron-37
+```
+
+### Code Quality Checklist
+
+Before submitting a PR, verify:
+
+- [ ] `pnpm test` passes with no failures
+- [ ] `pnpm run desktop:typecheck` passes with no errors
+- [ ] `pnpm run lint` passes with no errors
+- [ ] New code has colocated tests (see [Testing](/developer/testing))
+- [ ] Coverage thresholds are maintained (80% statements/functions/lines, 70% branches)
+- [ ] No new TypeScript `any` types without justification
+
+### Commit Messages
+
+Use concise imperative commits with optional prefixes:
+
+```
+feat: add space tagging UI in explorer panel
+fix: prevent git worktree error when root path has spaces
+chore: upgrade electron to 37.2.0
+test: add unit tests for normalizeAppState edge cases
+```
+
+For larger changes, use the body to explain the _why_:
+
+```
+fix: normalize AppState before saving to disk
+
+Previously, if a corrupted SpaceRecord was saved (e.g., missing
+the `id` field), the app would crash on next load because
+normalizeAppState was only called on read, not write.
+
+Now saveState() runs the incoming state through normalizeAppState()
+before persisting, which drops any invalid records.
+```
+
+### PR Description Template
+
+```markdown
+## Summary
+
+Brief description of what this PR does and why.
+
+## Changes
+
+- List key changes
+- Keep it focused on what reviewers need to know
+
+## Testing
+
+Steps to verify the change works:
+1. ...
+2. ...
+
+## Screenshots (if UI changes)
+
+Before / After screenshots go here.
+
+Fixes #<issue-number>
+```
+
+## Architecture Guidelines
+
+### Respect Process Boundaries
+
+- **Renderer** code must never import from `electron`, `node:*`, or `src/main/**`
+- **Main process** code must never import from `src/main.tsx` or React components
+- **Shared code** (`src/shared/**`) must compile cleanly in both environments
+
+### Feature Module Pattern
+
+When adding a new domain feature:
+
+```
+src/<feature>/
+  types.ts       # Types first — define interfaces before implementation
+  validation.ts  # Validate all inputs at system boundaries
+  store.ts       # State helpers (pure functions, no side effects)
+  *.test.ts      # Tests colocated with source
+```
+
+Register IPC handlers in `src/main/index.ts`. Expose them in `src/preload/index.ts`. Add method signatures to `ShellApi` in `src/shared/shell-api.ts`.
+
+### State Mutations
+
+All state updates must:
+1. Use the immutable spread pattern
+2. Update `updatedAt` timestamps on modified records
+3. Pass through `normalizeAppState()` on the main process before saving
+
+### Avoid Over-Engineering
+
+- Don't add features, abstraction layers, or error handling beyond what's needed for the current change
+- Don't add docstrings or comments to code you didn't change
+- Don't add backwards-compatibility shims for removed code — delete it
+- Three similar lines of code is better than a premature abstraction
+
+## Testing Contributions
+
+When changing shared logic in `src/git/**` or `packages/task-parser/**`:
+- Add or update tests in both the feature tests and any integration tests that cover the changed behavior
+- Follow the UAT-to-E2E policy: if you fix a bug found manually, add a Playwright test for it
+
+## Documentation Contributions
+
+Docs live in `docs/`. All docs use **MDX** (Markdown + JSX).
+
+For user-facing features, update the relevant page in `docs/user-guide/`.
+For developer changes, update `docs/developer/`.
+
+## Code of Conduct
+
+Be direct, professional, and constructive in all interactions. Focus on technical accuracy — respectful disagreement is preferable to false agreement. All contributions are reviewed on technical merit.
+
+## Release Process
+
+Kata Cloud follows a trunk-based development model:
+- `main` is always releasable
+- Feature flags are preferred over long-lived feature branches
+- Releases are tagged from `main`
+
+The maintainer handles release tagging and publishing. Contributors don't need to worry about release logistics — just ship quality PRs to `main`.

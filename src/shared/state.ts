@@ -2,7 +2,12 @@ import {
   isSpaceGitLifecycleStatus,
   type SpaceGitLifecycleStatus
 } from "../git/types";
-import type { ContextProviderId, ContextRetrievalError, ContextSnippet } from "../context/types";
+import type {
+  ContextProviderId,
+  ContextRetrievalError,
+  ContextRetrievalErrorCode,
+  ContextSnippet
+} from "../context/types";
 import { ALLOWED_RUN_TRANSITIONS } from "./orchestrator-run-lifecycle";
 
 export const APP_STATE_VERSION = 1;
@@ -119,6 +124,18 @@ function isContextProviderId(value: unknown): value is ContextProviderId {
   return value === "filesystem" || value === "mcp";
 }
 
+const CONTEXT_RETRIEVAL_ERROR_CODES: ReadonlySet<ContextRetrievalErrorCode> = new Set([
+  "provider_unavailable",
+  "unsupported_provider",
+  "invalid_query",
+  "invalid_root_path",
+  "io_failure"
+]);
+
+function isContextRetrievalErrorCode(value: unknown): value is ContextRetrievalErrorCode {
+  return typeof value === "string" && CONTEXT_RETRIEVAL_ERROR_CODES.has(value as ContextRetrievalErrorCode);
+}
+
 function isContextSnippet(value: unknown): value is ContextSnippet {
   if (!isObject(value)) {
     return false;
@@ -141,7 +158,7 @@ function isContextRetrievalError(value: unknown): value is ContextRetrievalError
   }
 
   return (
-    typeof value.code === "string" &&
+    isContextRetrievalErrorCode(value.code) &&
     isString(value.message) &&
     isString(value.remediation) &&
     typeof value.retryable === "boolean" &&

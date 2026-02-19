@@ -181,7 +181,7 @@ function registerStateHandlers(
         );
       }
       try {
-        return contextAdapter.retrieve({ ...request, rootPath: requestRootPath });
+        return await contextAdapter.retrieve({ ...request, rootPath: requestRootPath });
       } catch (error) {
         console.error("Context retrieval failed with unexpected runtime error.", error);
         return toContextRetrievalFailure(
