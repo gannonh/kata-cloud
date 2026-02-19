@@ -3,26 +3,29 @@
 Generated: 2026-02-19 | Source: code-scan (brownfield enrichment)
 
 ## Stack
-- 17 source files indexed
-- .ts: 15 files
+- 33 source files indexed
+- .ts: 24 files
 - .tsx: 1 files
 - .js: 1 files
+- .mjs: 7 files
 
 ## Architecture
-- main: 2 files
-- preload: 1 files
-- shared: 11 files
+- shared: 29 files
 - domain: 2 files
+- main: 1 files
 - package: 1 files
 
 ## Conventions
-- Export naming: mixed (confidence: 0.62)
-- src/shared/ — shared domain logic and colocated tests
+- Export naming: mixed (confidence: 0.57)
+- src/shared/ — test files
+- bin/ — CLI entry points
+- src/context/providers/ — Provider layer
 
 ## Key Patterns
-- File types: undefined: 7
-- File types: util: 5
-- File types: test: 5
+- File types: util: 21
+- File types: undefined: 4
+- File types: test: 7
+- File types: config: 1
 
 ## Concerns
 - Auto-generated from code scan. Run /kata-map-codebase for detailed analysis.
