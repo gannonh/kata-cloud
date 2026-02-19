@@ -1,0 +1,217 @@
+---
+title: "Project Structure"
+description: "Directory layout, file naming conventions, and module organization for kata-cloud."
+---
+
+## Top-Level Layout
+
+```
+kata-cloud/
+├── src/                    # Application source code
+│   ├── main/               # Electron main process
+│   ├── preload/            # Electron preload bridge
+│   ├── shared/             # Shared types and contracts
+│   ├── space/              # Space domain module
+│   ├── git/                # Git domain module
+│   ├── notes/              # Notes domain module
+│   ├── features/           # Feature-specific modules
+│   │   └── spec-panel/     # Spec editor feature
+│   ├── test/               # Test setup
+│   └── main.tsx            # Renderer app root
+├── packages/
+│   └── task-parser/        # Standalone ESM package
+│       ├── src/            # Package source
+│       └── test/           # Package tests
+├── scripts/                # Dev and build scripts
+├── docs/                   # Documentation (this site)
+├── notes/                  # Task tracking markdown files
+├── dist/                   # Build output (generated)
+├── tsconfig.base.json      # Shared TypeScript settings
+├── tsconfig.main.json      # Main process TypeScript config
+├── tsconfig.renderer.json  # Renderer TypeScript config
+├── vitest.config.ts        # Vitest configuration
+├── eslint.config.mjs       # ESLint flat config
+├── vite.config.ts          # Vite bundler config
+└── package.json            # Root package manifest
+```
+
+## Source Directory (`src/`)
+
+### `src/main/` — Electron Main Process
+
+| File | Purpose |
+|---|---|
+| `index.ts` | Entry point, window creation, IPC handler registration |
+
+The main process is intentionally thin — it registers IPC handlers and delegates to domain services. Business logic lives in the domain modules.
+
+### `src/preload/` — Security Bridge
+
+| File | Purpose |
+|---|---|
+| `index.ts` | Exposes `window.kataShell` via `contextBridge` |
+
+The preload is the only place that can import from both `electron` and be accessed by the renderer.
+
+### `src/shared/` — Cross-Process Contracts
+
+| File | Purpose |
+|---|---|
+| `state.ts` | `AppState` type, type guards, `normalizeAppState()` |
+| `shell-api.ts` | IPC channel constants, `ShellApi` interface, all request/response types |
+
+Code in `src/shared/` must compile cleanly in both CommonJS (main) and ESNext (renderer) contexts.
+
+### `src/main.tsx` — Renderer App Root
+
+The renderer is currently a **monolithic React component** (~1770 lines) managing:
+- View routing (`explorer`, `orchestrator`, `spec`, `changes`, `browser`)
+- Space and Session CRUD
+- Git operations and lifecycle
+- PR workflow
+- Orchestrator runs
+
+This is a known architectural debt. Feature extraction into smaller components is welcome.
+
+### Domain Modules
+
+Each domain follows the feature module pattern:
+
+```
+src/<domain>/
+  types.ts       # Types, interfaces, type guards
+  validation.ts  # Input validation
+  store.ts       # State helpers
+  *.test.ts      # Colocated unit tests
+```
+
+| Module | Contents |
+|---|---|
+| `src/space/` | `SpaceRecord` type, space CRUD helpers |
+| `src/git/` | Git CLI wrapper, space-git service, changes parser, PR workflow |
+| `src/notes/` | Notes types and search |
+| `src/features/spec-panel/` | Spec editor, autosave, comment threads |
+
+### `src/test/` — Test Setup
+
+| File | Purpose |
+|---|---|
+| `setup.ts` | Vitest + Testing Library setup, custom matchers |
+
+## Git Domain Deep-Dive (`src/git/`)
+
+The git domain is the most complex. Key files:
+
+```
+src/git/
+  git-cli.ts              # Low-level: shell out to git
+  space-git-service.ts    # High-level: initialize, switch, stage
+  changes.ts              # Parse git status --porcelain
+  space-git-ui-state.ts   # Map lifecycle status → UI labels/colors
+  pr-workflow.ts          # GitHub API: create session, generate draft, create PR
+  types.ts                # SpaceGitLifecycleStatus, SpaceGitChangesSnapshot, etc.
+```
+
+### Git CLI (`git-cli.ts`)
+
+Wraps `child_process.exec` to run git commands. Returns typed results. Does not throw — errors are captured in the return value.
+
+### Space Git Service (`space-git-service.ts`)
+
+Orchestrates multi-step git operations:
+- `initializeSpaceGit()`: Create worktree, set up branch, return status
+- `switchSpaceGit()`: Switch the active worktree, update UI state
+- `stageSpaceFile()` / `unstageSpaceFile()`: Stage individual files
+
+### Changes Parser (`changes.ts`)
+
+Converts `git status --porcelain=v1` output into a typed `SpaceGitChangesSnapshot`:
+```
+M  src/auth.ts       →  { path: "src/auth.ts", staged: true, status: "modified" }
+?? src/new-file.ts   →  { path: "src/new-file.ts", staged: false, status: "untracked" }
+```
+
+## Task Parser Package (`packages/task-parser/`)
+
+```
+packages/task-parser/
+  src/
+    index.ts        # Public API: parseTaskBlocks()
+    parser.ts       # Markdown task block extraction
+    types.ts        # TaskBlock, ParseResult types
+  test/
+    parser.test.ts  # Unit tests for the parser
+  package.json      # ESM module config
+```
+
+The package is published as a local workspace dependency. It has no Electron or React dependencies, making it testable in a pure Node.js environment.
+
+## Scripts (`scripts/`)
+
+| File | Purpose |
+|---|---|
+| `dev-desktop.mjs` | Orchestrates `pnpm run dev` (concurrent main build + Vite + Electron) |
+| `playwright-electron-runner.mjs` | Runs Playwright E2E suites |
+| `repo-guardrails.mjs` | Repository hygiene checks |
+
+## File Naming Conventions
+
+| Pattern | Used for |
+|---|---|
+| `kebab-case.ts` | All TypeScript files |
+| `kebab-case.tsx` | React component files |
+| `*.test.ts` | Unit tests (colocated with source) |
+| `*.node.test.ts` | Node.js-only tests (skipped in jsdom environment) |
+| `*.e2e.ts` | Playwright E2E tests |
+
+## Coding Style
+
+- **Indentation**: 2 spaces
+- **Quotes**: Double quotes (`"`)
+- **Semicolons**: Required
+- **Naming**:
+  - `PascalCase` — React components, TypeScript types/interfaces
+  - `camelCase` — functions, variables, object properties
+  - `kebab-case` — file names
+- **Exports**: Named exports preferred; avoid default exports for non-component files
+
+## TypeScript Configuration
+
+Two TypeScript configs extend a shared base:
+
+```jsonc
+// tsconfig.base.json (shared strict settings)
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    ...
+  }
+}
+```
+
+```jsonc
+// tsconfig.main.json (main process)
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "dist/",
+    "types": ["node", "electron"]
+  }
+}
+```
+
+```jsonc
+// tsconfig.renderer.json (renderer)
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "types": ["vite/client"]
+  }
+}
+```

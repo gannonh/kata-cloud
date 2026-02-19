@@ -1,0 +1,93 @@
+---
+title: "Kata Cloud"
+description: "A desktop app for spec-driven development. Orchestrate AI agent teams. Ship pull requests."
+---
+
+## What is Kata Cloud?
+
+Kata Cloud is a **spec-driven development platform** where you orchestrate AI agent teams rather than write code directly. Describe what you want to build, and Kata's Orchestrator analyzes your codebase, drafts a living specification, and dispatches specialized agents to implement it — all producing a clean pull request as output.
+
+<CardGroup cols={2}>
+  <Card title="Getting Started" icon="rocket" href="/user-guide/getting-started">
+    Download, install, and run your first agent workflow in minutes.
+  </Card>
+  <Card title="Spaces" icon="folder-open" href="/user-guide/spaces">
+    Isolated development environments with dedicated git branches.
+  </Card>
+  <Card title="The Orchestrator" icon="diagram-project" href="/user-guide/orchestrator">
+    How Kata coordinates your agent team to execute work.
+  </Card>
+  <Card title="The Spec" icon="file-lines" href="/user-guide/the-spec">
+    The self-maintaining source of truth for every project.
+  </Card>
+</CardGroup>
+
+## Core Concepts
+
+### Spec-Driven Development
+
+Instead of writing code and hoping it matches the plan, you write a spec and let agents implement it. As they work, the spec updates to reflect what was actually built — keeping agents and developers aligned automatically.
+
+### Spaces
+
+Every prompt creates a **Space**: an isolated git branch and worktree where agents can work without touching your main branch. Spaces give you clean separation between concurrent experiments and features.
+
+### The Orchestrator
+
+When you submit a prompt, Kata's **Coordination Agent**:
+1. Analyzes your codebase for context
+2. Drafts a **Spec** — a living document describing goals, tasks, decisions, and progress
+3. Delegates tasks to **Specialist Agents** (Investigate, Implement, Verify, Critique, Debug, Code Review)
+
+### Pull Request as Output
+
+Every Kata Cloud workflow produces an atomic pull request. The PR is the deliverable — not a pile of uncommitted files. Review diffs in the **Changes tab**, auto-generate a PR description, and push to GitHub in one click.
+
+## Key Features
+
+| Feature | Description |
+|---|---|
+| **Space Management** | Multiple isolated environments with metadata, tags, and git integration |
+| **Orchestrator** | Coordination Agent + 6 Specialist Agents working in parallel |
+| **The Spec** | Self-maintaining project document that updates as agents work |
+| **Changes Tab** | Visual diff viewer with selective staging and one-click PR creation |
+| **GitHub Integration** | Branch management, PR creation, and auto-generated descriptions |
+| **MCP Support** | Connect external tool servers to extend agent capabilities |
+| **Resumable Sessions** | Persistent state — pick up exactly where you left off |
+| **Notes** | Markdown notes with tags and full-text search |
+
+## Architecture at a Glance
+
+Kata Cloud is an **Electron desktop app** with a React 19 renderer. All agent work runs locally — your code never leaves your machine unless you push to GitHub. Model API calls go directly from your machine to Anthropic or OpenAI using your own API keys or subscriptions.
+
+```
+Your Machine
+├── Kata Cloud Desktop App (Electron + React)
+│   ├── Space Management
+│   ├── Orchestrator UI
+│   ├── Spec Panel
+│   └── Changes Tab
+├── Git Worktrees (local filesystem)
+└── Model Provider Auth (Anthropic / OpenAI)
+```
+
+**Local mode is free** — Kata Cloud uses your existing model provider API keys or subscriptions (Claude Max, ChatGPT Plus/Pro). You pay only for the tokens your agents consume.
+
+## For Developers
+
+Building on or contributing to Kata Cloud?
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="building" href="/developer/architecture">
+    Electron process model, IPC design, and module boundaries.
+  </Card>
+  <Card title="Development Setup" icon="terminal" href="/developer/development-setup">
+    Clone, install, build, and run the app locally.
+  </Card>
+  <Card title="Shell API Reference" icon="plug" href="/developer/shell-api">
+    IPC channels and the kataShell bridge API surface.
+  </Card>
+  <Card title="Contributing" icon="code-pull-request" href="/developer/contributing">
+    Guidelines for submitting issues and pull requests.
+  </Card>
+</CardGroup>

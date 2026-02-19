@@ -1,0 +1,184 @@
+---
+title: "Architecture Overview"
+description: "Electron process boundaries, IPC design, and module structure for kata-cloud."
+---
+
+## High-Level Architecture
+
+Kata Cloud is an **Electron desktop application** with a React 19 renderer. The app is structured around strict process isolation: the main process handles system operations, the renderer handles the UI, and a preload bridge mediates communication between them.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Kata Cloud                           │
+│                                                          │
+│  ┌──────────────┐    ┌──────────────┐                    │
+│  │  Renderer    │    │    Main      │                    │
+│  │  (React 19)  │◄──►│   Process   │                    │
+│  │              │    │  (Node.js)   │                    │
+│  └──────┬───────┘    └──────┬───────┘                    │
+│         │                  │                             │
+│  ┌──────▼───────────────────▼───────┐                    │
+│  │           Preload Bridge          │                    │
+│  │        (kataShell API)            │                    │
+│  └──────────────────────────────────┘                    │
+│                                                          │
+│  Local Filesystem (git worktrees, state, config)        │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Process Boundaries
+
+### Main Process (`src/main/index.ts`)
+
+The main process runs in **Node.js / CommonJS** and has full system access:
+
+- File system operations
+- Git operations via CLI
+- IPC handler registration
+- Persisted state management (`PersistedStateStore`)
+- Electron window management
+- Agent subprocess lifecycle
+
+The main process never communicates directly with the renderer's React components. All communication goes through IPC channels.
+
+**Build target**: CommonJS, outputs to `dist/`
+**TypeScript config**: `tsconfig.main.json`
+
+### Preload (`src/preload/index.ts`)
+
+The preload script is the **security boundary** between main and renderer. It runs in a privileged context but exposes only a typed API surface to the renderer via `contextBridge`.
+
+Security settings:
+- `contextIsolation: true` — renderer's global scope is isolated
+- `nodeIntegration: false` — renderer cannot use Node.js APIs
+- `sandbox: true` — additional OS-level sandboxing
+
+The preload exposes the `kataShell` object on `window.kataShell`. This is the only way the renderer can interact with the main process or file system.
+
+### Renderer (`src/main.tsx`)
+
+The renderer is a **React 19 SPA** bundled by Vite. It communicates exclusively through `window.kataShell`:
+
+- **Never** imports Electron APIs
+- **Never** uses Node.js built-ins directly
+- **Always** goes through `kataShell` for any system operation
+
+This design makes the renderer portable — with a shim for `window.kataShell`, the renderer can run as a web app.
+
+**Build target**: ESNext/Bundler (DOM + Vite types)
+**TypeScript config**: `tsconfig.renderer.json`
+
+## IPC Design
+
+IPC channels follow the naming convention: `kata-cloud/<domain>:<action>`
+
+```typescript
+// src/shared/shell-api.ts
+export const IPC_CHANNELS = {
+  getState:             "kata-cloud/state:get",
+  saveState:            "kata-cloud/state:save",
+  stateChanged:         "kata-cloud/state:changed",
+  initializeSpaceGit:   "kata-cloud/space-git:initialize",
+  switchSpaceGit:       "kata-cloud/space-git:switch",
+  getSpaceChanges:      "kata-cloud/space-git:changes",
+  getSpaceFileDiff:     "kata-cloud/space-git:file-diff",
+  stageSpaceFile:       "kata-cloud/space-git:file-stage",
+  unstageSpaceFile:     "kata-cloud/space-git:file-unstage",
+  createGitHubSession:  "kata-cloud/github:session-create",
+  clearGitHubSession:   "kata-cloud/github:session-clear",
+  generatePullRequestDraft: "kata-cloud/github:pr-draft",
+  createPullRequest:    "kata-cloud/github:pr-create",
+  openExternalUrl:      "kata-cloud/system:open-external-url",
+};
+```
+
+All IPC calls are **async** — the renderer awaits a response from the main process. The main process registers handlers using `ipcMain.handle()`.
+
+## State Flow
+
+Kata Cloud uses a centralized state model:
+
+```
+Main Process
+  └── PersistedStateStore
+        ├── reads ~/.config/kata-cloud/kata-cloud-state.json on startup
+        ├── writes on every saveState() call
+        └── broadcasts stateChanged event to all windows
+
+Renderer
+  └── React state (via useState)
+        ├── initialized from kataShell.getState() on mount
+        ├── updated via kataShell.subscribeState() listener
+        └── written back via kataShell.saveState()
+```
+
+The `AppState` type (defined in `src/shared/state.ts`) is the central data contract. All state transitions go through `normalizeAppState()` for validation.
+
+**Fallback**: When the app runs in a browser without the Electron shell (web-only mode), state falls back to `localStorage`.
+
+## Feature Module Pattern
+
+Each domain feature follows a consistent structure:
+
+```
+src/<feature>/
+  types.ts        # Domain types, request/response interfaces, type guards
+  validation.ts   # Input validation and normalization
+  store.ts        # State management helpers
+  *.test.ts       # Colocated tests
+```
+
+Feature directories:
+
+| Directory | Domain |
+|---|---|
+| `src/space/` | Space management |
+| `src/git/` | Git operations, worktrees, changes |
+| `src/notes/` | Notes with markdown and tagging |
+| `src/features/spec-panel/` | Spec editor and task parsing |
+
+## Git Domain (`src/git/`)
+
+The git feature is the most complex domain. Key files:
+
+| File | Responsibility |
+|---|---|
+| `git-cli.ts` | Shell command wrapper for git operations |
+| `space-git-service.ts` | High-level service: initialize, switch, stage |
+| `changes.ts` | Parses `git status --porcelain` output |
+| `space-git-ui-state.ts` | Maps lifecycle status to UI state |
+| `pr-workflow.ts` | GitHub API integration for pull requests |
+
+The git lifecycle status flows through phases: `initializing → switching → ready → error`.
+
+## Shared Contracts (`src/shared/`)
+
+Code shared between the main process and renderer lives in `src/shared/`:
+
+| File | Contents |
+|---|---|
+| `state.ts` | `AppState` type, type guards, `normalizeAppState()` |
+| `shell-api.ts` | IPC channel names, `ShellApi` interface, request/response types |
+
+**Rule**: `src/shared/` must not import from `src/main/` or any renderer code. It can only import from itself and external packages that work in both environments.
+
+## Task Parser (`packages/task-parser/`)
+
+A standalone **ESM package** that parses task blocks from Spec markdown. Used by the Orchestrator to extract and track delegated tasks.
+
+The package is separate from the main app to:
+- Allow independent versioning
+- Enable testing without the Electron environment
+- Keep the spec parsing logic reusable
+
+Tests live in `packages/task-parser/test/`.
+
+## Key Files for Orientation
+
+| File | Purpose |
+|---|---|
+| `src/shared/state.ts` | AppState contract and normalization |
+| `src/shared/shell-api.ts` | IPC channel definitions and ShellApi interface |
+| `src/preload/index.ts` | kataShell bridge implementation |
+| `src/main/index.ts` | Main process entry, IPC handler registration |
+| `src/main.tsx` | Renderer app root (~1770 lines) |

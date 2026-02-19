@@ -1,0 +1,166 @@
+---
+title: "Development Setup"
+description: "Clone, install dependencies, and run the kata-cloud Electron app locally."
+---
+
+## Prerequisites
+
+- **Node.js** 20 or later
+- **pnpm** 10.6.2 or later — install with `npm install -g pnpm@10.6.2`
+- **Git** 2.30 or later (for git worktree operations)
+- **macOS** (primary development platform; Linux support is in progress)
+
+<Note>
+The Electron app currently targets macOS. If you're on Linux, some features may not work as expected. Contributions to improve Linux support are welcome.
+</Note>
+
+## Clone and Install
+
+```bash
+git clone https://github.com/gannonh/kata-cloud.git
+cd kata-cloud
+pnpm install
+```
+
+The `pnpm install` step installs all workspace dependencies including the `packages/task-parser/` package.
+
+## Running the App
+
+### Full Desktop App (Electron)
+
+```bash
+pnpm run dev
+```
+
+This command (orchestrated by `scripts/dev-desktop.mjs`) runs three things concurrently:
+1. **Builds the main process** with `tsc -p tsconfig.main.json` in watch mode
+2. **Starts the Vite dev server** for the renderer on port 5173
+3. **Launches Electron** once both are ready
+
+The app hot-reloads on renderer changes. Main process changes require restarting the app (or restarting `pnpm run dev`).
+
+### Renderer Only (Web Mode)
+
+```bash
+pnpm run web:dev
+```
+
+Starts only the Vite dev server on `http://localhost:5173`. Useful for rapid UI development without Electron. The `window.kataShell` API is unavailable — state falls back to `localStorage`.
+
+## Building
+
+```bash
+pnpm run build
+```
+
+Compiles the main process TypeScript and bundles the renderer assets. Output goes to `dist/`.
+
+## Type Checking
+
+```bash
+pnpm run desktop:typecheck
+```
+
+Runs strict TypeScript type checks across both configs:
+- `tsconfig.main.json` — main process
+- `tsconfig.renderer.json` — renderer
+
+Always run this before opening a PR.
+
+## Environment Configuration
+
+Kata Cloud uses your model provider credentials. For local development:
+
+1. Launch the app with `pnpm run dev`
+2. Open **Settings** in the app
+3. Enter your Anthropic API key and/or OpenAI API key
+
+Credentials are stored in Electron's secure local storage — not in environment variables or files that might be committed.
+
+## Project Scripts Reference
+
+| Script | Description |
+|---|---|
+| `pnpm run dev` | Build main, start Vite, launch Electron |
+| `pnpm run web:dev` | Vite dev server only (renderer) |
+| `pnpm run build` | Full production build |
+| `pnpm run desktop:typecheck` | TypeScript type check (both configs) |
+| `pnpm test` | Run Vitest test suite once |
+| `pnpm run test:watch` | Run Vitest in watch mode |
+| `pnpm run lint` | ESLint across all files |
+| `pnpm run e2e` | Full Electron Playwright E2E suite |
+| `pnpm run e2e:electron:smoke` | Baseline smoke tests only |
+| `pnpm run e2e:electron:uat` | UAT verification scenarios |
+| `pnpm run repo:guardrails` | Repository hygiene checks |
+
+## Workspace Structure
+
+This is a **pnpm workspace**:
+
+```
+kata-cloud/
+  src/              # Main app source (renderer + main + preload)
+  packages/
+    task-parser/    # Standalone ESM package
+  scripts/          # Dev and build scripts
+  dist/             # Build output (generated)
+```
+
+The `packages/task-parser/` package is a local workspace dependency used by both the renderer and main process.
+
+## Debugging
+
+### Main Process
+
+Electron prints main process logs to the terminal where you ran `pnpm run dev`. Add `console.log()` calls to `src/main/` files as needed — they appear in the terminal.
+
+For DevTools in the main process:
+```javascript
+// In src/main/index.ts during development
+mainWindow.webContents.openDevTools();
+```
+
+### Renderer
+
+Open DevTools in the Electron window: **View → Toggle Developer Tools** (or `Cmd+Option+I`).
+
+The renderer runs as a normal Chromium renderer — React DevTools, network inspector, and console are all available.
+
+### IPC Calls
+
+To debug IPC round-trips, log in both the main process handler and the preload:
+
+```typescript
+// src/main/index.ts
+ipcMain.handle(IPC_CHANNELS.getState, async () => {
+  console.log("[main] getState called");
+  return store.getState();
+});
+
+// src/preload/index.ts
+getState: () => {
+  console.log("[preload] getState called");
+  return ipcRenderer.invoke(IPC_CHANNELS.getState);
+}
+```
+
+## Common Issues
+
+### Electron fails to start
+
+Ensure `pnpm install` completed successfully and that `dist/main/index.js` exists (built by `desktop:build-main`). If not, run:
+
+```bash
+pnpm run desktop:build-main
+```
+
+### Port 5173 already in use
+
+Kill the process using port 5173:
+```bash
+lsof -ti:5173 | xargs kill -9
+```
+
+### Type errors after pulling changes
+
+Run `pnpm install` to pick up any new dependencies, then `pnpm run desktop:typecheck` to see the full error list.
