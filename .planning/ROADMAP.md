@@ -3,16 +3,53 @@
 ## Overview
 
 Milestone execution is tracked as globally ordered phases.
-Current focus is completing desktop MVP closure after shipping orchestrator and context reliability.
+Current focus is executing v0.2.0 Desktop MVP Closure after shipping orchestrator and context reliability in v0.1.0.
 
 ## Milestones
 
 - **v0.1.0 Orchestrator and Context Engine Expansion** — Phases 5-8 (shipped 2026-02-19)
-- **v0.2.0 Desktop MVP Closure** — Phases TBD (planned)
+- **v0.2.0 Desktop MVP Closure** — Phases 9-13 (active)
 
-## Current Milestone: None
+## Current Milestone: v0.2.0 Desktop MVP Closure
 
-No active milestone. Use `/kata-add-milestone` to start planning the next version.
+**Status:** Active (Phase 09 planned, execution pending)
+
+**Goal:** Deliver MVP UX parity with the design specs and make orchestrator execution visibly real (agent deployment + provider-backed generation) while preserving v0.1 reliability guarantees.
+
+**Planning inputs:**
+- Existing planned v0.2 scope from roadmap/milestones
+- PI package integration opportunity (`pi-mono`) with ESM compatibility
+- Front-end spec corpus (`docs/design/specs/README.md` and specs 01-07)
+
+### Phase 09: Runtime Integration and ESM Consolidation
+
+**Goal:** Switch orchestrator generation from local draft synthesis to provider-backed execution, introduce PI adapter mode safely, and consolidate module pathways to ESM-first.
+**Depends on:** v0.1.0 shipped foundation
+**Plans:** 3 planned (`09-01`, `09-02`, `09-03`)
+
+### Phase 10: Coordinator Shell and Sidebar Semantics
+
+**Goal:** Align shell semantics to spec-defined three-column coordinator workspace with agent/status-aware left sidebar and chat-first center pane.
+**Depends on:** Phase 09
+**Plans:** TBD
+
+### Phase 11: Agent Deployment, Waves, and Tab Expansion
+
+**Goal:** Add wave/deployment model visibility and support + flows for agent, note, terminal, and browser tab expansion.
+**Depends on:** Phases 09-10
+**Plans:** TBD
+
+### Phase 12: Completion Workflow and Safety UX
+
+**Goal:** Deliver completion parity with commit UX, permission model, markdown-first spec rendering, and unblock pathways.
+**Depends on:** Phase 11
+**Plans:** TBD
+
+### Phase 13: MVP Verification and Release Handoff
+
+**Goal:** Run release-grade UAT/E2E verification sweep and produce requirement-traceable MVP handoff artifacts.
+**Depends on:** Phases 09-12
+**Plans:** TBD
 
 ## Completed Milestones
 
@@ -32,19 +69,7 @@ No active milestone. Use `/kata-add-milestone` to start planning the next versio
 
 ## Planned Milestones
 
-### v0.2.0 Desktop MVP Closure
-
-**Goal:** Complete provider-runtime UX/hardening closure and finalize release-ready desktop MVP handoff.
-
-**Input artifacts:**
-- UI specifications derived from 29 design mocks (`docs/design/specs/`), covering 7 feature areas with component inventories, state matrices, interaction maps, and implementation gap analysis
-
-**Target features:**
-- Provider runtime UX polish and resiliency
-- Cross-cutting UI gaps: chat-style conversation renderer, agent sidebar, wave grouping model
-- Feature-specific UI gaps: commit interface, markdown spec rendering, permission dialog
-- Full MVP UAT/E2E final sweep
-- Release handoff packet and prioritized follow-up backlog
+No additional milestones planned yet. Next milestone definition starts after v0.2.0 release audit.
 
 ---
 
@@ -56,7 +81,12 @@ No active milestone. Use `/kata-add-milestone` to start planning the next versio
 | 6. Delegation + Context Contract Hardening | v0.1.0 | 3/3 | Complete | 2026-02-19 |
 | 7. Resume Integrity and Context Consistency | v0.1.0 | 2/2 | Complete | 2026-02-19 |
 | 8. Verification Sweep and Guardrail Codification | v0.1.0 | 3/3 | Complete | 2026-02-19 |
+| 9. Runtime Integration and ESM Consolidation | v0.2.0 | 0/3 | Pending | — |
+| 10. Coordinator Shell and Sidebar Semantics | v0.2.0 | 0/TBD | Pending | — |
+| 11. Agent Deployment, Waves, and Tab Expansion | v0.2.0 | 0/TBD | Pending | — |
+| 12. Completion Workflow and Safety UX | v0.2.0 | 0/TBD | Pending | — |
+| 13. MVP Verification and Release Handoff | v0.2.0 | 0/TBD | Pending | — |
 
 ---
 *Roadmap created: 2026-02-18*
-*Last updated: 2026-02-19 — UI specs added as v0.2.0 input artifacts*
+*Last updated: 2026-02-19 — Phase 09 planning artifacts created and roadmap phase headings normalized*

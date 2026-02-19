@@ -2,26 +2,28 @@
 
 ## Current Position
 
-Phase: 8 of 8 (Verification Sweep and Guardrail Codification) — milestone complete
-Plan: All plans complete
-Status: Between milestones — v0.1.0 shipped, UI specs produced, next milestone not yet started
-Last activity: 2026-02-19 — UI specifications generated from design mocks
+Phase: 09 (Runtime Integration and ESM Consolidation) — planned
+Plan: 09-01, 09-02, 09-03 created
+Status: Ready for execution (`/kata-execute-phase 9`)
+Last activity: 2026-02-19 — Phase 9 research + plan artifacts generated
 
 ## Milestone Progress
 
-Progress: 4/4 phases complete (100%)
-Bar: [####################] SHIPPED
+Progress: 0/5 phases complete (0%)
+Bar: [....................] STARTED
 
 ## Project Reference
 
 See: `.planning/PROJECT.md` (updated 2026-02-19)
 
 Core value: The spec remains aligned with implementation while agent execution consistently yields reviewable pull requests.
-Current focus: Planning next milestone using UI spec gap analysis as input
+Current focus: Execute Phase 9 plans to close provider-backed runtime + ESM consolidation gaps
 
 ## Milestone Scope Issues
 
-No backlog issues selected yet for this milestone scope.
+No blocking scope issues yet. Primary integration risks tracked in requirements:
+- PI package adoption boundaries (incremental adapter-first integration)
+- ESM-only runtime migration guardrails
 
 ## Accumulated Context
 
@@ -30,6 +32,9 @@ No backlog issues selected yet for this milestone scope.
 - Provider runtime and PR workflow foundations remain validated from prior work.
 - UAT-to-E2E policy remains active: manual UAT outcomes must be codified into Playwright coverage.
 - UI specifications produced from 29 design mocks across 7 feature areas (`docs/design/specs/`). Cross-cutting gaps identified: chat-style conversation renderer, agent sidebar, wave grouping model, terminal/browser tabs, permission dialog, commit interface, markdown rendering in spec panel.
+- PI packages (`pi-mono`) are ESM-first and viable for selective integration; adoption strategy is to gate by adapter/feature flag.
+- Current orchestrator run path in renderer still finalizes with `createSpecDraft` local generation, so visible real LLM execution remains a milestone-critical closure gap.
+- Phase 9 planning artifacts created at `.planning/phases/pending/09-runtime-integration-and-esm-consolidation/` (research + 3 executable plans).
 
 ---
-Last updated: 2026-02-19 after UI spec generation from design mocks
+Last updated: 2026-02-19 after Phase 9 planning completion
