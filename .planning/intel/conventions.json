@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "generated": "2026-02-19T13:55:40.220Z",
-  "commitHash": "d8c76ab",
+  "generated": "2026-02-19T16:12:40.080Z",
+  "commitHash": "9ca1077",
   "naming": {
     "exports": {
       "pattern": "mixed",
@@ -37,7 +37,7 @@
   "fileSuffixes": {
     ".test.ts": {
       "purpose": "test files",
-      "count": 7
+      "count": 8
     },
     ".config.mjs": {
       "purpose": "configuration",
