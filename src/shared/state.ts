@@ -3,6 +3,7 @@ import {
   type SpaceGitLifecycleStatus
 } from "../git/types";
 import type { ContextProviderId, ContextSnippet } from "../context/types";
+import { ALLOWED_RUN_TRANSITIONS } from "./orchestrator-run-lifecycle";
 
 export const APP_STATE_VERSION = 1;
 
@@ -221,12 +222,54 @@ function isSessionRecord(value: unknown): value is SessionRecord {
   );
 }
 
+function hasValidRunTimeline(
+  statusTimeline: OrchestratorRunStatus[],
+  status: OrchestratorRunStatus
+): boolean {
+  if (statusTimeline.length === 0 || statusTimeline[0] !== "queued") {
+    return false;
+  }
+
+  const dedupedTimeline: OrchestratorRunStatus[] = [];
+  for (const entry of statusTimeline) {
+    if (dedupedTimeline[dedupedTimeline.length - 1] !== entry) {
+      dedupedTimeline.push(entry);
+    }
+  }
+
+  if (dedupedTimeline.length === 0 || dedupedTimeline[dedupedTimeline.length - 1] !== status) {
+    return false;
+  }
+
+  for (let index = 1; index < dedupedTimeline.length; index += 1) {
+    const from = dedupedTimeline[index - 1];
+    const to = dedupedTimeline[index];
+    if (!ALLOWED_RUN_TRANSITIONS[from].includes(to)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function isOrchestratorRunRecord(value: unknown): value is OrchestratorRunRecord {
   if (!isObject(value)) {
     return false;
   }
 
-  const completedAtIsValid = value.completedAt === undefined || isString(value.completedAt);
+  let runStatus: OrchestratorRunStatus | null = null;
+  if (isOrchestratorRunStatus(value.status)) {
+    runStatus = value.status;
+  }
+  const statusTimelineIsValid =
+    Array.isArray(value.statusTimeline) &&
+    value.statusTimeline.length > 0 &&
+    value.statusTimeline.every(isOrchestratorRunStatus) &&
+    runStatus !== null &&
+    hasValidRunTimeline(value.statusTimeline, runStatus);
+  const terminalStatus = runStatus === "completed" || runStatus === "failed";
+  const completedAtIsValid =
+    terminalStatus ? isString(value.completedAt) : value.completedAt === undefined || isString(value.completedAt);
   const errorMessageIsValid = value.errorMessage === undefined || isString(value.errorMessage);
   const contextSnippetsAreValid =
     value.contextSnippets === undefined ||
@@ -244,10 +287,7 @@ function isOrchestratorRunRecord(value: unknown): value is OrchestratorRunRecord
     isString(value.spaceId) &&
     isString(value.sessionId) &&
     typeof value.prompt === "string" &&
-    isOrchestratorRunStatus(value.status) &&
-    Array.isArray(value.statusTimeline) &&
-    value.statusTimeline.length > 0 &&
-    value.statusTimeline.every(isOrchestratorRunStatus) &&
+    statusTimelineIsValid &&
     isString(value.createdAt) &&
     isString(value.updatedAt) &&
     completedAtIsValid &&
@@ -311,7 +351,17 @@ export function normalizeAppState(input: unknown): AppState {
   const usableSessions = linkedSessions.length > 0 ? linkedSessions : fallback.sessions;
   const allowedSessionIds = new Set(usableSessions.map((session) => session.id));
   const orchestratorRuns = Array.isArray(input.orchestratorRuns)
-    ? input.orchestratorRuns.filter(isOrchestratorRunRecord)
+    ? input.orchestratorRuns.filter((entry) => {
+        if (isOrchestratorRunRecord(entry)) {
+          return true;
+        }
+        const id =
+          isObject(entry) && isString((entry as Record<string, unknown>).id)
+            ? (entry as Record<string, unknown>).id
+            : "(unknown)";
+        console.warn(`normalizeAppState: dropping invalid orchestrator run record (id=${id})`);
+        return false;
+      })
     : [];
   const linkedOrchestratorRuns = orchestratorRuns.filter(
     (run) => allowedSpaceIds.has(run.spaceId) && allowedSessionIds.has(run.sessionId)

@@ -1,19 +1,28 @@
-# Codebase Intel Summary
+# Codebase Intelligence Summary
 
-Generated: 2026-02-18
+Generated: 2026-02-18 | Source: code-scan (brownfield enrichment)
 
-This repository is an Electron + React desktop application (`kata-cloud`) with strict main/preload/renderer process boundaries and typed IPC contracts. Core behavior centers on workspace/session state persistence, git lifecycle orchestration, PR drafting/creation, and model-provider execution through Anthropic/OpenAI adapters.
+## Stack
+- 17 source files indexed
+- .ts: 15 files
+- .tsx: 1 files
+- .js: 1 files
 
-Primary hotspots:
-- `src/main.tsx` (large renderer orchestrator)
-- `src/git/` (worktree/changes/PR services)
-- `src/main/provider-runtime/` (provider auth/list/execute)
+## Architecture
+- main: 2 files
+- preload: 1 files
+- shared: 11 files
+- domain: 2 files
+- package: 1 files
 
-Reference docs:
-- `.planning/codebase/STACK.md`
-- `.planning/codebase/ARCHITECTURE.md`
-- `.planning/codebase/STRUCTURE.md`
-- `.planning/codebase/CONVENTIONS.md`
-- `.planning/codebase/TESTING.md`
-- `.planning/codebase/INTEGRATIONS.md`
-- `.planning/codebase/CONCERNS.md`
+## Conventions
+- Export naming: mixed (confidence: 0.62)
+- src/shared/ — test files
+
+## Key Patterns
+- File types: undefined: 7
+- File types: util: 5
+- File types: test: 5
+
+## Concerns
+- Auto-generated from code scan. Run /kata-map-codebase for detailed analysis.

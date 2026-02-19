@@ -291,4 +291,48 @@ describe("shared state helpers", () => {
 
     expect(state.activeView).toBe("browser");
   });
+
+  it("drops persisted runs with inconsistent lifecycle timeline metadata", () => {
+    const state = normalizeAppState({
+      activeView: "orchestrator",
+      activeSpaceId: "space-1",
+      activeSessionId: "session-1",
+      lastOpenedAt: "2026-02-16T00:00:00.000Z",
+      spaces: [
+        {
+          id: "space-1",
+          name: "Space 1",
+          rootPath: "/tmp/space-1",
+          description: "",
+          tags: [],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        }
+      ],
+      sessions: [
+        {
+          id: "session-1",
+          spaceId: "space-1",
+          label: "Session 1",
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z"
+        }
+      ],
+      orchestratorRuns: [
+        {
+          id: "run-bad",
+          spaceId: "space-1",
+          sessionId: "session-1",
+          prompt: "invalid lifecycle",
+          status: "failed",
+          statusTimeline: ["queued", "running", "completed"],
+          createdAt: "2026-02-16T00:00:00.000Z",
+          updatedAt: "2026-02-16T00:00:00.000Z",
+          completedAt: "2026-02-16T00:00:00.000Z"
+        }
+      ]
+    });
+
+    expect(state.orchestratorRuns).toHaveLength(0);
+  });
 });

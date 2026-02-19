@@ -9,8 +9,8 @@ Requirements for milestone v0.1.0 Orchestrator and Context Engine Expansion.
 
 ### Orchestrator Reliability
 
-- [ ] **ORCH-01**: User can start an orchestrator run and always receive a deterministic run status transition from queued to terminal state.
-- [ ] **ORCH-02**: User can see delegated specialist task progress and terminal outcomes with actionable failure context.
+- [x] **ORCH-01**: User can start an orchestrator run and always receive a deterministic run status transition from queued to terminal state.
+- [x] **ORCH-02**: User can see delegated specialist task progress and terminal outcomes with actionable failure context.
 - [ ] **ORCH-03**: User can re-open prior orchestrator runs and inspect full lifecycle timelines without data loss.
 - [ ] **ORCH-04**: User can recover safely from orchestrator failures without corrupting existing spec content or active session state.
 
@@ -55,8 +55,8 @@ Deferred to future milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ORCH-01 | Phase 5 | Pending |
-| ORCH-02 | Phase 5 | Pending |
+| ORCH-01 | Phase 5 | Complete |
+| ORCH-02 | Phase 5 | Complete |
 | ORCH-03 | Phase 6 | Pending |
 | ORCH-04 | Phase 6 | Pending |
 | CTX-01 | Phase 6 | Pending |
@@ -77,4 +77,4 @@ Coverage:
 
 ---
 Requirements defined: 2026-02-18
-Last updated: 2026-02-18 after milestone initialization
+Last updated: 2026-02-18 after Phase 5 completion

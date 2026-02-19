@@ -22,10 +22,15 @@ import { toSpaceGitUiState } from "./git/space-git-ui-state";
 import { SpecNotePanel } from "./notes/spec-note-panel";
 import { loadSpecNote } from "./notes/store";
 import { buildDelegatedTaskTimeline } from "./shared/orchestrator-delegation";
+import { transitionOrchestratorRunStatus } from "./shared/orchestrator-run-lifecycle";
 import {
   getRunHistoryForActiveSession,
   getRunsForActiveSession
 } from "./shared/orchestrator-run-history";
+import {
+  projectOrchestratorRunHistory,
+  projectOrchestratorRunViewModel
+} from "./shared/orchestrator-run-view-model";
 import {
   createInitialBrowserNavigationState,
   DEFAULT_LOCAL_PREVIEW_URL,
@@ -76,7 +81,8 @@ function readLocalFallbackState(): AppState {
     }
 
     return normalizeAppState(JSON.parse(raw));
-  } catch {
+  } catch (error) {
+    console.warn("Failed to read local fallback state; starting fresh.", error);
     return createInitialAppState();
   }
 }
@@ -84,8 +90,8 @@ function readLocalFallbackState(): AppState {
 function writeLocalFallbackState(nextState: AppState): void {
   try {
     window.localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(nextState));
-  } catch {
-    // Keep runtime resilient when storage quota is unavailable.
+  } catch (error) {
+    console.warn("Failed to write local fallback state.", error);
   }
 }
 
@@ -116,15 +122,6 @@ function createOrchestratorRunId(): string {
   }
 
   return `run-${Date.now()}`;
-}
-
-function appendRunStatus(run: OrchestratorRunRecord, status: OrchestratorRunStatus): OrchestratorRunRecord {
-  const timeline = run.statusTimeline.includes(status) ? run.statusTimeline : [...run.statusTimeline, status];
-  return {
-    ...run,
-    status,
-    statusTimeline: timeline
-  };
 }
 
 function formatContextSnippetSection(snippets: ContextSnippet[]): string {
@@ -284,7 +281,8 @@ function App(): React.JSX.Element {
             setState(normalizeAppState(nextState));
           }
         });
-      } catch {
+      } catch (error) {
+        console.error("Failed to load state from shell; falling back to local storage.", error);
         if (!cancelled) {
           setState(readLocalFallbackState());
           setIsBootstrapping(false);
@@ -314,7 +312,8 @@ function App(): React.JSX.Element {
       } else {
         writeLocalFallbackState(normalized);
       }
-    } catch {
+    } catch (error) {
+      console.error("Failed to persist state via shell; writing to local storage.", error);
       writeLocalFallbackState(normalized);
     } finally {
       setIsSaving(false);
@@ -449,9 +448,17 @@ function App(): React.JSX.Element {
     () => runHistoryForActiveSession[0],
     [runHistoryForActiveSession]
   );
+  const latestRunViewModel = useMemo(
+    () => (latestRunForActiveSession ? projectOrchestratorRunViewModel(latestRunForActiveSession) : null),
+    [latestRunForActiveSession]
+  );
   const priorRunHistoryForActiveSession = useMemo(
     () => runHistoryForActiveSession.filter((run) => run.id !== latestRunForActiveSession?.id),
     [latestRunForActiveSession?.id, runHistoryForActiveSession]
+  );
+  const priorRunHistoryViewModels = useMemo(
+    () => projectOrchestratorRunHistory(priorRunHistoryForActiveSession),
+    [priorRunHistoryForActiveSession]
   );
   const latestDraftForActiveSession = latestRunForActiveSession?.draft;
 
@@ -870,11 +877,31 @@ function App(): React.JSX.Element {
     await persistState(queuedState);
 
     const runningAt = new Date().toISOString();
-    const runningRun = appendRunStatus(queuedRun, "running");
+    const runningTransition = transitionOrchestratorRunStatus(queuedRun, "running", runningAt);
+    if (!runningTransition.ok) {
+      console.error(runningTransition.reason);
+      const failedAt = new Date().toISOString();
+      const failedRun: OrchestratorRunRecord = {
+        ...queuedRun,
+        status: "failed",
+        statusTimeline: ["queued", "running", "failed"],
+        updatedAt: failedAt,
+        completedAt: failedAt,
+        errorMessage: runningTransition.reason
+      };
+      await persistState({
+        ...queuedState,
+        orchestratorRuns: queuedState.orchestratorRuns.map((run) => (run.id === runId ? failedRun : run)),
+        lastOpenedAt: failedAt
+      });
+      return;
+    }
+
+    const runningRun = runningTransition.run;
     const runningState: AppState = {
       ...queuedState,
       orchestratorRuns: queuedState.orchestratorRuns.map((run) =>
-        run.id === runId ? { ...runningRun, updatedAt: runningAt } : run
+        run.id === runId ? runningRun : run
       ),
       lastOpenedAt: runningAt
     };
@@ -908,7 +935,34 @@ function App(): React.JSX.Element {
       : buildDelegatedTaskTimeline(runId, prompt, endedAt);
     const failureMessage = delegationOutcome.failureMessage;
     const endedStatus: OrchestratorRunStatus = failureMessage ? "failed" : "completed";
-    const endedRun = appendRunStatus(runningRun, endedStatus);
+    const endedTransition = transitionOrchestratorRunStatus(
+      runningRun,
+      endedStatus,
+      endedAt,
+      failureMessage ?? undefined
+    );
+    if (!endedTransition.ok) {
+      console.error(endedTransition.reason);
+      const failedRun: OrchestratorRunRecord = {
+        ...runningRun,
+        status: "failed",
+        statusTimeline: runningRun.statusTimeline.includes("failed")
+          ? runningRun.statusTimeline
+          : [...runningRun.statusTimeline, "failed"],
+        updatedAt: endedAt,
+        completedAt: endedAt,
+        errorMessage: endedTransition.reason,
+        delegatedTasks: delegationOutcome.tasks
+      };
+      await persistState({
+        ...runningState,
+        orchestratorRuns: runningState.orchestratorRuns.map((run) => (run.id === runId ? failedRun : run)),
+        lastOpenedAt: endedAt
+      });
+      return;
+    }
+
+    const endedRun = endedTransition.run;
     const draft = failureMessage ? undefined : createSpecDraft(endedRun, endedAt, contextSnippets);
     const endedState: AppState = {
       ...runningState,
@@ -916,9 +970,6 @@ function App(): React.JSX.Element {
         run.id === runId
           ? {
               ...endedRun,
-              updatedAt: endedAt,
-              completedAt: endedAt,
-              errorMessage: failureMessage ?? undefined,
               contextSnippets: failureMessage ? undefined : contextSnippets,
               draft,
               draftAppliedAt: undefined,
@@ -1456,21 +1507,24 @@ function App(): React.JSX.Element {
             <div className="info-card">
               <h3>Status</h3>
               <p>
-                {latestRunForActiveSession
-                  ? `Run ${latestRunForActiveSession.id} is ${latestRunForActiveSession.status}.`
+                {latestRunViewModel
+                  ? `Run ${latestRunViewModel.id} is ${latestRunViewModel.statusLabel}.`
                   : "No orchestrator runs yet."}
               </p>
-              {latestRunForActiveSession ? (
+              {/* latestRunViewModel is derived from latestRunForActiveSession; both are null/non-null
+                  simultaneously. Draft fields (draft, draftAppliedAt, draftApplyError) are not projected
+                  into the view model, so the raw record is used for those fields only. */}
+              {latestRunViewModel && latestRunForActiveSession ? (
                 <>
-                  <p>Prompt: {latestRunForActiveSession.prompt}</p>
-                  <p>Lifecycle: {latestRunForActiveSession.statusTimeline.join(" -> ")}</p>
-                  {latestRunForActiveSession.delegatedTasks ? (
+                  <p>Prompt: {latestRunViewModel.prompt}</p>
+                  <p>Lifecycle: {latestRunViewModel.lifecycleText}</p>
+                  {latestRunViewModel.delegatedTasks.length > 0 ? (
                     <div>
                       <p>Delegated tasks</p>
                       <ul>
-                        {latestRunForActiveSession.delegatedTasks.map((task) => (
+                        {latestRunViewModel.delegatedTasks.map((task) => (
                           <li key={task.id}>
-                            {task.type} ({task.specialist}): {task.status} [{task.statusTimeline.join(" -> ")}]
+                            {task.type} ({task.specialist}): {task.status} [{task.lifecycleText}]
                             {task.errorMessage ? (
                               <>
                                 {" "}
@@ -1488,8 +1542,8 @@ function App(): React.JSX.Element {
                   {latestRunForActiveSession.draftAppliedAt ? (
                     <p>Draft applied at {new Date(latestRunForActiveSession.draftAppliedAt).toLocaleString()}</p>
                   ) : null}
-                  {latestRunForActiveSession.errorMessage ? (
-                    <p className="field-error">{latestRunForActiveSession.errorMessage}</p>
+                  {latestRunViewModel.errorMessage ? (
+                    <p className="field-error">{latestRunViewModel.errorMessage}</p>
                   ) : null}
                   {latestRunForActiveSession.draftApplyError ? (
                     <p className="field-error">{latestRunForActiveSession.draftApplyError}</p>
@@ -1503,25 +1557,24 @@ function App(): React.JSX.Element {
                 <p>{latestRunForActiveSession.id}</p>
               </div>
             ) : null}
-            {priorRunHistoryForActiveSession.length > 0 ? (
+            {priorRunHistoryViewModels.length > 0 ? (
               <div className="info-card">
                 <h3>Run History</h3>
                 <ul>
-                  {priorRunHistoryForActiveSession.map((run) => (
+                  {priorRunHistoryViewModels.map((run) => (
                     <li key={run.id}>
                       <p>
                         <strong>{run.id}</strong> - {run.status}
                       </p>
                       <p>Prompt: {run.prompt}</p>
-                      <p>Lifecycle: {run.statusTimeline.join(" -> ")}</p>
-                      {run.delegatedTasks && run.delegatedTasks.length > 0 ? (
+                      <p>Lifecycle: {run.lifecycleText}</p>
+                      {run.delegatedTasks.length > 0 ? (
                         <div>
                           <p>Delegated tasks</p>
                           <ul>
                             {run.delegatedTasks.map((task) => (
                               <li key={task.id}>
-                                {task.type} ({task.specialist}): {task.status} [
-                                {task.statusTimeline.join(" -> ")}]
+                                {task.type} ({task.specialist}): {task.status} [{task.lifecycleText}]
                                 {task.errorMessage ? (
                                   <>
                                     {" "}

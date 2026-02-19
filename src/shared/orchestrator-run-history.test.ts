@@ -9,7 +9,8 @@ function createRunRecord(
   id: string,
   spaceId: string,
   sessionId: string,
-  updatedAt: string
+  updatedAt: string,
+  createdAt = "2026-02-16T00:00:00.000Z"
 ): OrchestratorRunRecord {
   return {
     id,
@@ -18,7 +19,7 @@ function createRunRecord(
     prompt: `Prompt ${id}`,
     status: "completed",
     statusTimeline: ["queued", "running", "completed"],
-    createdAt: "2026-02-16T00:00:00.000Z",
+    createdAt,
     updatedAt
   };
 }
@@ -48,5 +49,17 @@ describe("orchestrator run history selectors", () => {
 
     expect(runHistory.map((run) => run.id)).toEqual(["run-2", "run-3", "run-1"]);
     expect(runsForSession.map((run) => run.id)).toEqual(["run-1", "run-2", "run-3"]);
+  });
+
+  it("applies deterministic tie-breaks on updatedAt collisions", () => {
+    const runsForSession = [
+      createRunRecord("run-a", "space-1", "session-1", "2026-02-16T00:03:00.000Z", "2026-02-16T00:01:00.000Z"),
+      createRunRecord("run-b", "space-1", "session-1", "2026-02-16T00:03:00.000Z", "2026-02-16T00:02:00.000Z"),
+      createRunRecord("run-c", "space-1", "session-1", "2026-02-16T00:03:00.000Z", "2026-02-16T00:02:00.000Z")
+    ];
+
+    const runHistory = getRunHistoryForActiveSession(runsForSession);
+
+    expect(runHistory.map((run) => run.id)).toEqual(["run-c", "run-b", "run-a"]);
   });
 });

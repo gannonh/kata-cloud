@@ -1,0 +1,110 @@
+import type { ContextSnippet } from "../context/types";
+import type {
+  OrchestratorDelegatedTaskRecord,
+  OrchestratorRunRecord,
+  OrchestratorRunStatus,
+  OrchestratorTaskStatus
+} from "./state";
+
+export interface OrchestratorDelegatedTaskViewModel {
+  id: string;
+  type: OrchestratorDelegatedTaskRecord["type"];
+  specialist: string;
+  status: OrchestratorDelegatedTaskRecord["status"];
+  lifecycleText: string;
+  errorMessage?: string;
+}
+
+export interface OrchestratorRunViewModel {
+  id: string;
+  prompt: string;
+  status: OrchestratorRunStatus;
+  statusLabel: string;
+  lifecycleText: string;
+  contextPreview: string;
+  errorMessage?: string;
+  delegatedTasks: OrchestratorDelegatedTaskViewModel[];
+}
+
+function toStatusLabel(status: OrchestratorRunStatus): string {
+  switch (status) {
+    case "queued":
+      return "Queued";
+    case "running":
+      return "Running";
+    case "completed":
+      return "Completed";
+    case "failed":
+      return "Failed";
+  }
+}
+
+function toTaskStatusLabel(status: OrchestratorTaskStatus): string {
+  switch (status) {
+    case "queued":
+      return "Queued";
+    case "delegating":
+      return "Delegating";
+    case "delegated":
+      return "Delegated";
+    case "running":
+      return "Running";
+    case "completed":
+      return "Completed";
+    case "failed":
+      return "Failed";
+  }
+}
+
+function toContextPreview(contextSnippets: ContextSnippet[] | undefined): string {
+  if (!contextSnippets || contextSnippets.length === 0) {
+    return "No context snippets available.";
+  }
+
+  const firstSnippet = contextSnippets[0];
+  if (!firstSnippet) {
+    return "No context snippets available.";
+  }
+
+  const snippetText = firstSnippet.content.trim();
+  if (snippetText.length === 0) {
+    return `Context from ${firstSnippet.path}`;
+  }
+
+  return `${firstSnippet.path}: ${snippetText}`;
+}
+
+function projectDelegatedTask(
+  task: OrchestratorDelegatedTaskRecord
+): OrchestratorDelegatedTaskViewModel {
+  return {
+    id: task.id,
+    type: task.type,
+    specialist: task.specialist,
+    status: task.status,
+    lifecycleText: task.statusTimeline.map(toTaskStatusLabel).join(" -> "),
+    errorMessage: task.errorMessage
+  };
+}
+
+export function projectOrchestratorRunViewModel(run: OrchestratorRunRecord): OrchestratorRunViewModel {
+  const delegatedTasks = run.delegatedTasks?.map(projectDelegatedTask) ?? [];
+  const failedTaskError = delegatedTasks.find((task) => task.status === "failed")?.errorMessage;
+
+  return {
+    id: run.id,
+    prompt: run.prompt,
+    status: run.status,
+    statusLabel: toStatusLabel(run.status),
+    lifecycleText: run.statusTimeline.join(" -> "),
+    contextPreview: toContextPreview(run.contextSnippets),
+    errorMessage: failedTaskError ?? run.errorMessage,
+    delegatedTasks
+  };
+}
+
+export function projectOrchestratorRunHistory(
+  runs: OrchestratorRunRecord[]
+): OrchestratorRunViewModel[] {
+  return runs.map(projectOrchestratorRunViewModel);
+}

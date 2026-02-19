@@ -11,7 +11,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm run desktop:typecheck`: strict TS type checks for main + renderer configs.
 - `pnpm run e2e`: run the full Electron end-to-end suite.
 - `pnpm run e2e:electron:smoke`: run baseline Electron smoke guardrail (`window.kataShell` bridge + Changes wiring).
-- `pnpm run e2e:electron:uat`: run UAT-derived Electron Playwright scenarios (currently no-repo-link Changes flow + PR redaction checks).
+- `pnpm run e2e:electron:uat`: run UAT verification Electron Playwright scenarios codified from manual UAT.
+- `pnpm run e2e:electron:full`: run full Electron Playwright coverage (includes smoke + uat scenario tags).
 - `pnpm run uat:electron:smoke` / `pnpm run uat:electron:e2e`: compatibility aliases to the `e2e:*` commands.
 - `pnpm run repo:guardrails`: run repository hygiene guardrails.
 - `pnpm run lint`: lint all files with ESLint (flat config in `eslint.config.mjs`).
@@ -103,8 +104,9 @@ The git feature is the most complex domain. Key files:
 - UAT scenarios are a subset of the unified E2E suite, not a separate permanent test system.
 - Keep naming split by intent:
   - `e2e:electron:smoke`: fast baseline gate.
-  - `e2e:electron:uat`: newly codified/expanded scenarios from recent UAT.
-  - `e2e`: umbrella command for all Electron E2E coverage.
+  - `e2e:electron:uat`: automated UAT verification scenarios.
+  - `e2e:electron:full`: all Electron E2E coverage (smoke + uat + additional scenarios).
+  - `e2e`: umbrella alias to full Electron E2E coverage.
 - CI policy:
   - Pull requests run `e2e:electron:smoke`.
   - `main` pushes and nightly schedule run full `e2e`.
