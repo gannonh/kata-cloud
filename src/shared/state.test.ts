@@ -11,7 +11,7 @@ describe("shared state helpers", () => {
     const state = createInitialAppState(now);
 
     expect(state.version).toBe(APP_STATE_VERSION);
-    expect(state.activeView).toBe("orchestrator");
+    expect(state.activeView).toBe("coordinator");
     expect(state.activeSpaceId).toBe("space-getting-started");
     expect(state.activeSessionId).toBe("session-getting-started");
     expect(state.lastOpenedAt).toBe(now);
@@ -27,7 +27,7 @@ describe("shared state helpers", () => {
     const state = normalizeAppState(null);
 
     expect(state.version).toBe(APP_STATE_VERSION);
-    expect(state.activeView).toBe("orchestrator");
+    expect(state.activeView).toBe("coordinator");
     expect(state.spaces).toHaveLength(1);
     expect(state.sessions).toHaveLength(1);
     expect(state.orchestratorRuns).toHaveLength(0);
@@ -301,7 +301,7 @@ describe("shared state helpers", () => {
       ]
     });
 
-    expect(state.activeView).toBe("orchestrator");
+    expect(state.activeView).toBe("coordinator");
     expect(state.activeSpaceId).toBe("space-a");
     expect(state.activeSessionId).toBe("session-a");
     expect(state.lastOpenedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
@@ -315,9 +315,17 @@ describe("shared state helpers", () => {
     expect(state.activeView).toBe("browser");
   });
 
+  it("maps legacy orchestrator view to coordinator", () => {
+    const state = normalizeAppState({
+      activeView: "orchestrator"
+    });
+
+    expect(state.activeView).toBe("coordinator");
+  });
+
   it("normalizes context retrieval errors with strict code validation", () => {
     const state = normalizeAppState({
-      activeView: "orchestrator",
+      activeView: "coordinator",
       activeSpaceId: "space-1",
       activeSessionId: "session-1",
       lastOpenedAt: "2026-02-16T00:00:00.000Z",
@@ -388,7 +396,7 @@ describe("shared state helpers", () => {
 
   it("normalizes persisted interrupted run records through round-trip", () => {
     const state = normalizeAppState({
-      activeView: "orchestrator",
+      activeView: "coordinator",
       activeSpaceId: "space-1",
       activeSessionId: "session-1",
       lastOpenedAt: "2026-02-19T00:00:00.000Z",
@@ -438,7 +446,7 @@ describe("shared state helpers", () => {
 
   it("drops interrupted runs missing interruptedAt", () => {
     const state = normalizeAppState({
-      activeView: "orchestrator",
+      activeView: "coordinator",
       activeSpaceId: "space-1",
       activeSessionId: "session-1",
       lastOpenedAt: "2026-02-19T00:00:00.000Z",
@@ -481,7 +489,7 @@ describe("shared state helpers", () => {
 
   it("drops persisted runs with inconsistent lifecycle timeline metadata", () => {
     const state = normalizeAppState({
-      activeView: "orchestrator",
+      activeView: "coordinator",
       activeSpaceId: "space-1",
       activeSessionId: "session-1",
       lastOpenedAt: "2026-02-16T00:00:00.000Z",

@@ -217,7 +217,7 @@ async function setActiveSpace(page, repoPath, repoUrl) {
 
       await shell.saveState({
         ...current,
-        activeView: "orchestrator",
+        activeView: "coordinator",
         spaces: nextSpaces,
         lastOpenedAt: now
       });
@@ -268,7 +268,7 @@ async function setActiveContextProvider(page, providerId) {
 
       await shell.saveState({
         ...current,
-        activeView: "orchestrator",
+        activeView: "coordinator",
         spaces: nextSpaces,
         sessions: nextSessions,
         lastOpenedAt: now
@@ -497,17 +497,17 @@ async function getLatestRunSnapshot(page) {
 async function runOrchestratorPrompt(page, prompt, expectedStatus) {
   await ensureOrchestratorRunHelpers(page);
 
-  await page.getByRole("button", { name: "Orchestrator", exact: true }).click();
+  await page.getByRole("button", { name: "Coordinator", exact: true }).click();
   await page.locator("#space-prompt-input").fill(prompt);
 
   const beforePromptSnapshot = await getRunSnapshot(page, prompt);
   await page.waitForFunction(() => {
     const button = Array.from(document.querySelectorAll("button")).find(
-      (entry) => entry.textContent?.trim() === "Run Orchestrator"
+      (entry) => entry.textContent?.trim() === "Run Coordinator"
     );
     return Boolean(button && !button.disabled);
   });
-  await page.getByRole("button", { name: "Run Orchestrator", exact: true }).click();
+  await page.getByRole("button", { name: "Run Coordinator", exact: true }).click();
 
   await page.waitForFunction(
     async ({ previousRunCountForPrompt, targetPrompt, helpersKey }) => {
@@ -596,7 +596,7 @@ async function assertOrchestratorPhaseCoverage(page) {
 async function assertOrchestratorPersistenceAfterRestart(page, coverageEvidence) {
   await ensureOrchestratorRunHelpers(page);
 
-  await page.getByRole("button", { name: "Orchestrator", exact: true }).click();
+  await page.getByRole("button", { name: "Coordinator", exact: true }).click();
   await page.waitForFunction(
     async ({ latestCompletedRunId, failedRunId, helpersKey }) => {
       const shell = window.kataShell;
@@ -693,7 +693,7 @@ async function assertOrchestratorContextDiagnostics(page) {
 async function assertOrchestratorContextDiagnosticsPersistenceAfterRestart(page, coverageEvidence) {
   await ensureOrchestratorRunHelpers(page);
 
-  await page.getByRole("button", { name: "Orchestrator", exact: true }).click();
+  await page.getByRole("button", { name: "Coordinator", exact: true }).click();
   await page.waitForFunction(
     async ({ latestRunId, diagnosticRunId, helpersKey }) => {
       const shell = window.kataShell;
@@ -779,7 +779,7 @@ async function assertOrchestratorProviderExecution(page) {
 }
 
 async function assertCoordinatorShellSemantics(page) {
-  await page.getByRole("button", { name: "Orchestrator", exact: true }).click();
+  await page.getByRole("button", { name: "Coordinator", exact: true }).click();
 
   await page.waitForFunction(() => {
     const root = document.querySelector(".coordinator-shell-grid");

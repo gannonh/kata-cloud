@@ -4,7 +4,7 @@ import { normalizeAppState } from "./state.js";
 describe("orchestrator run state normalization", () => {
   it("retains explicit run lifecycle statuses for valid runs", () => {
     const state = normalizeAppState({
-      activeView: "orchestrator",
+      activeView: "coordinator",
       activeSpaceId: "space-1",
       activeSessionId: "session-1",
       lastOpenedAt: "2026-02-16T00:00:00.000Z",
@@ -75,7 +75,7 @@ describe("orchestrator run state normalization", () => {
 
   it("drops runs with unknown lifecycle states", () => {
     const state = normalizeAppState({
-      activeView: "orchestrator",
+      activeView: "coordinator",
       activeSpaceId: "space-1",
       activeSessionId: "session-1",
       lastOpenedAt: "2026-02-16T00:00:00.000Z",
@@ -119,7 +119,7 @@ describe("orchestrator run state normalization", () => {
 
   it("preserves runs with invalid optional nested artifacts by stripping malformed fields", () => {
     const state = normalizeAppState({
-      activeView: "orchestrator",
+      activeView: "coordinator",
       activeSpaceId: "space-1",
       activeSessionId: "session-1",
       lastOpenedAt: "2026-02-16T00:00:00.000Z",
@@ -182,7 +182,7 @@ describe("orchestrator run state normalization", () => {
 
   it("drops terminal runs without completedAt timestamp", () => {
     const state = normalizeAppState({
-      activeView: "orchestrator",
+      activeView: "coordinator",
       activeSpaceId: "space-1",
       activeSessionId: "session-1",
       lastOpenedAt: "2026-02-16T00:00:00.000Z",

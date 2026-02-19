@@ -29,10 +29,10 @@ describe("coordinator shell UI reducer", () => {
     expect(restored.isRightPanelCollapsed).toBe(false);
   });
 
-  it("tracks active center tab and message expansion IDs", () => {
+  it("tracks active right tab and message expansion IDs", () => {
     const initial = createInitialCoordinatorShellUiState();
     const specTab = coordinatorShellUiStateReducer(initial, {
-      type: "set-active-tab",
+      type: "set-active-right-tab",
       tab: "spec"
     });
     const expanded = coordinatorShellUiStateReducer(specTab, {
@@ -44,16 +44,16 @@ describe("coordinator shell UI reducer", () => {
       messageId: "run-1-prompt"
     });
 
-    expect(specTab.activeCenterTab).toBe("spec");
+    expect(specTab.activeRightTab).toBe("spec");
     expect(expanded.expandedMessageIds).toEqual(["run-1-prompt"]);
     expect(collapsed.expandedMessageIds).toEqual([]);
   });
 
-  it("returns same state reference when set-active-tab dispatched with current tab", () => {
+  it("returns same state reference when set-active-right-tab dispatched with current tab", () => {
     const state = createInitialCoordinatorShellUiState();
     const result = coordinatorShellUiStateReducer(state, {
-      type: "set-active-tab",
-      tab: state.activeCenterTab
+      type: "set-active-right-tab",
+      tab: state.activeRightTab
     });
 
     expect(result).toBe(state);

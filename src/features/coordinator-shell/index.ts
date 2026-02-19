@@ -9,7 +9,7 @@ export {
 } from "./ui-state.js";
 export { projectCoordinatorShellViewModel } from "./view-model.js";
 export type {
-  CoordinatorCenterTab,
+  CoordinatorRightTab,
   CoordinatorShellUiAction,
   CoordinatorShellUiState,
   CoordinatorShellViewModel

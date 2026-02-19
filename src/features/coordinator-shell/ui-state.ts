@@ -13,7 +13,7 @@ export function createInitialCoordinatorShellUiState(): CoordinatorShellUiState 
       context: false
     },
     isRightPanelCollapsed: false,
-    activeCenterTab: "coordinator",
+    activeRightTab: "workflow",
     expandedMessageIds: []
   };
 }
@@ -36,13 +36,13 @@ export function coordinatorShellUiStateReducer(
         ...state,
         isRightPanelCollapsed: !state.isRightPanelCollapsed
       };
-    case "set-active-tab":
-      if (state.activeCenterTab === action.tab) {
+    case "set-active-right-tab":
+      if (state.activeRightTab === action.tab) {
         return state;
       }
       return {
         ...state,
-        activeCenterTab: action.tab
+        activeRightTab: action.tab
       };
     case "toggle-message": {
       const alreadyExpanded = state.expandedMessageIds.includes(action.messageId);

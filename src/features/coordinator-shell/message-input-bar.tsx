@@ -35,7 +35,7 @@ export function CoordinatorMessageInputBar(props: MessageInputBarProps): React.J
       <div className="coordinator-input__actions">
         <span className="coordinator-input__model">{modelLabel}</span>
         <button type="submit" className="pill-button" disabled={disabled}>
-          Run Orchestrator
+          Run Coordinator
         </button>
       </div>
     </form>

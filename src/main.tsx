@@ -100,7 +100,7 @@ const DEFAULT_ORCHESTRATOR_MODELS: Record<ModelProviderId, string> = {
 };
 const PROVIDER_AUTH_FAILURE_CODES = new Set(["missing_auth", "invalid_auth", "session_expired"]);
 
-const viewOrder: NavigationView[] = ["explorer", "orchestrator", "spec", "changes", "browser"];
+const viewOrder: NavigationView[] = ["explorer", "coordinator", "spec", "changes", "browser"];
 
 function createProviderPrompt(prompt: string, contextSnippets: ContextSnippet[]): string {
   const contextSection = contextSnippets.length > 0
@@ -196,8 +196,8 @@ function toViewLabel(view: NavigationView): string {
   switch (view) {
     case "explorer":
       return "Explorer";
-    case "orchestrator":
-      return "Orchestrator";
+    case "coordinator":
+      return "Coordinator";
     case "spec":
       return "Spec";
     case "changes":
@@ -1358,7 +1358,7 @@ function App(): React.JSX.Element {
       const newSession: SessionRecord = {
         id: newSessionId,
         spaceId: newSpaceId,
-        label: "Initial Orchestrator Session",
+        label: "Initial Coordinator Session",
         contextProvider: "filesystem",
         createdAt: now,
         updatedAt: now
@@ -1370,7 +1370,7 @@ function App(): React.JSX.Element {
         sessions: [...state.sessions, newSession],
         activeSpaceId: newSpaceId,
         activeSessionId: newSessionId,
-        activeView: "orchestrator",
+        activeView: "coordinator",
         lastOpenedAt: now
       });
 
@@ -1435,9 +1435,9 @@ function App(): React.JSX.Element {
     });
   }, []);
 
-  const onSelectCoordinatorTab = useCallback((tab: "coordinator" | "spec") => {
+  const onSelectCoordinatorRightTab = useCallback((tab: "workflow" | "spec") => {
     dispatchCoordinatorShellUiAction({
-      type: "set-active-tab",
+      type: "set-active-right-tab",
       tab
     });
   }, []);
@@ -1555,7 +1555,7 @@ function App(): React.JSX.Element {
         <span>{isSaving ? "Saving state..." : "State synced"}</span>
       </div>
 
-      {state.activeView === "orchestrator" ? (
+      {state.activeView === "coordinator" ? (
         <section className="coordinator-shell-grid">
           <section className="coordinator-column">
             <CoordinatorLeftSidebar
@@ -1574,72 +1574,60 @@ function App(): React.JSX.Element {
             <header className="panel-header">
               <h2>Coordinator</h2>
               <p>Chat-first orchestration with run and context diagnostics.</p>
-              <nav className="view-nav">
-                <button
-                  type="button"
-                  className={
-                    coordinatorShellUiState.activeCenterTab === "coordinator"
-                      ? "nav-button is-active"
-                      : "nav-button"
-                  }
-                  onClick={() => onSelectCoordinatorTab("coordinator")}
-                >
-                  Coordinator
-                </button>
-                <button
-                  type="button"
-                  className={
-                    coordinatorShellUiState.activeCenterTab === "spec"
-                      ? "nav-button is-active"
-                      : "nav-button"
-                  }
-                  onClick={() => onSelectCoordinatorTab("spec")}
-                >
-                  Spec
-                </button>
-              </nav>
             </header>
-            {coordinatorShellUiState.activeCenterTab === "coordinator" ? (
-              <>
-                <CoordinatorChatThread
-                  entries={coordinatorShellViewModel.latestEntries}
-                  historyEntries={coordinatorShellViewModel.historicalEntries}
-                  expandedMessageIds={coordinatorShellUiState.expandedMessageIds}
-                  onToggleMessage={onToggleCoordinatorMessage}
-                />
-                <CoordinatorMessageInputBar
-                  prompt={spacePrompt}
-                  modelLabel={coordinatorModelLabel}
-                  disabled={!activeSpace || !activeSession || !spacePrompt.trim() || isSaving}
-                  onPromptChange={setSpacePrompt}
-                  onSubmitPrompt={() => {
-                    void onRunOrchestrator();
-                  }}
-                />
-                {coordinatorStatusMessage ? (
-                  <p className="coordinator-status-message">{coordinatorStatusMessage}</p>
-                ) : null}
-              </>
-            ) : (
-              <div className="coordinator-spec">
-                <p className="coordinator-spec__header">NOTES / Spec</p>
-                <SpecNotePanel
-                  storage={window.localStorage}
-                  draftArtifact={latestDraftForActiveSession}
-                  onApplyDraftResult={onSpecDraftApplied}
-                />
-              </div>
-            )}
+            <CoordinatorChatThread
+              entries={coordinatorShellViewModel.latestEntries}
+              historyEntries={coordinatorShellViewModel.historicalEntries}
+              expandedMessageIds={coordinatorShellUiState.expandedMessageIds}
+              onToggleMessage={onToggleCoordinatorMessage}
+            />
+            <CoordinatorMessageInputBar
+              prompt={spacePrompt}
+              modelLabel={coordinatorModelLabel}
+              disabled={!activeSpace || !activeSession || !spacePrompt.trim() || isSaving}
+              onPromptChange={setSpacePrompt}
+              onSubmitPrompt={() => {
+                void onRunOrchestrator();
+              }}
+            />
+            {coordinatorStatusMessage ? (
+              <p className="coordinator-status-message">{coordinatorStatusMessage}</p>
+            ) : null}
           </section>
 
           <section className="coordinator-column">
             <div className="coordinator-right">
-              <CoordinatorWorkflowPanel
-                steps={coordinatorShellViewModel.workflowSteps}
-                collapsed={coordinatorShellUiState.isRightPanelCollapsed}
-                onToggleCollapse={onToggleCoordinatorRightPanel}
-              />
-              {!coordinatorShellUiState.isRightPanelCollapsed ? (
+              <nav className="view-nav">
+                <button
+                  type="button"
+                  className={
+                    coordinatorShellUiState.activeRightTab === "workflow"
+                      ? "nav-button is-active"
+                      : "nav-button"
+                  }
+                  onClick={() => onSelectCoordinatorRightTab("workflow")}
+                >
+                  Workflow
+                </button>
+                <button
+                  type="button"
+                  className={
+                    coordinatorShellUiState.activeRightTab === "spec"
+                      ? "nav-button is-active"
+                      : "nav-button"
+                  }
+                  onClick={() => onSelectCoordinatorRightTab("spec")}
+                >
+                  Spec
+                </button>
+              </nav>
+              {coordinatorShellUiState.activeRightTab === "workflow" ? (
+                <CoordinatorWorkflowPanel
+                  steps={coordinatorShellViewModel.workflowSteps}
+                  collapsed={coordinatorShellUiState.isRightPanelCollapsed}
+                  onToggleCollapse={onToggleCoordinatorRightPanel}
+                />
+              ) : (
                 <div className="coordinator-spec">
                   <p className="coordinator-spec__header">NOTES / Spec</p>
                   <SpecNotePanel
@@ -1648,7 +1636,7 @@ function App(): React.JSX.Element {
                     onApplyDraftResult={onSpecDraftApplied}
                   />
                 </div>
-              ) : null}
+              )}
             </div>
           </section>
         </section>
@@ -1809,7 +1797,7 @@ function App(): React.JSX.Element {
 
         <section className="panel">
           <header className="panel-header">
-            <h2>Orchestrator</h2>
+            <h2>Coordinator</h2>
             <p>Coordination and specialist execution</p>
           </header>
           <div className="panel-body">
@@ -1835,7 +1823,7 @@ function App(): React.JSX.Element {
                     void onRunOrchestrator();
                   }}
                 >
-                  Run Orchestrator
+                  Run Coordinator
                 </button>
               </div>
 
@@ -1913,7 +1901,7 @@ function App(): React.JSX.Element {
                           tags: event.target.value
                         }))
                       }
-                      placeholder="frontend, orchestrator"
+                      placeholder="frontend, coordinator"
                     />
                   </label>
 
@@ -1948,7 +1936,7 @@ function App(): React.JSX.Element {
                   .
                 </p>
               ) : (
-                <p>No orchestrator runs yet.</p>
+                <p>No coordinator runs yet.</p>
               )}
               {/* latestRunViewModel is derived from latestRunForActiveSession; both are null/non-null
                   simultaneously. Draft fields (draft, draftAppliedAt, draftApplyError) are not projected

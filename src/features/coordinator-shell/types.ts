@@ -8,7 +8,7 @@ import type {
 import type { OrchestratorRunViewModel } from "../../shared/orchestrator-run-view-model.js";
 
 export type CoordinatorSidebarSectionId = "agents" | "context";
-export type CoordinatorCenterTab = "coordinator" | "spec";
+export type CoordinatorRightTab = "workflow" | "spec";
 
 export type CoordinatorShellStatusTone =
   | "idle"
@@ -87,14 +87,14 @@ export interface ProjectCoordinatorShellViewModelInput {
 export interface CoordinatorShellUiState {
   collapsedSections: Record<CoordinatorSidebarSectionId, boolean>;
   isRightPanelCollapsed: boolean;
-  activeCenterTab: CoordinatorCenterTab;
+  activeRightTab: CoordinatorRightTab;
   expandedMessageIds: string[];
 }
 
 export type CoordinatorShellUiAction =
   | { type: "toggle-sidebar-section"; sectionId: CoordinatorSidebarSectionId }
   | { type: "toggle-right-panel" }
-  | { type: "set-active-tab"; tab: CoordinatorCenterTab }
+  | { type: "set-active-right-tab"; tab: CoordinatorRightTab }
   | { type: "toggle-message"; messageId: string };
 
 export function toStatusClassName(status: CoordinatorShellStatusTone): string {

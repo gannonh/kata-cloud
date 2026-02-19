@@ -153,7 +153,7 @@ describe("coordinator-shell components", () => {
       />
     );
 
-    await user.click(screen.getByRole("button", { name: "Run Orchestrator" }));
+    await user.click(screen.getByRole("button", { name: "Run Coordinator" }));
     expect(onSubmitPrompt).not.toHaveBeenCalled();
   });
 
@@ -172,7 +172,7 @@ describe("coordinator-shell components", () => {
       />
     );
 
-    await user.click(screen.getByRole("button", { name: "Run Orchestrator" }));
+    await user.click(screen.getByRole("button", { name: "Run Coordinator" }));
     expect(onSubmitPrompt).toHaveBeenCalledTimes(1);
   });
 });
