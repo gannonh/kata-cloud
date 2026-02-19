@@ -67,7 +67,7 @@ describe("orchestrator run view model projections", () => {
 
     expect(projection.status).toBe("failed");
     expect(projection.delegatedTasks).toHaveLength(2);
-    expect(projection.delegatedTasks[1]?.lifecycleText).toBe("queued -> delegating -> failed");
+    expect(projection.delegatedTasks[1]?.lifecycleText).toBe("Queued -> Delegating -> Failed");
     expect(projection.errorMessage).toBe("Delegation failed for verify.");
   });
 

@@ -2,7 +2,8 @@ import type { ContextSnippet } from "../context/types";
 import type {
   OrchestratorDelegatedTaskRecord,
   OrchestratorRunRecord,
-  OrchestratorRunStatus
+  OrchestratorRunStatus,
+  OrchestratorTaskStatus
 } from "./state";
 
 export interface OrchestratorDelegatedTaskViewModel {
@@ -40,6 +41,23 @@ function toStatusLabel(status: OrchestratorRunStatus): string {
   }
 }
 
+function toTaskStatusLabel(status: OrchestratorTaskStatus): string {
+  switch (status) {
+    case "queued":
+      return "Queued";
+    case "delegating":
+      return "Delegating";
+    case "delegated":
+      return "Delegated";
+    case "running":
+      return "Running";
+    case "completed":
+      return "Completed";
+    case "failed":
+      return "Failed";
+  }
+}
+
 function toContextPreview(contextSnippets: ContextSnippet[] | undefined): string {
   if (!contextSnippets || contextSnippets.length === 0) {
     return "No context snippets available.";
@@ -66,7 +84,7 @@ function projectDelegatedTask(
     type: task.type,
     specialist: task.specialist,
     status: task.status,
-    lifecycleText: task.statusTimeline.join(" -> "),
+    lifecycleText: task.statusTimeline.map(toTaskStatusLabel).join(" -> "),
     errorMessage: task.errorMessage
   };
 }
