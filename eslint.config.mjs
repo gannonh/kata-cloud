@@ -52,7 +52,7 @@ export default [
     }
   },
   {
-    files: ["scripts/dev-desktop.mjs"],
+    files: ["bin/dev-desktop.mjs"],
     rules: {
       "no-control-regex": "off"
     }
