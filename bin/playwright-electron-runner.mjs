@@ -227,6 +227,55 @@ async function setActiveSpace(page, repoPath, repoUrl) {
   );
 }
 
+async function setActiveContextProvider(page, providerId) {
+  await page.evaluate(
+    async (nextProviderId) => {
+      const shell = window.kataShell;
+      if (!shell) {
+        throw new Error("kataShell bridge unavailable.");
+      }
+
+      const current = await shell.getState();
+      const activeSpaceId = current.activeSpaceId ?? current.spaces[0]?.id;
+      if (!activeSpaceId) {
+        throw new Error("No active space available.");
+      }
+
+      const activeSessionId =
+        current.activeSessionId ??
+        current.sessions.find((session) => session.spaceId === activeSpaceId)?.id;
+      const now = new Date().toISOString();
+      const nextSpaces = current.spaces.map((space) =>
+        space.id === activeSpaceId
+          ? {
+              ...space,
+              contextProvider: nextProviderId,
+              updatedAt: now
+            }
+          : space
+      );
+      const nextSessions = current.sessions.map((session) =>
+        session.id === activeSessionId
+          ? {
+              ...session,
+              contextProvider: nextProviderId,
+              updatedAt: now
+            }
+          : session
+      );
+
+      await shell.saveState({
+        ...current,
+        activeView: "orchestrator",
+        spaces: nextSpaces,
+        sessions: nextSessions,
+        lastOpenedAt: now
+      });
+    },
+    providerId
+  );
+}
+
 async function assertBodyIncludes(page, expectedText, description = expectedText) {
   const found = await page
     .waitForFunction((needle) => (document.body.textContent ?? "").includes(needle), expectedText)
@@ -372,7 +421,16 @@ async function getLatestRunSnapshot(page) {
             prompt: latestRun.prompt,
             status: latestRun.status,
             lifecycleText: latestRun.statusTimeline.join(" -> "),
-            errorMessage: latestRun.errorMessage ?? null
+            errorMessage: latestRun.errorMessage ?? null,
+            contextRetrievalError: latestRun.contextRetrievalError
+              ? {
+                  code: latestRun.contextRetrievalError.code,
+                  message: latestRun.contextRetrievalError.message,
+                  remediation: latestRun.contextRetrievalError.remediation,
+                  retryable: latestRun.contextRetrievalError.retryable,
+                  providerId: latestRun.contextRetrievalError.providerId
+                }
+              : null
           }
         : null
     };
@@ -516,6 +574,108 @@ async function assertOrchestratorPersistenceAfterRestart(page, coverageEvidence)
   await assertBodyIncludes(page, coverageEvidence.deterministicFailure, "failed diagnostics after restart");
 }
 
+async function assertOrchestratorContextDiagnostics(page) {
+  const mcpPrompt = "Capture context diagnostics with mcp provider unavailable.";
+  const filesystemPrompt = "Run after diagnostics using filesystem context provider.";
+  const contextDiagnosticText =
+    "Context (mcp / provider_unavailable): MCP context provider is not yet connected.";
+  const remediationText = "Remediation: Configure the MCP provider runtime before requesting MCP context.";
+
+  await setActiveContextProvider(page, "mcp");
+  const diagnosticRun = await runOrchestratorPrompt(page, mcpPrompt, "completed");
+
+  const latestWithDiagnostic = await getLatestRunSnapshot(page);
+  if (!latestWithDiagnostic.latest?.contextRetrievalError) {
+    throw new Error("Expected latest run to persist context retrieval diagnostics.");
+  }
+  if (latestWithDiagnostic.latest.contextRetrievalError.code !== "provider_unavailable") {
+    throw new Error(
+      "Expected context retrieval diagnostic code provider_unavailable for MCP run."
+    );
+  }
+  if (latestWithDiagnostic.latest.contextRetrievalError.providerId !== "mcp") {
+    throw new Error("Expected context retrieval diagnostic provider mcp.");
+  }
+
+  await assertBodyIncludes(page, `Run ${diagnosticRun.id} is Completed.`);
+  await assertBodyIncludes(page, contextDiagnosticText, "latest-run context diagnostic text");
+  await assertBodyIncludes(page, remediationText, "latest-run remediation text");
+  await assertBodyIncludes(page, "(retryable)", "context diagnostic retryability marker");
+
+  await setActiveContextProvider(page, "filesystem");
+  const postDiagnosticRun = await runOrchestratorPrompt(page, filesystemPrompt, "completed");
+  const latestWithoutDiagnostic = await getLatestRunSnapshot(page);
+  if (latestWithoutDiagnostic.latest?.id !== postDiagnosticRun.id) {
+    throw new Error("Expected filesystem run to become latest run.");
+  }
+  if (latestWithoutDiagnostic.latest.contextRetrievalError) {
+    throw new Error("Expected filesystem run to complete without context diagnostics.");
+  }
+
+  await assertBodyIncludes(page, "Run History", "run history card");
+  await assertBodyIncludes(page, diagnosticRun.id, "diagnostic run id in history");
+  await assertBodyIncludes(page, contextDiagnosticText, "historical context diagnostic text");
+
+  return {
+    latestRunId: postDiagnosticRun.id,
+    diagnosticRunId: diagnosticRun.id,
+    contextDiagnosticText
+  };
+}
+
+async function assertOrchestratorContextDiagnosticsPersistenceAfterRestart(page, coverageEvidence) {
+  await page.getByRole("button", { name: "Orchestrator", exact: true }).click();
+  await page.waitForFunction(
+    async ({ latestRunId, diagnosticRunId }) => {
+      const shell = window.kataShell;
+      if (!shell) {
+        return false;
+      }
+
+      const state = await shell.getState();
+      const runs = state.orchestratorRuns.filter(
+        (run) => run.spaceId === state.activeSpaceId && run.sessionId === state.activeSessionId
+      );
+      if (runs.length < 2) {
+        return false;
+      }
+
+      const latestRun = [...runs].sort((leftRun, rightRun) => {
+        if (rightRun.updatedAt !== leftRun.updatedAt) {
+          return rightRun.updatedAt < leftRun.updatedAt ? -1 : 1;
+        }
+        if (rightRun.createdAt !== leftRun.createdAt) {
+          return rightRun.createdAt < leftRun.createdAt ? -1 : 1;
+        }
+        return rightRun.id.localeCompare(leftRun.id);
+      })[0];
+
+      const diagnosticRun = runs.find((run) => run.id === diagnosticRunId);
+      return Boolean(
+        latestRun &&
+          latestRun.id === latestRunId &&
+          latestRun.status === "completed" &&
+          !latestRun.contextRetrievalError &&
+          diagnosticRun &&
+          diagnosticRun.contextRetrievalError &&
+          diagnosticRun.contextRetrievalError.code === "provider_unavailable" &&
+          diagnosticRun.contextRetrievalError.providerId === "mcp"
+      );
+    },
+    {
+      latestRunId: coverageEvidence.latestRunId,
+      diagnosticRunId: coverageEvidence.diagnosticRunId
+    }
+  );
+
+  await assertBodyIncludes(page, coverageEvidence.diagnosticRunId, "diagnostic run id after restart");
+  await assertBodyIncludes(
+    page,
+    coverageEvidence.contextDiagnosticText,
+    "historical context diagnostics after restart"
+  );
+}
+
 function includesScenario(suite, tags) {
   if (suite === "full") {
     return true;
@@ -572,6 +732,20 @@ export async function runElectronSuite({ suite = "full", label } = {}) {
         const coverageEvidence = await assertOrchestratorPhaseCoverage(context.page);
         await context.relaunch();
         await assertOrchestratorPersistenceAfterRestart(context.page, coverageEvidence);
+      }
+    },
+    {
+      id: "orchestrator-context-diagnostics-uat",
+      tags: ["uat"],
+      requiresRepo: true,
+      run: async (context) => {
+        await setActiveSpace(context.page, context.repoPath, "");
+        const coverageEvidence = await assertOrchestratorContextDiagnostics(context.page);
+        await context.relaunch();
+        await assertOrchestratorContextDiagnosticsPersistenceAfterRestart(
+          context.page,
+          coverageEvidence
+        );
       }
     },
     {
