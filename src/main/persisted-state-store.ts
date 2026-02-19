@@ -71,7 +71,11 @@ export class PersistedStateStore {
         : run
     );
     this.state = { ...this.state, orchestratorRuns: recoveredRuns };
-    await this.writeToDisk(this.state);
+    try {
+      await this.writeToDisk(this.state);
+    } catch (error) {
+      console.error("Failed to persist recovered interrupted runs. Recovery applied in memory only.", error);
+    }
   }
 
   private async writeToDisk(nextState: AppState): Promise<void> {

@@ -204,7 +204,33 @@ describe("orchestrator run view model projections", () => {
     );
 
     expect(projection.contextProvenance?.resolvedProviderId).toBe("filesystem");
+    expect(projection.contextProvenance?.snippetCount).toBe(0);
     expect(projection.contextProvenance?.fallbackFromProviderId).toBe("mcp");
+  });
+
+  it("prefers explicit fallbackFromProviderId over legacy snippet inference", () => {
+    // resolvedProviderId = "mcp", explicit fallback = "filesystem", snippet provider = "mcp"
+    // Legacy inference: snippets[0].provider === resolvedProviderId => returns undefined
+    // Result: explicit "filesystem" wins over legacy undefined
+    const projection = projectOrchestratorRunViewModel(
+      createRun({
+        resolvedProviderId: "mcp",
+        fallbackFromProviderId: "filesystem",
+        contextSnippets: [
+          {
+            id: "snippet-1",
+            provider: "mcp",
+            source: "mcp",
+            path: "/tmp/project/src/main.tsx",
+            content: "snippet one",
+            score: 0.8
+          }
+        ]
+      })
+    );
+
+    expect(projection.contextProvenance?.resolvedProviderId).toBe("mcp");
+    expect(projection.contextProvenance?.fallbackFromProviderId).toBe("filesystem");
   });
 
   it("infers fallback provenance from snippets for legacy runs", () => {

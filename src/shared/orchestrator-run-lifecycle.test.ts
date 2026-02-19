@@ -61,6 +61,7 @@ describe("orchestrator run lifecycle transitions", () => {
     expect(interrupted.run.status).toBe("interrupted");
     expect(interrupted.run.statusTimeline).toEqual(["queued", "interrupted"]);
     expect(interrupted.run.interruptedAt).toBe("2026-02-19T00:00:01.000Z");
+    expect(interrupted.run.completedAt).toBeUndefined();
   });
 
   it("applies running -> interrupted transition", () => {
@@ -88,6 +89,7 @@ describe("orchestrator run lifecycle transitions", () => {
     expect(interrupted.run.status).toBe("interrupted");
     expect(interrupted.run.statusTimeline).toEqual(["queued", "running", "interrupted"]);
     expect(interrupted.run.interruptedAt).toBe("2026-02-19T00:00:02.000Z");
+    expect(interrupted.run.completedAt).toBeUndefined();
   });
 
   it("is idempotent for duplicate statuses", () => {

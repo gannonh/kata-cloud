@@ -486,7 +486,10 @@ function App(): React.JSX.Element {
     () => projectOrchestratorRunHistory(priorRunHistoryForActiveSession),
     [priorRunHistoryForActiveSession]
   );
-  const latestRunProvenanceLine = formatContextProvenanceLine(latestRunViewModel?.contextProvenance);
+  const latestRunProvenanceLine = useMemo(
+    () => formatContextProvenanceLine(latestRunViewModel?.contextProvenance),
+    [latestRunViewModel?.contextProvenance]
+  );
   const latestDraftForActiveSession = latestRunForActiveSession?.draft;
 
   const sessionsForActiveSpace = useMemo(

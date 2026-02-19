@@ -29,8 +29,8 @@ describe("PersistedStateStore.initialize", () => {
 
   it("recovers queued and running runs as interrupted and writes recovered state", async () => {
     const baseState = createInitialAppState("2026-02-19T00:00:00.000Z");
-    const spaceId = baseState.spaces[0].id;
-    const sessionId = baseState.sessions[0].id;
+    const spaceId = baseState.spaces[0]!.id;
+    const sessionId = baseState.sessions[0]!.id;
     const queuedRun: OrchestratorRunRecord = {
       id: "run-queued",
       spaceId,
@@ -94,5 +94,32 @@ describe("PersistedStateStore.initialize", () => {
     expect(persistedRecovered.orchestratorRuns.find((run) => run.id === runningRun.id)?.status).toBe(
       "interrupted"
     );
+  });
+
+  it("does not recover or rewrite state when no in-flight runs exist", async () => {
+    const baseState = createInitialAppState("2026-02-19T00:00:00.000Z");
+    const spaceId = baseState.spaces[0]!.id;
+    const sessionId = baseState.sessions[0]!.id;
+    const completedRun: OrchestratorRunRecord = {
+      id: "run-completed",
+      spaceId,
+      sessionId,
+      prompt: "Completed run",
+      status: "completed",
+      statusTimeline: ["queued", "running", "completed"],
+      createdAt: "2026-02-19T00:00:00.000Z",
+      updatedAt: "2026-02-19T00:00:01.000Z",
+      completedAt: "2026-02-19T00:00:01.000Z"
+    };
+    const seededState: AppState = { ...baseState, orchestratorRuns: [completedRun] };
+    const statePath = path.join(userDataPath, "kata-cloud-state.json");
+    await writeFile(statePath, JSON.stringify(seededState, null, 2), "utf8");
+
+    const store = new PersistedStateStore();
+    const initialized = await store.initialize();
+
+    const run = initialized.orchestratorRuns.find((r) => r.id === completedRun.id);
+    expect(run?.status).toBe("completed");
+    expect(run?.completedAt).toBe("2026-02-19T00:00:01.000Z");
   });
 });
