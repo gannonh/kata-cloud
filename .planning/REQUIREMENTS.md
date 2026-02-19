@@ -17,10 +17,10 @@ Requirements for milestone v0.2.0 Desktop MVP Closure.
 
 ### Real Orchestration and Observability
 
-- [ ] **ORCH-01**: User-triggered orchestrator runs execute at least one real provider-backed generation call when credentials are configured (not local draft-only fallback).
+- [x] **ORCH-01**: User-triggered orchestrator runs execute at least one real provider-backed generation call when credentials are configured (not local draft-only fallback).
 - [ ] **ORCH-02**: User can see provider/model/run telemetry for orchestrator execution, including lifecycle events and surfaced run diagnostics.
 - [ ] **ORCH-03**: User can inspect wave-grouped execution (`waveId`-backed) with per-wave summaries and agent/task associations.
-- [ ] **ORCH-04**: User receives typed remediation and deterministic terminal run outcomes when provider execution fails or is unavailable.
+- [x] **ORCH-04**: User receives typed remediation and deterministic terminal run outcomes when provider execution fails or is unavailable.
 
 ### Workspace Flow Completion
 
@@ -32,9 +32,9 @@ Requirements for milestone v0.2.0 Desktop MVP Closure.
 
 ### PI Integration and Module Strategy
 
-- [ ] **PI-01**: PI package adoption is implemented through a controlled adapter boundary (starting with `pi-ai` and/or `pi-agent-core`) without breaking existing kataShell/provider contracts.
-- [ ] **PI-02**: Runtime behavior can be switched between native provider execution and PI-backed execution via an explicit feature flag/setting.
-- [ ] **PI-03**: Desktop runtime path is ESM-first, with CommonJS preload/runtime debt removed from the core milestone execution path.
+- [x] **PI-01**: PI package adoption is implemented through a controlled adapter boundary (starting with `pi-ai` and/or `pi-agent-core`) without breaking existing kataShell/provider contracts.
+- [x] **PI-02**: Runtime behavior can be switched between native provider execution and PI-backed execution via an explicit feature flag/setting.
+- [x] **PI-03**: Desktop runtime path is ESM-first, with CommonJS preload/runtime debt removed from the core milestone execution path.
 
 ### Verification and MVP Handoff
 
@@ -70,11 +70,11 @@ Deferred beyond v0.2.0:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PI-01 | Phase 9 | Pending |
-| PI-02 | Phase 9 | Pending |
-| PI-03 | Phase 9 | Pending |
-| ORCH-01 | Phase 9 | Pending |
-| ORCH-04 | Phase 9 | Pending |
+| PI-01 | Phase 9 | Complete |
+| PI-02 | Phase 9 | Complete |
+| PI-03 | Phase 9 | Complete |
+| ORCH-01 | Phase 9 | Complete |
+| ORCH-04 | Phase 9 | Complete |
 | UX-01 | Phase 10 | Pending |
 | UX-03 | Phase 10 | Pending |
 | UX-04 | Phase 10 | Pending |
