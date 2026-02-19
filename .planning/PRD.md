@@ -1,8 +1,8 @@
 # Kata Cloud: Product Requirements Document
 
 **Codename:** kata-cloud
-**Version:** 0.3
-**Date:** 2026-02-17
+**Version:** 0.4
+**Date:** 2026-02-19
 **Author:** Generated from competitive analysis, codebase exploration, SDK research, and MVP implementation progress
 
 ---
@@ -386,9 +386,9 @@ The orchestration layer is provider-agnostic: the Coordination Agent and Special
 
 ## 6. Core Workflows
 
-### 6.0 MVP Workflow (Current)
+### 6.0 MVP Workflow (v0.1 Foundation Shipped, v0.2 Closure Active)
 
-This is the workflow implemented in the current desktop MVP. It represents the core loop that all future workflow expansions build on.
+This is the workflow implemented in the shipped desktop foundation (v0.1.0). It represents the core loop that v0.2.0 is hardening and aligning to the design-spec target experience (three-column coordinator UX, visible agent deployment status, and provider-backed execution visibility).
 
 ```
 User                          Kata Cloud
@@ -420,13 +420,18 @@ User                          Kata Cloud
   |-- Merge PR ----------------->|
 ```
 
-Key characteristics of the MVP workflow:
+Key characteristics of the shipped foundation workflow:
 - Space creation isolates work in a dedicated git branch and worktree
 - The Spec is a self-maintaining document that updates as agents work
 - The user can pause the Orchestrator at any time to manually edit the Spec
-- 6 Specialist Agent personas handle different aspects of implementation
+- Specialist task delegation is modeled and persisted; v0.2.0 expands this into explicit agent deployment visibility and wave-first UX
 - The Changes tab provides full diff inspection with selective staging
 - PR creation with auto-generated descriptions completes the cycle
+
+Current v0.2.0 closure focus (active):
+- Replace local draft-only orchestration terminal path with provider-backed generation in run execution
+- Integrate PI runtime mode through adapter boundaries with explicit rollback mode
+- Close UX gaps from `docs/design/specs/` (chat rendering, agent sidebar, wave grouping, permission flow, commit UX, markdown-first spec rendering)
 
 ### 6.1 Project Initialization (Future: Expanded Workflow)
 
@@ -536,9 +541,9 @@ Kata's PR output includes: agent-created branches in isolated worktrees; atomic 
 
 **CORE-01: Space Management.** Create Spaces from prompts with isolated git branches and worktrees. Space metadata with descriptions, tags, and custom properties. Activity logging. File organization with change detection. **Status: ✅ Implemented.**
 
-**CORE-02: Spec-Driven Workflow Engine / Orchestrator.** Orchestrator run lifecycle with prompt-triggered execution. Spec draft synthesis from orchestrator runs. Specialist task delegation and execution timeline. Self-maintaining Spec that updates as agents work. The full vision (milestones, requirements traceability with ID assignment, phase lifecycle, wave-based dependency analysis, verification loops) is the long-term target. **Status: ✅ Implemented (MVP scope).**
+**CORE-02: Spec-Driven Workflow Engine / Orchestrator.** Orchestrator run lifecycle with prompt-triggered execution. Spec draft synthesis from orchestrator runs. Specialist task delegation and execution timeline. Self-maintaining Spec that updates as agents work. The full vision (milestones, requirements traceability with ID assignment, phase lifecycle, wave-based dependency analysis, verification loops) is the long-term target. **Status: ✅ Foundation implemented (v0.1.0), 🔄 v0.2.0 closure in progress (provider-backed generation + wave UX parity).**
 
-**CORE-03: Agent Orchestration.** Coordination Agent that analyzes codebase, drafts Spec, generates tasks. 6 Specialist Agent personas (Investigate, Implement, Verify, Critique, Debug, Code Review). Task creation, assignment, and status tracking. Parallel execution. **Status: ✅ Implemented (MVP scope).**
+**CORE-03: Agent Orchestration.** Coordination Agent that analyzes codebase, drafts Spec, generates tasks. 6 Specialist Agent personas (Investigate, Implement, Verify, Critique, Debug, Code Review). Task creation, assignment, and status tracking. Parallel execution. **Status: ✅ Foundation implemented (v0.1.0), 🔄 v0.2.0 UX/observability closure in progress.**
 
 **CORE-04: Git Worktree Management.** Automatic worktree creation per Space. Branch naming and lifecycle management. Worktree cleanup after merge. Support for monorepos and submodules. **Status: ✅ Implemented.**
 
@@ -548,9 +553,9 @@ Kata's PR output includes: agent-created branches in isolated worktrees; atomic 
 
 **CORE-07: Integrated Git Client (Changes Tab).** Visual diff viewer. Staging area management. One-click PR creation. Branch management. **Status: ✅ Implemented.**
 
-**CORE-08: Permission System.** Explore (read-only), Ask (approval), Execute (auto-approve) modes. Per-project permission configuration. Dangerous command blocking. Customizable allowlists/blocklists. **Status: Future.**
+**CORE-08: Permission System.** Explore (read-only), Ask (approval), Execute (auto-approve) modes. Per-project permission configuration. Dangerous command blocking. Customizable allowlists/blocklists. **Status: 🔄 Planned for v0.2.0 completion flow parity (permission dialog + escalation decisions).**
 
-**CORE-09: Model Routing.** Multi-model provider support: Anthropic (Opus 4.5, Sonnet 4.5, Haiku) and OpenAI (GPT 5.2, Codex). Quality/balanced/budget profiles. Per-task-type model assignment. API key and subscription authentication for both providers. **Status: 🔄 In progress (provider runtime task).**
+**CORE-09: Model Routing.** Multi-model provider support: Anthropic (Opus 4.5, Sonnet 4.5, Haiku) and OpenAI (GPT 5.2, Codex). Quality/balanced/budget profiles. Per-task-type model assignment. API key and subscription authentication for both providers. **Status: 🔄 In progress (v0.2.0 Phase 09: provider-backed run wiring + PI mode integration + ESM consolidation).**
 
 **CORE-10: CLI Interface.** All workflow operations available via `kata-cloud` command. Headless operation mode. JSON output for scripting. CI/CD pipeline integration. **Status: Future (Phase 2).**
 
@@ -771,7 +776,7 @@ The terminal has become the primary surface for agentic coding. Claude Code, Cod
 
 ## 13. Development Roadmap
 
-### Phase 1: Foundation (Largely Complete)
+### Phase 1: Foundation (Shipped as v0.1.0)
 
 **Objective:** Core desktop MVP with spec-driven workflow.
 
@@ -785,13 +790,29 @@ The terminal has become the primary surface for agentic coding. Claude Code, Cod
 - Quality gates: linting, coverage enforcement (80/70/80/80), CI on PRs, Dependabot
 - MCP client support
 
-**Remaining (in progress):**
+**Remaining (moved to v0.2.0 closure):**
 - In-app browser preview for localhost development
 - Context Engine adapter with initial filesystem provider
 - Model provider runtime with Anthropic + OpenAI authentication
 
 **Design artifacts produced:**
 - 7 UI specification documents (`docs/design/specs/`) derived from 29 design mocks, covering: Create Space Flow, Coordinator Session, Spec & Notes Panel, Build Session, Changes & Git, Wave Execution, Completion & Verification. Each spec includes component inventories, state matrices, data dependency maps, interaction tables, and implementation gap analysis against the current codebase.
+
+### Current Milestone Snapshot: v0.2.0 Desktop MVP Closure (Active)
+
+**Objective:** Close the gap between v0.1 foundation and the intended MVP product experience.
+
+**Planned global phases (active roadmap):**
+- **Phase 09: Runtime Integration and ESM Consolidation** (planned with 3 executable plans)
+- **Phase 10: Coordinator Shell and Sidebar Semantics**
+- **Phase 11: Agent Deployment, Waves, and Tab Expansion**
+- **Phase 12: Completion Workflow and Safety UX**
+- **Phase 13: MVP Verification and Release Handoff**
+
+**Phase 09 emphasis (planned):**
+- Provider-backed orchestrator execution path (replace local draft-only terminal path)
+- PI adapter-mode integration with explicit runtime switch and fallback safety
+- Desktop module-path cleanup to ESM-first execution path
 
 ### Phase 2: Expanded Workflow + CLI
 
