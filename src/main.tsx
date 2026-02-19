@@ -81,7 +81,8 @@ function readLocalFallbackState(): AppState {
     }
 
     return normalizeAppState(JSON.parse(raw));
-  } catch {
+  } catch (error) {
+    console.warn("Failed to read local fallback state; starting fresh.", error);
     return createInitialAppState();
   }
 }
@@ -89,8 +90,8 @@ function readLocalFallbackState(): AppState {
 function writeLocalFallbackState(nextState: AppState): void {
   try {
     window.localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(nextState));
-  } catch {
-    // Keep runtime resilient when storage quota is unavailable.
+  } catch (error) {
+    console.warn("Failed to write local fallback state.", error);
   }
 }
 
@@ -280,7 +281,8 @@ function App(): React.JSX.Element {
             setState(normalizeAppState(nextState));
           }
         });
-      } catch {
+      } catch (error) {
+        console.error("Failed to load state from shell; falling back to local storage.", error);
         if (!cancelled) {
           setState(readLocalFallbackState());
           setIsBootstrapping(false);
@@ -310,7 +312,8 @@ function App(): React.JSX.Element {
       } else {
         writeLocalFallbackState(normalized);
       }
-    } catch {
+    } catch (error) {
+      console.error("Failed to persist state via shell; writing to local storage.", error);
       writeLocalFallbackState(normalized);
     } finally {
       setIsSaving(false);
