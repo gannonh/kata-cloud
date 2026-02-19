@@ -25,7 +25,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:orchestrator-context": "vitest run src/shared/orchestrator-run-lifecycle.test.ts src/shared/orchestrator-run-view-model.test.ts src/main/persisted-state-store.node.test.ts src/context/context-adapter.node.test.ts"
+    "test:orchestrator-context": "vitest run --reporter=verbose src/shared/orchestrator-run-lifecycle.test.ts src/shared/orchestrator-run-view-model.test.ts src/main/persisted-state-store.node.test.ts src/context/context-adapter.node.test.ts"
   },
   "dependencies": {
     "react": "^19.0.0",
