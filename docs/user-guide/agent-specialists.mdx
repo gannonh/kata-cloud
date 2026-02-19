@@ -1,0 +1,151 @@
+---
+title: "Specialist Agents"
+description: "The six agent personas that execute work in Kata Cloud, each designed for a specific type of task."
+---
+
+## Overview
+
+Kata Cloud uses a **team of specialized agents** rather than a single general-purpose model. This mirrors how engineering teams actually work: different people (and agents) excel at different tasks. The Coordination Agent decides which specialist to use for each task based on the Spec.
+
+Every specialist agent runs in its own context window and can work in parallel with other specialists.
+
+## The Six Specialists
+
+### Investigate
+
+**Purpose**: Explore the codebase, assess feasibility, and gather context before implementation.
+
+**When it's used**:
+- Before implementation tasks, to understand existing patterns
+- When the Orchestrator needs to assess the impact of a change
+- To answer questions like "how does the existing auth system work?"
+
+**What it produces**:
+- A summary of relevant code structure
+- Notes on constraints and dependencies
+- Recommendations for implementation approach
+
+---
+
+### Implement
+
+**Purpose**: Execute implementation plans — write, modify, and delete code.
+
+**When it's used**:
+- After investigation tasks have gathered sufficient context
+- To build new features, refactor existing code, or fix bugs
+- For any task that requires writing production code
+
+**What it produces**:
+- Modified or new source files
+- Updated configuration files
+- Code that follows the patterns discovered during investigation
+
+---
+
+### Verify
+
+**Purpose**: Check that implementations match specifications and that code is correct.
+
+**When it's used**:
+- After implementation tasks complete
+- To confirm that the Spec's requirements are actually met
+- To run existing tests and flag failures
+
+**What it produces**:
+- A verification report against the Spec's acceptance criteria
+- Test results (pass/fail)
+- A list of gaps between what was implemented and what was required
+
+---
+
+### Critique
+
+**Purpose**: Review specifications for feasibility, completeness, and potential issues — before implementation begins.
+
+**When it's used**:
+- After a Spec draft is generated but before agents start executing
+- To catch ambiguous requirements, missing edge cases, or infeasible designs
+- As a quality gate on the Spec itself (not the code)
+
+**What it produces**:
+- Identified risks and gaps in the Spec
+- Questions or clarifications for the human developer
+- Suggested refinements to the Spec
+
+---
+
+### Debug
+
+**Purpose**: Analyze failures, identify root causes, and fix issues.
+
+**When it's used**:
+- When Verify agents report failures
+- When implementation agents produce code that doesn't work
+- When existing tests break after a change
+
+**What it produces**:
+- Root cause analysis of the failure
+- A fix for the identified problem
+- Notes on why the failure occurred
+
+---
+
+### Code Review
+
+**Purpose**: Automated code review with categorized feedback on quality, style, and correctness.
+
+**When it's used**:
+- After implementation tasks, as a quality gate before PR creation
+- To surface issues that would block a human code review
+- To enforce project conventions and best practices
+
+**What it produces**:
+- Categorized review feedback (errors, warnings, suggestions)
+- Severity-rated issues (blocking, major, minor, style)
+- Inline annotations for specific code sections
+
+---
+
+## Task Assignment
+
+The Coordination Agent assigns tasks to specialists based on:
+
+1. **Task type**: `implement`, `verify`, or `debug` task types map directly to specialist personas
+2. **Spec context**: The content of each task block in the Spec guides the specialist choice
+3. **Dependencies**: Tasks that depend on each other run in sequence; independent tasks run in parallel
+
+## Parallel Execution
+
+When multiple tasks have no interdependencies, specialists run simultaneously:
+
+```
+Wave 1: [Investigate] → analyzes codebase
+Wave 2: [Implement A] + [Implement B] → run in parallel
+Wave 3: [Verify]      → checks both implementations
+Wave 4: [Code Review] → reviews combined result
+```
+
+This significantly reduces wall-clock time for complex features.
+
+## Custom Specialists
+
+You can create **custom specialist personas** in Settings to tailor agents to your workflow:
+
+- Define the agent's name and purpose
+- Set the system prompt that shapes its behavior
+- Assign it to specific task types
+
+Custom specialists follow the same execution model as built-in ones.
+
+## Model Assignment
+
+Different task types can be routed to different models:
+
+| Task Type | Recommended Model |
+|---|---|
+| Complex architecture (Investigate, Critique) | Opus 4.5 |
+| Implementation, debugging | Sonnet 4.5 |
+| Verification, code review | GPT 5.2 or Haiku |
+
+Configure model routing in **Settings → Model Profiles**.

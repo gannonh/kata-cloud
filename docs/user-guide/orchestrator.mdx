@@ -1,0 +1,138 @@
+---
+title: "The Orchestrator"
+description: "How Kata Cloud's Coordination Agent analyzes your codebase, drafts a Spec, and dispatches Specialist Agents."
+---
+
+## Overview
+
+The **Orchestrator** is the control center of every Kata Cloud workflow. It coordinates a team of AI agents — not just a single model call — to understand your codebase, plan the work, execute it in parallel, and produce a pull request.
+
+The Orchestrator panel (center column) shows you:
+- The **current run status** and activity log
+- The **Spec draft** as it's being generated
+- **Delegated task** assignments and statuses
+
+## The Coordination Agent
+
+When you submit a prompt, the **Coordination Agent** runs first. It:
+
+1. **Analyzes your codebase** using the Context Engine to build a deep understanding of your project structure, dependencies, and conventions
+2. **Drafts the Spec** — a structured document covering goals, tasks to complete, assumptions, and decisions
+3. **Generates tasks** for Specialist Agents based on the Spec content
+4. **Delegates tasks** to the appropriate specialists and tracks their execution
+
+The Coordination Agent stays lean — it orchestrates rather than implements. Implementation, verification, and review are handled by Specialist Agents running in parallel.
+
+## Run Lifecycle
+
+Each Orchestrator session is called a **Run**. Runs follow this lifecycle:
+
+```
+queued → running → completed
+                └→ failed
+```
+
+| Status | Description |
+|---|---|
+| `queued` | The run is waiting to start |
+| `running` | Agents are actively executing |
+| `completed` | All tasks finished successfully |
+| `failed` | One or more tasks encountered an error |
+
+### Run History
+
+Every run is recorded in the **Orchestrator panel**. You can:
+- Browse previous runs and their outcomes
+- Inspect the Spec draft generated for each run
+- See which tasks were delegated and their final statuses
+
+## Submitting a Prompt
+
+The quality of the Orchestrator's output depends on the clarity of your prompt. Good prompts include:
+
+- **What** you want to build or change
+- **Why** — the problem being solved
+- **Constraints** — tech stack, patterns to follow, things to avoid
+
+**Example prompts:**
+
+```
+Add email/password authentication to the Express API.
+Use JWT tokens, bcrypt for hashing, and store users in the existing PostgreSQL database.
+Follow the existing middleware pattern in src/middleware/.
+```
+
+```
+Refactor the ProductList component to use React Query for data fetching.
+Remove the manual loading/error state management.
+Keep the existing UI unchanged.
+```
+
+## Reviewing and Editing the Spec Draft
+
+After the Coordination Agent runs, it presents a **Spec draft** in the right panel. Before agents start executing, you have full control:
+
+### Accept the Draft
+
+Click **Apply Draft** to accept the Spec as-is and start agent execution. The Orchestrator will begin delegating tasks to Specialist Agents immediately.
+
+### Edit Before Executing
+
+You can edit the Spec draft directly in the Spec panel before applying it:
+- Adjust the scope of work
+- Add technical constraints
+- Remove tasks you want to handle manually
+- Clarify ambiguous requirements
+
+### Stop and Redirect
+
+Once execution begins, click **Stop** at any time to pause. Edit the Spec, then resume — or start a new run with a revised prompt.
+
+<Tip>
+Pausing to review the Spec draft before applying is especially valuable on large or unfamiliar codebases. The Coordination Agent's draft shows you exactly what it intends to do, and you can catch misunderstandings before agents write any code.
+</Tip>
+
+## Task Delegation
+
+After the Spec is applied, the Coordination Agent creates **tasks** and delegates them to Specialist Agents. Each task has:
+
+| Field | Description |
+|---|---|
+| **Type** | The kind of work: `implement`, `verify`, or `debug` |
+| **Specialist** | Which agent persona handles it |
+| **Status** | `queued → delegating → delegated → running → completed` |
+| **Timeline** | Timestamped history of every status change |
+
+Tasks can run **in parallel** when there are no interdependencies — multiple Specialist Agents execute simultaneously.
+
+## Parallel Execution
+
+Kata Cloud maximizes throughput by running independent tasks concurrently. The Orchestrator:
+
+1. Analyzes task dependencies from the Spec
+2. Groups independent tasks into **waves**
+3. Launches all agents in a wave simultaneously
+4. Waits for each wave to complete before starting the next
+
+This mirrors how engineering teams work: a frontend agent and backend agent can implement their respective pieces at the same time, then a verification agent checks the combined result.
+
+## Specialist Agents
+
+See [Specialist Agents](/user-guide/agent-specialists) for a full breakdown of each agent persona and what they do.
+
+## Troubleshooting
+
+### The Orchestrator failed
+
+Check the error message in the run detail view. Common causes:
+- **API key not configured** — ensure your model provider credentials are set in Settings
+- **Context too large** — the codebase may exceed the model's context window; try scoping the prompt more narrowly
+- **Rate limits** — reduce concurrent tasks or wait before retrying
+
+### The Spec draft doesn't look right
+
+Edit the Spec directly before applying. The Coordination Agent works from available context — if it missed something, add it to the Spec manually and apply.
+
+### A task got stuck in `running`
+
+Stop the run, check the partial changes in the Changes tab, and either resume with a new run or handle the remaining work manually.

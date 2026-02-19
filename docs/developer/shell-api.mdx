@@ -1,0 +1,315 @@
+---
+title: "Shell API Reference"
+description: "The kataShell bridge API — every method the renderer can call on the main process."
+---
+
+## Overview
+
+The **Shell API** (`ShellApi`) is the contract between the Electron renderer (React app) and the main process (Node.js). It's exposed on `window.kataShell` by the preload bridge.
+
+The renderer **never** imports Electron APIs or Node.js modules directly. Every system operation goes through `kataShell`.
+
+The API is defined in `src/shared/shell-api.ts` and implemented in `src/preload/index.ts`.
+
+## Accessing the API
+
+```typescript
+// In renderer code
+const shell = window.kataShell;
+
+// Type-safe access
+if (shell) {
+  const state = await shell.getState();
+}
+```
+
+## State Management
+
+### `getState()`
+
+Returns the current `AppState` from the persisted state store.
+
+```typescript
+getState: () => Promise<AppState>
+```
+
+Called once on renderer mount to initialize React state.
+
+### `saveState(nextState)`
+
+Persists a new `AppState` to disk and broadcasts the change to all windows.
+
+```typescript
+saveState: (nextState: AppState) => Promise<AppState>
+```
+
+Returns the saved state (after normalization). The main process validates the incoming state through `normalizeAppState()` before persisting.
+
+### `subscribeState(listener)`
+
+Registers a listener that fires whenever the state changes (from any window or main process action).
+
+```typescript
+subscribeState: (listener: (nextState: AppState) => void) => () => void
+```
+
+Returns an **unsubscribe function**. Call it in a `useEffect` cleanup to prevent memory leaks:
+
+```typescript
+useEffect(() => {
+  const unsubscribe = window.kataShell?.subscribeState((newState) => {
+    setAppState(newState);
+  });
+  return () => unsubscribe?.();
+}, []);
+```
+
+## Git Lifecycle
+
+### `initializeSpaceGit(request)`
+
+Creates a git worktree and branch for a new Space.
+
+```typescript
+initializeSpaceGit: (request: SpaceGitLifecycleRequest) => Promise<SpaceGitLifecycleStatus>
+```
+
+**Request:**
+```typescript
+interface SpaceGitLifecycleRequest {
+  spaceId: string;
+  rootPath: string;   // Local filesystem path for the worktree
+  branchName: string;
+}
+```
+
+**Response:**
+```typescript
+type SpaceGitLifecycleStatus =
+  | { phase: "ready" }
+  | { phase: "initializing" }
+  | { phase: "switching" }
+  | { phase: "error"; message: string };
+```
+
+### `switchSpaceGit(request)`
+
+Switches the active Space, loading the worktree and updating git status.
+
+```typescript
+switchSpaceGit: (request: SpaceGitLifecycleRequest) => Promise<SpaceGitLifecycleStatus>
+```
+
+Same request/response types as `initializeSpaceGit`.
+
+## Git Changes
+
+### `getSpaceChanges(request)`
+
+Returns all changed files in a Space's worktree (staged and unstaged).
+
+```typescript
+getSpaceChanges: (request: SpaceGitChangesRequest) => Promise<SpaceGitChangesSnapshot>
+```
+
+**Request:**
+```typescript
+interface SpaceGitChangesRequest {
+  spaceId: string;
+  rootPath: string;
+}
+```
+
+**Response:**
+```typescript
+interface SpaceGitChangesSnapshot {
+  files: SpaceGitFileChange[];
+  hasChanges: boolean;
+}
+
+interface SpaceGitFileChange {
+  path: string;
+  status: "modified" | "added" | "deleted" | "renamed" | "untracked";
+  staged: boolean;
+}
+```
+
+### `getSpaceFileDiff(request)`
+
+Returns the diff for a single file.
+
+```typescript
+getSpaceFileDiff: (request: SpaceGitFileDiffRequest) => Promise<SpaceGitFileDiffResult>
+```
+
+**Request:**
+```typescript
+interface SpaceGitFileDiffRequest {
+  spaceId: string;
+  rootPath: string;
+  filePath: string;
+  staged: boolean;
+}
+```
+
+### `stageSpaceFile(request)` / `unstageSpaceFile(request)`
+
+Stage or unstage a single file in the Space's worktree.
+
+```typescript
+stageSpaceFile: (request: SpaceGitFileRequest) => Promise<SpaceGitChangesSnapshot>
+unstageSpaceFile: (request: SpaceGitFileRequest) => Promise<SpaceGitChangesSnapshot>
+```
+
+Both return the updated `SpaceGitChangesSnapshot` after the operation.
+
+## GitHub Workflow
+
+### `createGitHubSession(request)`
+
+Initiates GitHub OAuth authentication.
+
+```typescript
+createGitHubSession: (request: GitHubSessionRequest) => Promise<GitHubSessionInfo>
+```
+
+**Response:**
+```typescript
+interface GitHubSessionInfo {
+  sessionId: string;
+  accessToken: string;
+  login: string;  // GitHub username
+}
+```
+
+### `clearGitHubSession(sessionId)`
+
+Revokes and removes a GitHub authentication session.
+
+```typescript
+clearGitHubSession: (sessionId: string) => Promise<void>
+```
+
+### `generatePullRequestDraft(request)`
+
+Uses an AI agent to draft a PR title and description from the Space's Spec and changes.
+
+```typescript
+generatePullRequestDraft: (request: SpaceGitPullRequestDraftRequest) => Promise<SpaceGitPullRequestDraftResult>
+```
+
+**Request:**
+```typescript
+interface SpaceGitPullRequestDraftRequest {
+  spaceId: string;
+  sessionId: string;       // GitHub session ID
+  specContent: string;     // Current Spec markdown
+  diffSummary: string;     // Summary of staged changes
+}
+```
+
+**Response:**
+```typescript
+interface SpaceGitPullRequestDraftResult {
+  title: string;
+  body: string;
+}
+```
+
+### `createPullRequest(request)`
+
+Commits staged changes, pushes the branch, and opens a GitHub pull request.
+
+```typescript
+createPullRequest: (request: SpaceGitCreatePullRequestRequest) => Promise<SpaceGitCreatePullRequestResult>
+```
+
+**Request:**
+```typescript
+interface SpaceGitCreatePullRequestRequest {
+  spaceId: string;
+  sessionId: string;     // GitHub session ID
+  rootPath: string;
+  branchName: string;
+  title: string;
+  body: string;
+  repoUrl: string;       // GitHub repository URL
+}
+```
+
+**Response:**
+```typescript
+interface SpaceGitCreatePullRequestResult {
+  prUrl: string;          // URL of the created PR
+  prNumber: number;
+}
+```
+
+## System
+
+### `openExternalUrl(url)`
+
+Opens a URL in the system's default browser.
+
+```typescript
+openExternalUrl: (url: string) => Promise<void>
+```
+
+Use this for any external link — the renderer cannot open browser tabs directly.
+
+## IPC Channel Reference
+
+All channels follow the pattern `kata-cloud/<domain>:<action>`:
+
+| Channel | Method |
+|---|---|
+| `kata-cloud/state:get` | `getState()` |
+| `kata-cloud/state:save` | `saveState()` |
+| `kata-cloud/state:changed` | `subscribeState()` (push event) |
+| `kata-cloud/space-git:initialize` | `initializeSpaceGit()` |
+| `kata-cloud/space-git:switch` | `switchSpaceGit()` |
+| `kata-cloud/space-git:changes` | `getSpaceChanges()` |
+| `kata-cloud/space-git:file-diff` | `getSpaceFileDiff()` |
+| `kata-cloud/space-git:file-stage` | `stageSpaceFile()` |
+| `kata-cloud/space-git:file-unstage` | `unstageSpaceFile()` |
+| `kata-cloud/github:session-create` | `createGitHubSession()` |
+| `kata-cloud/github:session-clear` | `clearGitHubSession()` |
+| `kata-cloud/github:pr-draft` | `generatePullRequestDraft()` |
+| `kata-cloud/github:pr-create` | `createPullRequest()` |
+| `kata-cloud/system:open-external-url` | `openExternalUrl()` |
+
+## Adding New API Methods
+
+To add a new method to the Shell API:
+
+1. **Define the channel** in `src/shared/shell-api.ts`:
+   ```typescript
+   export const IPC_CHANNELS = {
+     // ...existing
+     myNewMethod: "kata-cloud/domain:action",
+   };
+   ```
+
+2. **Add request/response types** to `src/shared/shell-api.ts`
+
+3. **Add the method signature** to the `ShellApi` interface in `src/shared/shell-api.ts`
+
+4. **Register the IPC handler** in `src/main/index.ts`:
+   ```typescript
+   ipcMain.handle(IPC_CHANNELS.myNewMethod, async (_, request: MyRequest) => {
+     return await myDomainService.doThing(request);
+   });
+   ```
+
+5. **Expose the method** in `src/preload/index.ts`:
+   ```typescript
+   contextBridge.exposeInMainWorld("kataShell", {
+     // ...existing
+     myNewMethod: (request) => ipcRenderer.invoke(IPC_CHANNELS.myNewMethod, request),
+   });
+   ```
+
+6. **Call it from the renderer**:
+   ```typescript
+   const result = await window.kataShell?.myNewMethod(request);
+   ```

@@ -1,0 +1,219 @@
+---
+title: "Testing"
+description: "Unit tests, E2E tests, coverage requirements, and UAT policy for kata-cloud."
+---
+
+## Testing Stack
+
+| Tool | Purpose |
+|---|---|
+| **Vitest** | Unit and integration test runner |
+| **Testing Library** | React component testing utilities |
+| **jsdom** | DOM environment for renderer tests |
+| **Playwright** | End-to-end Electron app tests |
+
+## Running Tests
+
+### Unit Tests
+
+```bash
+# Run once
+pnpm test
+
+# Watch mode
+pnpm run test:watch
+
+# Filter by file
+pnpm test -- state
+pnpm test -- git
+
+# Filter by test name
+pnpm test -- -t "normalizeAppState"
+```
+
+### E2E Tests
+
+```bash
+# Full suite (smoke + UAT + all scenarios)
+pnpm run e2e
+
+# Fast baseline only
+pnpm run e2e:electron:smoke
+
+# UAT verification scenarios
+pnpm run e2e:electron:uat
+
+# All Electron coverage
+pnpm run e2e:electron:full
+```
+
+## Coverage Requirements
+
+Coverage is enforced by `vitest.config.ts`:
+
+| Metric | Threshold |
+|---|---|
+| Statements | 80% |
+| Functions | 80% |
+| Lines | 80% |
+| Branches | 70% |
+
+Coverage is measured on the renderer and shared code. The main process (`src/main/**`) and preload (`src/preload/**`) are **excluded from coverage** because they depend on Electron APIs that aren't available in the test environment.
+
+## Unit Test Patterns
+
+### Test File Location
+
+Tests are **colocated** with the source code they test:
+
+```
+src/git/changes.ts
+src/git/changes.test.ts       # colocated
+
+src/shared/state.ts
+src/shared/state.test.ts      # colocated
+
+packages/task-parser/src/parser.ts
+packages/task-parser/test/parser.test.ts
+```
+
+### Node-Only Tests
+
+If a test requires Node.js APIs (file system, process, etc.) that won't work in the jsdom environment, use the `.node.test.ts` suffix:
+
+```
+src/git/git-cli.node.test.ts  # runs in Node.js, not jsdom
+```
+
+### Test Environment
+
+Vitest uses **jsdom** by default (set in `vitest.config.ts`). The `src/test/setup.ts` file runs before all tests and sets up:
+- Testing Library custom matchers (`@testing-library/jest-dom`)
+- Any global mocks needed for the test environment
+
+### Writing Unit Tests
+
+Follow behavior-driven test names — describe what the code does, not how it does it:
+
+```typescript
+// Good — describes behavior
+describe("normalizeAppState", () => {
+  it("returns initial state when input is null", () => { ... });
+  it("drops SpaceRecords with missing id field", () => { ... });
+  it("preserves valid spaces from the input", () => { ... });
+});
+
+// Avoid — describes implementation
+describe("normalizeAppState", () => {
+  it("calls isSpaceRecord on each space", () => { ... });
+});
+```
+
+### React Component Tests
+
+Use Testing Library for component tests. Prefer user-visible assertions:
+
+```typescript
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+test("clicking Create Space opens the space form", async () => {
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: "New Space" }));
+
+  expect(screen.getByText("Create Space")).toBeInTheDocument();
+  expect(screen.getByLabelText("Space name")).toBeInTheDocument();
+});
+```
+
+### Mocking `window.kataShell`
+
+The renderer depends on `window.kataShell`. In tests, mock it before rendering:
+
+```typescript
+beforeEach(() => {
+  Object.defineProperty(window, "kataShell", {
+    value: {
+      getState: vi.fn().mockResolvedValue(createInitialAppState()),
+      saveState: vi.fn().mockImplementation((s) => Promise.resolve(s)),
+      subscribeState: vi.fn().mockReturnValue(() => {}),
+    },
+    writable: true,
+  });
+});
+```
+
+## E2E Tests
+
+E2E tests use **Playwright** to drive the real Electron app. They verify the complete integration — from user actions in the renderer through IPC to the main process and back.
+
+### Test Tags
+
+Tests are organized by tag:
+
+| Tag | Suite | When it runs |
+|---|---|---|
+| `@smoke` | `e2e:electron:smoke` | Every pull request |
+| `@uat` | `e2e:electron:uat` | Manual UAT sessions |
+| Full | `e2e:electron:full` | Main branch pushes, nightly |
+
+### Writing E2E Tests
+
+E2E tests live in `e2e/` (or colocated with features, following the project convention). They use Playwright's Electron driver:
+
+```typescript
+import { test, expect, _electron as electron } from "@playwright/test";
+
+test("creates a new space from a prompt @smoke", async () => {
+  const app = await electron.launch({ args: ["dist/main/index.js"] });
+  const page = await app.firstWindow();
+
+  await page.getByPlaceholder("Describe what you want to build").fill(
+    "Add user authentication"
+  );
+  await page.getByRole("button", { name: "Create Space" }).click();
+
+  await expect(page.getByText("Getting Started Space")).toBeVisible();
+  await app.close();
+});
+```
+
+### UAT to E2E Policy
+
+Every manual UAT session must be followed by Playwright coverage:
+
+1. For each manual UAT scenario that passes or finds a regression, add/update a Playwright scenario
+2. Prefer shipping E2E coverage in the same PR as the fix
+3. If the scope is too large, open a follow-up issue before merge and link it in the PR
+4. Keep artifacts in `output/playwright/` for screenshots and debugging evidence
+
+## CI Policy
+
+| Trigger | Suite |
+|---|---|
+| Pull request | `e2e:electron:smoke` |
+| Push to `main` | `e2e:electron:full` |
+| Nightly schedule | `e2e:electron:full` |
+
+## Repository Guardrails
+
+```bash
+pnpm run repo:guardrails
+```
+
+Checks repository hygiene — runs before PR merge. Includes checks for:
+- Missing test files for new source files
+- Configuration consistency
+- Build artifact cleanliness
+
+## Before Opening a PR
+
+Run the full local quality gate:
+
+```bash
+pnpm test && pnpm run desktop:typecheck
+```
+
+Both must pass with no errors before the PR is ready for review.

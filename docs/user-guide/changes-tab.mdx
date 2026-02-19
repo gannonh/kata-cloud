@@ -1,0 +1,125 @@
+---
+title: "Changes Tab"
+description: "Inspect diffs, stage files, and create pull requests from agent-generated code."
+---
+
+## Overview
+
+The **Changes tab** is where you review everything agents produced and prepare it for merge. It's a built-in git client that shows you:
+
+- Every file modified, added, or deleted by agents
+- Side-by-side diffs for each changed file
+- Staged vs. unstaged status
+- Tools to create a GitHub pull request
+
+Navigate to the Changes tab by clicking **Changes** in the top navigation bar.
+
+## File List
+
+The left panel shows all changed files in the current Space, grouped by status:
+
+| Status | Description |
+|---|---|
+| **Modified** | Files that existed and were changed |
+| **Added** | New files created by agents |
+| **Deleted** | Files removed by agents |
+| **Staged** | Files queued for the PR |
+| **Unstaged** | Files with changes not yet included |
+
+Click any file to open its diff in the right panel.
+
+## Diff Viewer
+
+The diff viewer shows a **side-by-side comparison** of the original and modified versions of each file:
+
+- **Left side**: the original file (before agent changes)
+- **Right side**: the modified file (after agent changes)
+- Additions are highlighted in green, deletions in red
+- Unchanged context lines are shown in gray
+
+The diff viewer supports **syntax highlighting** for 20+ programming languages using CodeMirror.
+
+### Navigating Large Diffs
+
+For files with many changes:
+- Use the scroll bar to navigate
+- Changed hunks are visually separated
+- The file header shows the total number of additions and deletions
+
+## Staging Files
+
+Before creating a PR, select which files to include by **staging** them:
+
+### Stage a File
+Click the **+** icon next to any unstaged file to stage it.
+
+### Unstage a File
+Click the **−** icon next to any staged file to remove it from the staging area.
+
+### Stage All / Unstage All
+Use the **Stage All** and **Unstage All** buttons at the top of the file list to quickly manage all files.
+
+<Note>
+Staging in Kata Cloud mirrors `git add` / `git restore --staged`. Only staged files will be included in the pull request.
+</Note>
+
+## Creating a Pull Request
+
+Once you've staged the files you want:
+
+1. Click **Create PR** in the Changes tab toolbar
+2. Kata Cloud opens the **PR workflow panel**
+
+### GitHub Authentication
+
+The first time you create a PR, you'll need to authenticate with GitHub:
+1. Click **Connect GitHub**
+2. Follow the OAuth flow in your browser
+3. Authorize Kata Cloud to access your repositories
+
+### PR Description
+
+Kata Cloud can **auto-generate a comprehensive PR description** based on:
+- The Spec content (goals, tasks, decisions)
+- The diff of changed files
+- The Orchestrator run history
+
+Click **Generate Description** to let an agent write the PR description. You can edit the generated text before submitting.
+
+### Submitting the PR
+
+Review the title and description, then click **Submit PR**. Kata Cloud:
+1. Creates a commit with your staged changes
+2. Pushes the Space's branch to the remote repository
+3. Opens a GitHub pull request
+4. Returns the PR URL so you can view it directly
+
+## Inspecting Agent Work
+
+### Understanding What Agents Changed
+
+Before merging, review each diff carefully:
+
+- Look for files you didn't expect agents to touch
+- Check that changes match what the Spec described
+- Verify that existing tests still make sense with the new code
+- Confirm that code style matches your project conventions
+
+### Agent Commit Messages
+
+Agents create commits with descriptive messages following conventional commit format:
+```
+feat(auth): add JWT token generation utility
+fix(middleware): handle expired tokens with 401 response
+test(auth): add unit tests for token utilities
+```
+
+## Tips
+
+**Review before staging**: Don't just stage everything at once. Read through the diffs to catch unexpected changes or mistakes.
+
+**Partial PRs are fine**: You can stage a subset of changed files and create a PR for just that part. Leave the rest staged for a follow-up run.
+
+**Use the Spec to verify**: Cross-reference the Changes tab against the Spec's task list. Every completed task in the Spec should have corresponding changes visible here.
+
+**Auto-generated PR descriptions save time**: The agent-generated description typically covers everything a human reviewer needs — what changed, why, and how to test it.

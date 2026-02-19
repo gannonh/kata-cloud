@@ -1,0 +1,89 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Kata Cloud",
+  "logo": {
+    "light": "/assets/logo-light.svg",
+    "dark": "/assets/logo-dark.svg"
+  },
+  "favicon": "/assets/favicon.svg",
+  "colors": {
+    "primary": "#6366f1",
+    "light": "#818cf8",
+    "dark": "#4f46e5",
+    "anchors": {
+      "from": "#6366f1",
+      "to": "#8b5cf6"
+    }
+  },
+  "topbar": {
+    "style": "default"
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/gannonh/kata-cloud"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Download",
+    "url": "https://kata.sh"
+  },
+  "tabs": [
+    {
+      "name": "User Guide",
+      "url": "user-guide"
+    },
+    {
+      "name": "Developer Docs",
+      "url": "developer"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/gannonh/kata-cloud"
+    },
+    {
+      "name": "Issues",
+      "icon": "circle-exclamation",
+      "url": "https://github.com/gannonh/kata-cloud/issues"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Overview",
+      "pages": [
+        "introduction"
+      ]
+    },
+    {
+      "group": "User Guide",
+      "pages": [
+        "user-guide/getting-started",
+        "user-guide/spaces",
+        "user-guide/orchestrator",
+        "user-guide/the-spec",
+        "user-guide/changes-tab",
+        "user-guide/agent-specialists",
+        "user-guide/github-integration",
+        "user-guide/mcp-support"
+      ]
+    },
+    {
+      "group": "Developer Docs",
+      "pages": [
+        "developer/architecture",
+        "developer/development-setup",
+        "developer/project-structure",
+        "developer/shell-api",
+        "developer/state-management",
+        "developer/testing",
+        "developer/contributing"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/gannonh/kata-cloud"
+  }
+}

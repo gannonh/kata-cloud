@@ -1,0 +1,131 @@
+---
+title: "The Spec"
+description: "The self-maintaining source of truth for every Kata Cloud project."
+---
+
+## What is the Spec?
+
+The **Spec** is a living document that serves as the single source of truth for everything happening in a Space. It captures:
+
+- **Project goals and requirements** — what you're trying to build
+- **Tasks to complete** — the work agents are executing or will execute
+- **Completed work** — what has been done and by which agents
+- **Assumptions, tradeoffs, and decisions** — the reasoning behind implementation choices
+
+Unlike a traditional PRD or design document that goes stale, the Spec **updates itself as agents work**. When an agent completes a task, the Spec reflects that. When requirements change, updates propagate to all active agents. The Spec is always accurate because it maintains itself.
+
+## The Spec Panel
+
+The Spec appears in the **right panel** of the Kata Cloud interface. It shows the current content with full markdown rendering, including:
+
+- Headings and structure
+- Task lists with completion checkboxes
+- Code blocks
+- Comment threads (annotations added by you or agents)
+
+### Autosave
+
+Every edit to the Spec is saved automatically. There's no explicit save step.
+
+## How the Spec Gets Created
+
+### Orchestrator Draft
+
+When you run the Orchestrator, the Coordination Agent analyzes your codebase and prompt, then generates a **Spec draft**. This draft appears in the Spec panel with a banner indicating it's a draft that hasn't been applied yet.
+
+The draft typically includes:
+- A summary of the goal
+- A list of proposed tasks (formatted as markdown task blocks)
+- Technical context the agent gathered
+- Assumptions made about scope or approach
+
+### Applying a Draft
+
+Click **Apply Draft** to merge the draft into the active Spec. Once applied:
+- The draft becomes the Spec (or is merged into an existing one)
+- The Orchestrator begins delegating tasks to Specialist Agents
+- The Spec updates as tasks complete
+
+### Manual Editing
+
+You can edit the Spec at any time — before, during, or after an Orchestrator run. The editor supports full markdown. Changes are picked up by agents on the next run.
+
+<Tip>
+Editing the Spec before applying a draft is the best way to course-correct the Orchestrator. If the Coordination Agent proposed tasks you don't want, remove them from the Spec before clicking Apply Draft.
+</Tip>
+
+## Task Blocks
+
+Tasks in the Spec are formatted as markdown checkboxes that the task parser recognizes:
+
+```markdown
+## Tasks
+
+- [ ] Investigate the existing auth middleware pattern
+- [ ] Implement JWT token generation in `src/auth/tokens.ts`
+- [ ] Add password hashing with bcrypt in `src/auth/password.ts`
+- [ ] Write unit tests for auth utilities
+- [ ] Update API route handlers to use the new middleware
+```
+
+When agents complete tasks, the Spec's checkboxes update:
+
+```markdown
+- [x] Investigate the existing auth middleware pattern ✓
+- [x] Implement JWT token generation in `src/auth/tokens.ts` ✓
+- [ ] Add password hashing with bcrypt (in progress)
+- [ ] Write unit tests for auth utilities
+- [ ] Update API route handlers
+```
+
+The task parser in `packages/task-parser/` extracts and tracks these blocks, providing the Orchestrator with real-time task status.
+
+## Comment Threads
+
+You can add **comment threads** to any section of the Spec to ask questions, flag concerns, or leave context for agents and collaborators. Comments appear as inline annotations and are preserved across Orchestrator runs.
+
+## Spec as Source of Truth
+
+The Spec's self-maintaining nature solves a fundamental problem in AI-assisted development: drift between what was planned and what was built.
+
+### Traditional workflow problems:
+- PRDs go stale immediately after agents start working
+- Nobody knows which tasks are actually done vs. still pending
+- Decisions made during implementation aren't captured anywhere
+- The next developer (or agent) starts without full context
+
+### With the Spec:
+- Tasks mark themselves complete as agents finish them
+- Implementation decisions are captured in the Spec by agents
+- The Spec always reflects the current state of the project
+- Any agent — current or future — starts with full context
+
+## Spec Best Practices
+
+**Be specific about constraints**: Agents interpret the Spec literally. If you have preferences about code style, file organization, or library choices, include them.
+
+```markdown
+## Constraints
+- Use the existing `src/middleware/` pattern for new middleware
+- Prefer named exports over default exports
+- Do not modify any existing test files
+```
+
+**Scope tasks clearly**: Vague tasks produce vague implementations. Break large tasks into concrete steps.
+
+```markdown
+## Tasks
+❌ "Set up authentication"
+✅ "Add POST /auth/login endpoint that validates email/password and returns a JWT"
+✅ "Add auth middleware that validates the Authorization header on protected routes"
+```
+
+**Use the Spec to pause and redirect**: If agents are heading in the wrong direction, stop the Orchestrator, edit the Spec to correct course, and restart.
+
+**Preserve decisions**: When an agent makes an implementation choice, leave a record in the Spec. The next Orchestrator run will have that context.
+
+```markdown
+## Decisions
+- Using `jsonwebtoken` library (already in package.json) rather than adding `jose`
+- Storing refresh tokens in httpOnly cookies for XSS protection
+```

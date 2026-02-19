@@ -1,0 +1,259 @@
+---
+title: "State Management"
+description: "AppState, persisted state store, validation, and the renderer state flow."
+---
+
+## Overview
+
+Kata Cloud uses a **single centralized state** (`AppState`) that persists to disk and synchronizes across all Electron windows. The state design prioritizes:
+
+- **Durability**: State is written to `~/.config/kata-cloud/kata-cloud-state.json` on every change
+- **Safety**: All incoming state passes through `normalizeAppState()` before use
+- **Simplicity**: No complex state library — just TypeScript types, IPC events, and React `useState`
+
+## AppState
+
+Defined in `src/shared/state.ts`:
+
+```typescript
+interface AppState {
+  version: number;
+  activeView: NavigationView;
+  activeSpaceId: string;
+  activeSessionId: string;
+  spaces: SpaceRecord[];
+  sessions: SessionRecord[];
+  orchestratorRuns: OrchestratorRunRecord[];
+  lastOpenedAt: string; // ISO 8601 timestamp
+}
+```
+
+### Navigation Views
+
+```typescript
+type NavigationView =
+  | "explorer"
+  | "orchestrator"
+  | "spec"
+  | "changes"
+  | "browser";
+```
+
+### SpaceRecord
+
+An isolated development environment:
+
+```typescript
+interface SpaceRecord {
+  id: string;
+  name: string;
+  rootPath: string;
+  description?: string;
+  tags?: string[];
+  repoUrl?: string;
+  contextProvider?: string;
+  gitStatus?: SpaceGitLifecycleStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### SessionRecord
+
+A named work context within a Space:
+
+```typescript
+interface SessionRecord {
+  id: string;
+  spaceId: string;
+  label: string;
+  contextProvider?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### OrchestratorRunRecord
+
+A single Orchestrator execution:
+
+```typescript
+interface OrchestratorRunRecord {
+  id: string;
+  spaceId: string;
+  sessionId: string;
+  prompt: string;
+  status: OrchestratorRunStatus;
+  statusTimeline: OrchestratorStatusTimelineEntry[];
+  contextSnippets: ContextSnippet[];
+  draft?: OrchestratorSpecDraft;
+  delegatedTasks: OrchestratorDelegatedTaskRecord[];
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+## State Validation
+
+### `normalizeAppState(raw)`
+
+The entry point for all state deserialization. Takes an unknown value and returns a valid `AppState`:
+
+```typescript
+function normalizeAppState(raw: unknown): AppState;
+```
+
+It:
+1. Validates the top-level structure using `isAppState()`
+2. Filters `spaces` using `isSpaceRecord()` — invalid records are dropped
+3. Filters `sessions` using `isSessionRecord()` — invalid records are dropped
+4. Filters `orchestratorRuns` using `isOrchestratorRunRecord()` — invalid records are dropped
+5. Falls back to `createInitialAppState()` if the whole state is corrupted
+
+### Type Guards
+
+Each domain type has a corresponding type guard:
+
+```typescript
+function isSpaceRecord(v: unknown): v is SpaceRecord
+function isSessionRecord(v: unknown): v is SessionRecord
+function isOrchestratorRunRecord(v: unknown): v is OrchestratorRunRecord
+function hasValidRunTimeline(run: unknown): boolean
+```
+
+Type guards check every required field and its expected type. They do not coerce values — missing or wrong-typed fields cause the guard to return `false` and the record to be dropped.
+
+### `createInitialAppState()`
+
+Returns a fresh, valid `AppState` with a "Getting Started Space" as a starter:
+
+```typescript
+function createInitialAppState(): AppState;
+```
+
+Used when:
+- The app runs for the first time (no persisted state file)
+- The persisted state is corrupted and cannot be recovered
+
+## Persisted State Store (Main Process)
+
+`PersistedStateStore` (in `src/main/`) manages the state file:
+
+```typescript
+class PersistedStateStore {
+  getState(): AppState
+  setState(nextState: AppState): AppState
+}
+```
+
+The state file location: `~/.config/kata-cloud/kata-cloud-state.json`
+
+On every `setState()` call:
+1. The new state is validated via `normalizeAppState()`
+2. Written to disk as JSON
+3. Broadcast to all Electron windows via `IPC_CHANNELS.stateChanged`
+
+## State Flow in the Renderer
+
+The renderer manages state in a React `useState` hook:
+
+```typescript
+// Simplified from src/main.tsx
+const [appState, setAppState] = useState<AppState>(createInitialAppState());
+
+// Initialize from persisted state
+useEffect(() => {
+  window.kataShell?.getState().then(setAppState);
+}, []);
+
+// Subscribe to changes from other windows or main process
+useEffect(() => {
+  const unsubscribe = window.kataShell?.subscribeState(setAppState);
+  return () => unsubscribe?.();
+}, []);
+
+// Write state changes back to disk
+const updateState = useCallback(async (nextState: AppState) => {
+  const saved = await window.kataShell?.saveState(nextState);
+  if (saved) setAppState(saved);
+}, []);
+```
+
+### Web Mode Fallback
+
+When `window.kataShell` is unavailable (browser/web mode):
+
+```typescript
+// Fallback read
+const raw = localStorage.getItem("kata-cloud-state");
+const state = raw ? normalizeAppState(JSON.parse(raw)) : createInitialAppState();
+
+// Fallback write
+localStorage.setItem("kata-cloud-state", JSON.stringify(nextState));
+```
+
+## Mutating State
+
+All state mutations follow the immutable update pattern. Since `AppState` is a plain TypeScript object, spread operators are used:
+
+```typescript
+// Add a Space
+const nextState: AppState = {
+  ...appState,
+  spaces: [...appState.spaces, newSpace],
+  activeSpaceId: newSpace.id,
+  updatedAt: new Date().toISOString(),
+};
+await updateState(nextState);
+```
+
+```typescript
+// Update a Space
+const nextState: AppState = {
+  ...appState,
+  spaces: appState.spaces.map((s) =>
+    s.id === spaceId ? { ...s, name: newName, updatedAt: now } : s
+  ),
+};
+await updateState(nextState);
+```
+
+```typescript
+// Delete a Space
+const nextState: AppState = {
+  ...appState,
+  spaces: appState.spaces.filter((s) => s.id !== spaceId),
+  sessions: appState.sessions.filter((s) => s.spaceId !== spaceId),
+  orchestratorRuns: appState.orchestratorRuns.filter((r) => r.spaceId !== spaceId),
+};
+await updateState(nextState);
+```
+
+## State Versioning
+
+The `version` field on `AppState` supports future migrations. When loading state from disk, the normalizer can check the version and apply migration logic before returning the state.
+
+Current version: `1`
+
+## Adding New State Fields
+
+1. **Add the field** to the relevant interface in `src/shared/state.ts`
+2. **Update the type guard** to validate the new field
+3. **Update `normalizeAppState()`** to handle missing fields from old state files (provide a default)
+4. **Update `createInitialAppState()`** to include the field with a default value
+
+Example — adding `color` to `SpaceRecord`:
+
+```typescript
+// types
+interface SpaceRecord {
+  // ...existing fields
+  color?: string;  // Optional, so old state without it is still valid
+}
+
+// type guard — no change needed (optional field)
+
+// normalizeAppState — no change needed (undefined is a valid color)
+
+// createInitialAppState — optionally set a default color
+```
