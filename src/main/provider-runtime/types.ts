@@ -1,4 +1,5 @@
 export type ModelProviderId = "anthropic" | "openai";
+export type ProviderRuntimeMode = "native" | "pi";
 
 export type ProviderAuthMode = "api_key" | "token_session";
 
@@ -64,6 +65,7 @@ export interface ProviderExecuteResult {
   model: string;
   authMode: ProviderAuthMode;
   text: string;
+  runtimeMode?: ProviderRuntimeMode;
 }
 
 export interface ProviderClientAuth {

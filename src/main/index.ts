@@ -20,7 +20,7 @@ import { createContextAdapter } from "../context/context-adapter.js";
 import { FilesystemContextProvider } from "../context/providers/filesystem-context-provider.js";
 import { McpCompatibleStubContextProvider } from "../context/providers/mcp-context-provider.js";
 import type { ContextRetrievalRequest } from "../context/types.js";
-import { createProviderRuntimeRegistry } from "./provider-runtime/registry.js";
+import { createProviderRuntimeRegistry, resolveProviderRuntimeMode } from "./provider-runtime/registry.js";
 import { ProviderRuntimeService } from "./provider-runtime/service.js";
 import { serializeProviderRuntimeError } from "./provider-runtime/errors.js";
 import {
@@ -51,7 +51,7 @@ function createMainWindow(): BrowserWindow {
     title: "Kata Cloud",
     backgroundColor: "#0f1116",
     webPreferences: {
-      preload: path.join(__dirname, "../preload/index.cjs"),
+      preload: path.join(__dirname, "../preload/index.js"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -77,7 +77,6 @@ function createMainWindow(): BrowserWindow {
 
   return mainWindow;
 }
-
 
 function registerStateHandlers(
   store: PersistedStateStore,
@@ -242,11 +241,15 @@ async function bootstrap(): Promise<void> {
   });
   const gitLifecycleService = new SpaceGitLifecycleService();
   const pullRequestWorkflowService = new PullRequestWorkflowService();
+  const providerRuntimeMode = resolveProviderRuntimeMode(process.env.KATA_CLOUD_PROVIDER_RUNTIME_MODE);
   const providerRegistry = createProviderRuntimeRegistry([
     new AnthropicProviderAdapter(new AnthropicApiKeyClient()),
     new OpenAiProviderAdapter(new OpenAiApiKeyClient())
   ]);
-  const providerService = new ProviderRuntimeService(providerRegistry);
+  const providerService = new ProviderRuntimeService(providerRegistry, {
+    runtimeMode: providerRuntimeMode
+  });
+  console.log(`Provider runtime mode: ${providerService.getMode()}`);
   await stateStore.initialize();
 
   registerStateHandlers(stateStore, gitLifecycleService, pullRequestWorkflowService, providerService);

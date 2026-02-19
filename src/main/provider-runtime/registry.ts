@@ -1,5 +1,5 @@
 import { createProviderRuntimeError } from "./errors.js";
-import type { ModelProviderId, ProviderRuntimeAdapter } from "./types.js";
+import type { ModelProviderId, ProviderRuntimeAdapter, ProviderRuntimeMode } from "./types.js";
 
 export interface ProviderRuntimeRegistry {
   register(adapter: ProviderRuntimeAdapter): void;
@@ -59,4 +59,8 @@ export function resolveModelProviderId(
   defaultProviderId: ModelProviderId = "anthropic"
 ): ModelProviderId {
   return sessionProviderId ?? spaceProviderId ?? defaultProviderId;
+}
+
+export function resolveProviderRuntimeMode(value: string | undefined): ProviderRuntimeMode {
+  return value === "pi" ? "pi" : "native";
 }
