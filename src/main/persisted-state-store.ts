@@ -15,6 +15,7 @@ export class PersistedStateStore {
 
   async initialize(): Promise<AppState> {
     this.state = await this.readFromDisk();
+    await this.recoverInterruptedRuns();
     return this.state;
   }
 
@@ -46,6 +47,29 @@ export class PersistedStateStore {
       await this.writeToDisk(fallback);
       return fallback;
     }
+  }
+
+  private async recoverInterruptedRuns(): Promise<void> {
+    const now = new Date().toISOString();
+    const runs = this.state.orchestratorRuns;
+    const hasInFlightRun = runs.some((run) => run.status === "queued" || run.status === "running");
+    if (!hasInFlightRun) {
+      return;
+    }
+
+    const recoveredRuns = runs.map((run) =>
+      run.status === "queued" || run.status === "running"
+        ? {
+            ...run,
+            status: "interrupted" as const,
+            statusTimeline: [...run.statusTimeline, "interrupted" as const],
+            interruptedAt: now,
+            updatedAt: now
+          }
+        : run
+    );
+    this.state = { ...this.state, orchestratorRuns: recoveredRuns };
+    await this.writeToDisk(this.state);
   }
 
   private async writeToDisk(nextState: AppState): Promise<void> {
