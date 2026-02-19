@@ -25,6 +25,16 @@
       "type": "button"
     }
   },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity"
+    ],
+    "display": "header"
+  },
   "navigation": {
     "tabs": [
       {
