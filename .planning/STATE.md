@@ -2,15 +2,15 @@
 
 ## Current Position
 
-Phase: 7 — Resume Integrity and Context Consistency (next)
-Plan: Phase 6 completed and verified; Phase 7 planning/execution pending
-Status: Phase 6 complete and verified
-Last activity: 2026-02-19 — Phase 6 completed and moved to completed/
+Phase: 8 — Verification Sweep and Guardrail Codification (next)
+Plan: Phase 7 completed and verified; Phase 8 planning/execution pending
+Status: PR review complete - ready for milestone completion
+Last activity: 2026-02-19 - PR Review complete (CI + reviews passed)
 
 ## Milestone Progress
 
-Progress: 2/4 phases complete (50%)
-Bar: [##########----------]
+Progress: 3/4 phases complete (75%)
+Bar: [###############-----]
 
 ## Project Reference
 
@@ -28,9 +28,10 @@ No backlog issues selected yet for this milestone scope.
 - Provider runtime and PR workflow foundations are already present and validated.
 - Phase 5 delivered deterministic run lifecycle transitions, shared run/task projections, and renderer wiring for lifecycle/status display.
 - Phase 6 delivered typed context retrieval contracts, structured context IPC diagnostics, and recoverable run-history persistence semantics.
-- ORCH-01, ORCH-02, ORCH-03, ORCH-04, CTX-01, and CTX-02 are now complete and reflected in requirements traceability.
-- Next focus is restart/resume integrity and context consistency guarantees in repeated session flows (Phase 7).
+- Phase 7 delivered startup interrupted-run recovery, interrupted lifecycle normalization, and context provenance capture/rendering in orchestrator views.
+- ORCH-01, ORCH-02, ORCH-03, ORCH-04, CTX-01, CTX-02, CTX-03, CTX-04, SESS-01, SESS-02, and SESS-03 are now complete and reflected in requirements traceability.
+- Next focus is deterministic verification sweep and guardrail codification for Phase 8.
 - UAT-to-E2E policy remains active: manual UAT outcomes must be codified into Playwright coverage.
 
 ---
-Last updated: 2026-02-19 after Phase 6 completion
+Last updated: 2026-02-19 after Phase 7 completion

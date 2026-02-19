@@ -18,14 +18,14 @@ Requirements for milestone v0.1.0 Orchestrator and Context Engine Expansion.
 
 - [x] **CTX-01**: User-triggered orchestration can retrieve relevant repository context through the adapter interface with stable request/response contracts.
 - [x] **CTX-02**: User gets predictable context retrieval behavior when provider or filesystem lookups fail (typed error handling, no silent failure).
-- [ ] **CTX-03**: User can execute orchestrator flows with consistent context grounding across repeated runs in the same session.
-- [ ] **CTX-04**: User-visible orchestrator output reflects context-source provenance (what data source informed generated output).
+- [x] **CTX-03**: User can execute orchestrator flows with consistent context grounding across repeated runs in the same session.
+- [x] **CTX-04**: User-visible orchestrator output reflects context-source provenance (what data source informed generated output).
 
 ### Session and Resume Integrity
 
-- [ ] **SESS-01**: User can restart the app and find orchestrator run history, statuses, and delegated task summaries preserved.
-- [ ] **SESS-02**: User can continue an in-progress workflow after restart without losing active milestone/space/session linkage.
-- [ ] **SESS-03**: User can distinguish stale/expired run artifacts from current active workflow state.
+- [x] **SESS-01**: User can restart the app and find orchestrator run history, statuses, and delegated task summaries preserved.
+- [x] **SESS-02**: User can continue an in-progress workflow after restart without losing active milestone/space/session linkage.
+- [x] **SESS-03**: User can distinguish stale/expired run artifacts from current active workflow state.
 
 ### Verification and Guardrails
 
@@ -61,11 +61,11 @@ Deferred to future milestones.
 | ORCH-04 | Phase 6 | Complete |
 | CTX-01 | Phase 6 | Complete |
 | CTX-02 | Phase 6 | Complete |
-| CTX-03 | Phase 7 | Pending |
-| CTX-04 | Phase 7 | Pending |
-| SESS-01 | Phase 7 | Pending |
-| SESS-02 | Phase 7 | Pending |
-| SESS-03 | Phase 7 | Pending |
+| CTX-03 | Phase 7 | Complete |
+| CTX-04 | Phase 7 | Complete |
+| SESS-01 | Phase 7 | Complete |
+| SESS-02 | Phase 7 | Complete |
+| SESS-03 | Phase 7 | Complete |
 | VERI-01 | Phase 8 | Pending |
 | VERI-02 | Phase 8 | Pending |
 | VERI-03 | Phase 8 | Pending |
@@ -77,4 +77,4 @@ Coverage:
 
 ---
 Requirements defined: 2026-02-18
-Last updated: 2026-02-19 after Phase 6 completion
+Last updated: 2026-02-19 after Phase 7 completion

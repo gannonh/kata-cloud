@@ -71,6 +71,19 @@ describe("orchestrator run view model projections", () => {
     expect(projection.errorMessage).toBe("Delegation failed for verify.");
   });
 
+  it("labels interrupted runs as Interrupted", () => {
+    const projection = projectOrchestratorRunViewModel(
+      createRun({
+        status: "interrupted",
+        statusTimeline: ["queued", "running", "interrupted"],
+        completedAt: undefined,
+        interruptedAt: "2026-02-19T00:00:00.000Z"
+      })
+    );
+
+    expect(projection.statusLabel).toBe("Interrupted");
+  });
+
   it("falls back to run-level failure message when tasks do not fail", () => {
     const projection = projectOrchestratorRunViewModel(
       createRun({
@@ -149,6 +162,116 @@ describe("orchestrator run view model projections", () => {
     expect(projection.contextDiagnostics?.providerId).toBe("mcp");
     expect(projection.contextDiagnostics?.retryable).toBe(true);
     expect(projection.contextDiagnostics?.remediation).toContain("filesystem");
+  });
+
+  it("projects context provenance when resolvedProviderId is present", () => {
+    const projection = projectOrchestratorRunViewModel(
+      createRun({
+        resolvedProviderId: "filesystem",
+        contextSnippets: [
+          {
+            id: "snippet-1",
+            provider: "filesystem",
+            source: "filesystem",
+            path: "/tmp/project/src/main.tsx",
+            content: "snippet one",
+            score: 0.8
+          },
+          {
+            id: "snippet-2",
+            provider: "filesystem",
+            source: "filesystem",
+            path: "/tmp/project/src/state.ts",
+            content: "snippet two",
+            score: 0.7
+          }
+        ]
+      })
+    );
+
+    expect(projection.contextProvenance?.resolvedProviderId).toBe("filesystem");
+    expect(projection.contextProvenance?.snippetCount).toBe(2);
+    expect(projection.contextProvenance?.fallbackFromProviderId).toBeUndefined();
+  });
+
+  it("projects fallback provenance from explicit run metadata", () => {
+    const projection = projectOrchestratorRunViewModel(
+      createRun({
+        resolvedProviderId: "filesystem",
+        fallbackFromProviderId: "mcp",
+        contextSnippets: []
+      })
+    );
+
+    expect(projection.contextProvenance?.resolvedProviderId).toBe("filesystem");
+    expect(projection.contextProvenance?.snippetCount).toBe(0);
+    expect(projection.contextProvenance?.fallbackFromProviderId).toBe("mcp");
+  });
+
+  it("prefers explicit fallbackFromProviderId over legacy snippet inference", () => {
+    // resolvedProviderId = "mcp", explicit fallback = "filesystem", snippet provider = "mcp"
+    // Legacy inference: snippets[0].provider === resolvedProviderId => returns undefined
+    // Result: explicit "filesystem" wins over legacy undefined
+    const projection = projectOrchestratorRunViewModel(
+      createRun({
+        resolvedProviderId: "mcp",
+        fallbackFromProviderId: "filesystem",
+        contextSnippets: [
+          {
+            id: "snippet-1",
+            provider: "mcp",
+            source: "mcp",
+            path: "/tmp/project/src/main.tsx",
+            content: "snippet one",
+            score: 0.8
+          }
+        ]
+      })
+    );
+
+    expect(projection.contextProvenance?.resolvedProviderId).toBe("mcp");
+    expect(projection.contextProvenance?.fallbackFromProviderId).toBe("filesystem");
+  });
+
+  it("infers fallback provenance from snippets for legacy runs", () => {
+    const projection = projectOrchestratorRunViewModel(
+      createRun({
+        resolvedProviderId: "mcp",
+        contextSnippets: [
+          {
+            id: "snippet-1",
+            provider: "filesystem",
+            source: "filesystem",
+            path: "/tmp/project/src/main.tsx",
+            content: "snippet one",
+            score: 0.8
+          }
+        ]
+      })
+    );
+
+    expect(projection.contextProvenance?.resolvedProviderId).toBe("mcp");
+    expect(projection.contextProvenance?.fallbackFromProviderId).toBe("filesystem");
+  });
+
+  it("omits contextProvenance when resolvedProviderId is absent", () => {
+    const projection = projectOrchestratorRunViewModel(
+      createRun({
+        resolvedProviderId: undefined,
+        contextSnippets: [
+          {
+            id: "snippet-1",
+            provider: "filesystem",
+            source: "filesystem",
+            path: "/tmp/project/src/main.tsx",
+            content: "snippet one",
+            score: 0.8
+          }
+        ]
+      })
+    );
+
+    expect(projection.contextProvenance).toBeUndefined();
   });
 
   it("projects run history arrays without reordering", () => {

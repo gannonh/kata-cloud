@@ -1,21 +1,62 @@
 {
   "version": 2,
-  "generated": "2026-02-18T23:17:15.380Z",
+  "generated": "2026-02-19T13:55:40.220Z",
   "source": "code-scan",
   "generatedBy": "scan-codebase",
-  "commitHash": "41d59c7",
+  "commitHash": "d8c76ab",
   "files": {
     "src/main/index.ts": {
-      "purpose": "Electron main bootstrap and IPC registration",
-      "layer": "main",
-      "exports": []
+      "exports": [],
+      "imports": {
+        "packages": [
+          "electron",
+          "node:path"
+        ],
+        "local": [
+          "../context/context-adapter",
+          "../context/providers/filesystem-context-provider",
+          "../context/providers/mcp-context-provider",
+          "../context/types",
+          "../git/pr-workflow",
+          "../git/space-git-service",
+          "../git/types",
+          "../shared/context-ipc",
+          "../shared/shell-api",
+          "../shared/state",
+          "./persisted-state-store",
+          "./provider-runtime/errors",
+          "./provider-runtime/registry",
+          "./provider-runtime/service",
+          "./providers/anthropic/adapter",
+          "./providers/anthropic/api-key-client",
+          "./providers/openai/adapter",
+          "./providers/openai/api-key-client"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
     },
     "src/preload/index.ts": {
-      "purpose": "Expose typed shell API through contextBridge",
-      "layer": "preload",
       "exports": [
         "PRELOAD_IPC_CHANNELS"
-      ]
+      ],
+      "imports": {
+        "packages": [
+          "electron"
+        ],
+        "local": [
+          "../context/types",
+          "../git/types",
+          "../shared/shell-api",
+          "../shared/state"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
     },
     "src/main.tsx": {
       "exports": [],
@@ -34,10 +75,12 @@
           "./git/types",
           "./notes/spec-note-panel",
           "./notes/store",
+          "./shared/context-ipc",
           "./shared/orchestrator-delegation",
           "./shared/orchestrator-failure",
           "./shared/orchestrator-run-history",
           "./shared/orchestrator-run-lifecycle",
+          "./shared/orchestrator-run-persistence",
           "./shared/orchestrator-run-view-model",
           "./shared/state",
           "./space/types",
@@ -47,8 +90,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "41d59c7",
-      "indexedAt": "2026-02-18T23:17:15.380Z"
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
     },
     "src/shared/state.ts": {
       "exports": [
@@ -70,20 +113,33 @@
         "packages": [],
         "local": [
           "../context/types",
-          "../git/types"
+          "../git/types",
+          "./orchestrator-run-lifecycle"
         ]
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "41d59c7",
-      "indexedAt": "2026-02-18T23:17:15.380Z"
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
     },
     "src/shared/shell-api.ts": {
-      "purpose": "IPC channels and ShellApi interface",
-      "layer": "shared",
       "exports": [
-        "IPC_CHANNELS"
-      ]
+        "IPC_CHANNELS",
+        "ShellApi"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "../context/types",
+          "../git/types",
+          "../main/provider-runtime/types",
+          "./state"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
     },
     "src/git/space-git-service.ts": {
       "purpose": "Worktree/branch lifecycle and changes snapshots",
@@ -158,11 +214,12 @@
       },
       "type": "test",
       "layer": "shared",
-      "lastIndexed": "41d59c7",
-      "indexedAt": "2026-02-18T23:17:15.380Z"
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
     },
     "src/shared/orchestrator-run-lifecycle.ts": {
       "exports": [
+        "ALLOWED_RUN_TRANSITIONS",
         "OrchestratorRunTransitionFailure",
         "OrchestratorRunTransitionResult",
         "OrchestratorRunTransitionSuccess",
@@ -176,8 +233,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "41d59c7",
-      "indexedAt": "2026-02-18T23:17:15.380Z"
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
     },
     "src/shared/orchestrator-run-view-model.test.ts": {
       "exports": [],
@@ -192,12 +249,13 @@
       },
       "type": "test",
       "layer": "shared",
-      "lastIndexed": "41d59c7",
-      "indexedAt": "2026-02-18T23:17:15.380Z"
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
     },
     "src/shared/orchestrator-run-view-model.ts": {
       "exports": [
         "OrchestratorDelegatedTaskViewModel",
+        "OrchestratorRunContextProvenance",
         "OrchestratorRunViewModel",
         "projectOrchestratorRunHistory",
         "projectOrchestratorRunViewModel"
@@ -211,8 +269,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "41d59c7",
-      "indexedAt": "2026-02-18T23:17:15.380Z"
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
     },
     "src/shared/orchestrator-state.test.ts": {
       "exports": [],
@@ -226,8 +284,8 @@
       },
       "type": "test",
       "layer": "shared",
-      "lastIndexed": "41d59c7",
-      "indexedAt": "2026-02-18T23:17:15.380Z"
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
     },
     "src/shared/state.test.ts": {
       "exports": [],
@@ -241,28 +299,316 @@
       },
       "type": "test",
       "layer": "shared",
-      "lastIndexed": "41d59c7",
-      "indexedAt": "2026-02-18T23:17:15.380Z"
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "bin/dev-desktop.mjs": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "node:child_process",
+          "node:http",
+          "node:process",
+          "node:timers/promises"
+        ],
+        "local": []
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "bin/playwright-electron-e2e.mjs": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "node:process"
+        ],
+        "local": [
+          "./playwright-electron-runner.mjs"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "bin/playwright-electron-runner.mjs": {
+      "exports": [
+        "runElectronSuite"
+      ],
+      "imports": {
+        "packages": [
+          "node:child_process",
+          "node:fs/promises",
+          "node:http",
+          "node:os",
+          "node:path",
+          "node:process",
+          "node:timers/promises",
+          "node:url",
+          "playwright-core"
+        ],
+        "local": []
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "bin/playwright-electron-smoke.mjs": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "node:process"
+        ],
+        "local": [
+          "./playwright-electron-runner.mjs"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "bin/repo-guardrails.mjs": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "node:child_process",
+          "node:process"
+        ],
+        "local": []
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "bin/run-tests.mjs": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "node:child_process"
+        ],
+        "local": []
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "eslint.config.mjs": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "@eslint/js",
+          "@typescript-eslint/eslint-plugin",
+          "@typescript-eslint/parser",
+          "eslint-plugin-react-hooks",
+          "eslint-plugin-react-refresh",
+          "globals"
+        ],
+        "local": []
+      },
+      "type": "config",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "src/context/context-adapter.node.test.ts": {
+      "exports": [
+        "engine",
+        "fallback",
+        "legacy",
+        "note",
+        "setting"
+      ],
+      "imports": {
+        "packages": [
+          "node:assert/strict",
+          "node:fs/promises",
+          "node:os",
+          "node:path",
+          "vitest"
+        ],
+        "local": [
+          "./context-adapter",
+          "./providers/filesystem-context-provider",
+          "./providers/mcp-context-provider"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "src/context/context-adapter.ts": {
+      "exports": [
+        "createContextAdapter",
+        "resolveContextProviderId"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "./types"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "src/context/providers/filesystem-context-provider.ts": {
+      "exports": [
+        "FilesystemContextProvider"
+      ],
+      "imports": {
+        "packages": [
+          "node:fs/promises",
+          "node:os",
+          "node:path"
+        ],
+        "local": [
+          "../types"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "src/context/providers/mcp-context-provider.ts": {
+      "exports": [
+        "McpCompatibleStubContextProvider"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "../types"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "src/context/types.ts": {
+      "exports": [
+        "ContextAdapter",
+        "ContextProvider",
+        "ContextProviderId",
+        "ContextQuery",
+        "ContextRetrievalError",
+        "ContextRetrievalErrorCode",
+        "ContextRetrievalFailure",
+        "ContextRetrievalRequest",
+        "ContextRetrievalResult",
+        "ContextRetrievalSuccess",
+        "ContextSnippet"
+      ],
+      "imports": {
+        "packages": [],
+        "local": []
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "src/main/persisted-state-store.ts": {
+      "exports": [
+        "PersistedStateStore"
+      ],
+      "imports": {
+        "packages": [
+          "electron",
+          "node:fs/promises",
+          "node:path"
+        ],
+        "local": [
+          "../shared/state"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "src/shared/context-ipc.ts": {
+      "exports": [
+        "ContextIpcErrorPayload",
+        "createContextIpcErrorPayload",
+        "parseContextIpcError",
+        "serializeContextIpcError",
+        "toContextRetrievalFailure"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "../context/types"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "src/shared/orchestrator-run-persistence.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "vitest"
+        ],
+        "local": [
+          "./orchestrator-run-persistence",
+          "./state"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "src/shared/orchestrator-run-persistence.ts": {
+      "exports": [
+        "OrchestratorRunCompletionUpdate",
+        "applyOrchestratorRunUpdate",
+        "completeOrchestratorRun",
+        "enqueueOrchestratorRun"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "../context/types",
+          "./state"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "d8c76ab",
+      "indexedAt": "2026-02-19T13:55:40.220Z"
     }
   },
   "stats": {
-    "totalFiles": 17,
+    "totalFiles": 33,
     "byType": {
-      "undefined": 7,
-      "util": 5,
-      "test": 5
+      "util": 21,
+      "undefined": 4,
+      "test": 7,
+      "config": 1
     },
     "byLayer": {
-      "main": 2,
-      "preload": 1,
-      "shared": 11,
+      "shared": 29,
       "domain": 2,
+      "main": 1,
       "package": 1
     },
     "byExtension": {
-      ".ts": 15,
+      ".ts": 24,
       ".tsx": 1,
-      ".js": 1
+      ".js": 1,
+      ".mjs": 7
     }
   }
 }

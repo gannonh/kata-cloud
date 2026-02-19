@@ -15,6 +15,7 @@ export class PersistedStateStore {
 
   async initialize(): Promise<AppState> {
     this.state = await this.readFromDisk();
+    await this.recoverInterruptedRuns();
     return this.state;
   }
 
@@ -45,6 +46,35 @@ export class PersistedStateStore {
       const fallback = createInitialAppState();
       await this.writeToDisk(fallback);
       return fallback;
+    }
+  }
+
+  private async recoverInterruptedRuns(): Promise<void> {
+    const now = new Date().toISOString();
+    const runs = this.state.orchestratorRuns;
+    const hasInFlightRun = runs.some((run) => run.status === "queued" || run.status === "running");
+    if (!hasInFlightRun) {
+      return;
+    }
+
+    const recoveredRuns = runs.map((run) =>
+      run.status === "queued" || run.status === "running"
+        ? {
+            // Recovery operates on persisted snapshots before the runtime is rehydrated,
+            // so we mark in-flight runs directly instead of replaying lifecycle transitions.
+            ...run,
+            status: "interrupted" as const,
+            statusTimeline: [...run.statusTimeline, "interrupted" as const],
+            interruptedAt: now,
+            updatedAt: now
+          }
+        : run
+    );
+    this.state = { ...this.state, orchestratorRuns: recoveredRuns };
+    try {
+      await this.writeToDisk(this.state);
+    } catch (error) {
+      console.error("Failed to persist recovered interrupted runs. Recovery applied in memory only.", error);
     }
   }
 
