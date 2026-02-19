@@ -36,8 +36,6 @@ function toStatusLabel(status: OrchestratorRunStatus): string {
       return "Completed";
     case "failed":
       return "Failed";
-    default:
-      return status;
   }
 }
 

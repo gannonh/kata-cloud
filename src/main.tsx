@@ -1505,9 +1505,12 @@ function App(): React.JSX.Element {
               <h3>Status</h3>
               <p>
                 {latestRunViewModel
-                  ? `Run ${latestRunViewModel.id} is ${latestRunViewModel.status}.`
+                  ? `Run ${latestRunViewModel.id} is ${latestRunViewModel.statusLabel}.`
                   : "No orchestrator runs yet."}
               </p>
+              {/* latestRunViewModel is derived from latestRunForActiveSession; both are null/non-null
+                  simultaneously. Draft fields (draft, draftAppliedAt, draftApplyError) are not projected
+                  into the view model, so the raw record is used for those fields only. */}
               {latestRunViewModel && latestRunForActiveSession ? (
                 <>
                   <p>Prompt: {latestRunViewModel.prompt}</p>
