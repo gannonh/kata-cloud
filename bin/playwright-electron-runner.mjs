@@ -160,7 +160,8 @@ async function launchElectronApp(rendererAddress, isolatedHome, isolatedConfig) 
       ...process.env,
       HOME: isolatedHome,
       XDG_CONFIG_HOME: isolatedConfig,
-      KATA_CLOUD_RENDERER_URL: rendererAddress
+      KATA_CLOUD_RENDERER_URL: rendererAddress,
+      KATA_CLOUD_E2E_PROVIDER_STUB: process.env.KATA_CLOUD_E2E_PROVIDER_STUB ?? "1"
     }
   });
 }

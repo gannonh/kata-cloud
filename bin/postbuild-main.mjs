@@ -3,7 +3,7 @@
 import { access } from "node:fs/promises";
 import process from "node:process";
 
-const preloadOutput = "dist/preload/index.js";
+const preloadOutput = "dist/preload/index.cjs";
 
 try {
   await access(preloadOutput);

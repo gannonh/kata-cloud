@@ -23,6 +23,7 @@ import type { ContextRetrievalRequest } from "../context/types.js";
 import { createProviderRuntimeRegistry, resolveProviderRuntimeMode } from "./provider-runtime/registry.js";
 import { ProviderRuntimeService } from "./provider-runtime/service.js";
 import { serializeProviderRuntimeError } from "./provider-runtime/errors.js";
+import type { ModelProviderId, ProviderRuntimeAdapter, ProviderAuthInput } from "./provider-runtime/types.js";
 import {
   createContextIpcErrorPayload,
   toContextRetrievalFailure
@@ -35,6 +36,47 @@ import { OpenAiApiKeyClient } from "./providers/openai/api-key-client.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let stateStore: PersistedStateStore | undefined;
+
+function createE2EProviderRuntimeAdapter(providerId: ModelProviderId): ProviderRuntimeAdapter {
+  return {
+    providerId,
+    capabilities: {
+      supportsApiKey: true,
+      supportsTokenSession: false,
+      supportsModelListing: true
+    },
+    resolveAuth(auth: ProviderAuthInput) {
+      return {
+        requestedMode: auth.preferredMode ?? "api_key",
+        resolvedMode: "api_key",
+        status: "authenticated",
+        fallbackApplied: false,
+        failureCode: null,
+        reason: null,
+        apiKey: auth.apiKey?.trim() || "kata-e2e-stub-key",
+        tokenSessionId: null
+      };
+    },
+    async listModels() {
+      return [
+        {
+          id: providerId === "anthropic" ? "claude-e2e-stub" : "gpt-e2e-stub",
+          displayName: providerId === "anthropic" ? "Claude E2E Stub" : "GPT E2E Stub"
+        }
+      ];
+    },
+    async execute(request) {
+      const trimmedPrompt = request.prompt.trim();
+      const summary = trimmedPrompt.length > 0 ? trimmedPrompt.slice(0, 120) : "No prompt provided.";
+      return {
+        providerId,
+        model: request.model,
+        authMode: "api_key",
+        text: `E2E stub response (${providerId}): ${summary}`
+      };
+    }
+  };
+}
 
 function broadcastState(nextState: AppState): void {
   for (const browserWindow of BrowserWindow.getAllWindows()) {
@@ -51,7 +93,7 @@ function createMainWindow(): BrowserWindow {
     title: "Kata Cloud",
     backgroundColor: "#0f1116",
     webPreferences: {
-      preload: path.join(__dirname, "../preload/index.js"),
+      preload: path.join(__dirname, "../preload/index.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -73,6 +115,12 @@ function createMainWindow(): BrowserWindow {
     if (stateStore) {
       mainWindow.webContents.send(IPC_CHANNELS.stateChanged, stateStore.getState());
     }
+  });
+  mainWindow.webContents.on("preload-error", (_event, preloadPath, error) => {
+    console.error("Failed to execute preload script.", {
+      preloadPath,
+      error
+    });
   });
 
   return mainWindow;
@@ -241,15 +289,23 @@ async function bootstrap(): Promise<void> {
   });
   const gitLifecycleService = new SpaceGitLifecycleService();
   const pullRequestWorkflowService = new PullRequestWorkflowService();
+  const useE2EProviderStub = process.env.KATA_CLOUD_E2E_PROVIDER_STUB === "1";
   const providerRuntimeMode = resolveProviderRuntimeMode(process.env.KATA_CLOUD_PROVIDER_RUNTIME_MODE);
-  const providerRegistry = createProviderRuntimeRegistry([
-    new AnthropicProviderAdapter(new AnthropicApiKeyClient()),
-    new OpenAiProviderAdapter(new OpenAiApiKeyClient())
-  ]);
+  const providerRegistry = createProviderRuntimeRegistry(
+    useE2EProviderStub
+      ? [createE2EProviderRuntimeAdapter("anthropic"), createE2EProviderRuntimeAdapter("openai")]
+      : [
+          new AnthropicProviderAdapter(new AnthropicApiKeyClient()),
+          new OpenAiProviderAdapter(new OpenAiApiKeyClient())
+        ]
+  );
   const providerService = new ProviderRuntimeService(providerRegistry, {
     runtimeMode: providerRuntimeMode
   });
   console.log(`Provider runtime mode: ${providerService.getMode()}`);
+  if (useE2EProviderStub) {
+    console.log("Provider runtime adapters: e2e stubs");
+  }
   await stateStore.initialize();
 
   registerStateHandlers(stateStore, gitLifecycleService, pullRequestWorkflowService, providerService);

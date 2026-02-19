@@ -13,8 +13,6 @@ import type {
   SpaceGitPullRequestDraftRequest
 } from "../git/types.js";
 
-// Keep this in sync with IPC_CHANNELS in src/shared/shell-api.ts.
-// Do not runtime-import IPC_CHANNELS from preload in sandbox mode.
 export const PRELOAD_IPC_CHANNELS = {
   getState: "kata-cloud/state:get",
   saveState: "kata-cloud/state:save",
