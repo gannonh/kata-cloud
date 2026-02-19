@@ -28,20 +28,25 @@
 
 ---
 
-## Planned
+## Active
 
-### v0.2.0 Desktop MVP Closure (tentative)
+### v0.2.0 Desktop MVP Closure (Started: 2026-02-19)
 
-**Input:** 7 UI specification documents (`docs/design/specs/`) derived from 29 design mocks, each containing component inventories, state matrices, data dependency maps, interaction tables, and implementation gap analysis.
+**Goal:** Deliver MVP UX parity with the front-end specs while making orchestrator execution visibly real through provider-backed runs and agent deployment telemetry.
 
-**Cross-cutting gaps to address:**
-- Chat-style conversation renderer (affects Coordinator Session, Build Session, Wave Execution)
-- Agent sidebar with status indicators (affects Coordinator Session, Build Session, Wave Execution, Completion)
-- Wave grouping model (affects Wave Execution, Completion)
-- Terminal and browser tab types (affects Create Space, Wave Execution)
-- Permission dialog system (affects Completion)
-- Commit interface with message input (affects Changes & Git, Completion)
-- Markdown rendering in spec panel (affects Spec & Notes Panel)
+**Planning inputs:**
+- Existing v0.2 scope baseline from roadmap/milestone docs
+- PI package feasibility (`pi-mono`) for runtime acceleration
+- 7 UI specification documents (`docs/design/specs/`) derived from 29 design mocks
+
+**Primary scope themes:**
+- Coordinator three-column UX parity (left agent/status, center chat, right living spec)
+- Wave-aware orchestrator and agent deployment visibility
+- Completion flow parity (commit UX, permission dialog, verification report)
+- PI adapter-first integration with rollback toggle
+- ESM-first runtime cleanup (retire remaining CommonJS debt in milestone path)
+
+**Phase range:** 9-13 (see `.planning/ROADMAP.md` and `.planning/REQUIREMENTS.md`)
 
 ---
-Last updated: 2026-02-19 after UI spec generation
+Last updated: 2026-02-19 after v0.2.0 milestone kickoff

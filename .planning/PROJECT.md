@@ -8,6 +8,17 @@ Kata Cloud is a desktop app for spec-driven development where developers orchest
 
 The spec is the source of truth that stays aligned with real implementation while agents execute, so every workflow reliably produces a high-quality, reviewable pull request.
 
+## Current Milestone: v0.2.0 Desktop MVP Closure
+
+Goal: Close the gap between the current deterministic orchestration foundation and the intended MVP desktop UX with visible, real agent execution.
+
+Target features:
+- Three-column coordinator experience aligned with design specs (agent/status sidebar, conversation center, living spec right panel)
+- Real provider-backed orchestrator execution surfaced as observable agent deployments and wave progress
+- PI package integration path that accelerates runtime capabilities without breaking current workflows
+- ESM-first desktop runtime cleanup to remove remaining CommonJS build path debt
+- Completion flow parity (commit UX, permission dialog, verification reporting) plus release-grade validation
+
 ## Current State
 
 Shipped v0.1.0 with 14,724 LOC TypeScript across 201 files.
@@ -41,9 +52,12 @@ UI specifications produced from 29 design mocks covering 7 feature areas (`docs/
 
 ### Active
 
-(None — next milestone requirements to be defined via `/kata-add-milestone`)
-
-UI spec gap analysis (`docs/design/specs/README.md`) identifies cross-cutting implementation gaps that will inform v0.2.0 scope: conversation renderer, agent sidebar, wave grouping, commit interface, markdown rendering, permission dialog, terminal/browser tabs.
+- [ ] v0.2.0 requirement baseline established in `.planning/REQUIREMENTS.md`
+- [ ] Coordinator UX semantics match design specs in `docs/design/specs/` (left agent/status, center chat, right living spec)
+- [ ] Real LLM/provider calls and agent deployment lifecycle are observable in orchestrator UI
+- [ ] PI packages are integrated through a controlled adapter path with rollback safety
+- [ ] Electron runtime path is ESM-first with CommonJS debt retired
+- [ ] Completion/verification UX and release guardrails are MVP-ready
 
 ### Out of Scope
 
@@ -58,6 +72,10 @@ Kata Cloud consolidates prior Kata R&D into one product: spec-driven development
 
 Core workflows are implemented and merged through foundational slices (desktop shell, space/git lifecycle, spec panel, orchestration basics, context adapter foundation, provider-runtime base, and Playwright smoke/E2E baseline). v0.1.0 added reliability and depth in orchestration plus context retrieval.
 
+v0.2.0 planning inputs combine three sources: previously defined v0.2 scope, PI integration feasibility, and the front-end specification corpus (`docs/design/specs/README.md` + 7 detailed specs). The design specs call out specific cross-cutting gaps (chat renderer, agent sidebar, wave grouping, terminal/browser tabs, permission dialog, commit UI, markdown spec rendering) that now define MVP closure criteria.
+
+Current implementation includes provider runtime IPC and adapters, but orchestrator runs still generate local draft content via `createSpecDraft` in `src/main.tsx` rather than executing provider-backed generation in the run flow. This mismatch is now tracked as a primary v0.2 requirement.
+
 The team operates with strict branch hygiene and slice discipline: start from fresh `origin/main`, keep single-purpose PRs, avoid cross-scope edits, and require explicit validation artifacts (`test`, `desktop:typecheck`, targeted E2E/UAT evidence).
 
 ## Constraints
@@ -68,6 +86,8 @@ The team operates with strict branch hygiene and slice discipline: start from fr
 - **Quality gates**: Lint, strict typecheck, coverage thresholds, and e2e smoke/full gates — required for merge confidence.
 - **State integrity**: Orchestrator and context state persistence must remain deterministic across save/reload/restart boundaries.
 - **Scope control**: Milestone execution excludes broad unrelated feature expansions to preserve atomic PR hygiene and deterministic validation.
+- **Module strategy**: ESM-first TypeScript runtime — no net-new CommonJS runtime paths.
+- **Integration risk control**: PI adoption must be incrementally gated with feature toggles and rollback path.
 
 ## Key Decisions
 
@@ -80,6 +100,9 @@ The team operates with strict branch hygiene and slice discipline: start from fr
 | Prioritize orchestrator/context reliability before broader expansion | Stable execution core is prerequisite for scaling workflow depth | ✓ Good |
 | Use native Vitest invocation for guardrail commands | Avoids wrapper tooling overhead; leverages existing test infrastructure | ✓ Good |
 | State-based assertions for Electron UAT | More reliable than timing-based waits; deterministic prompt-targeted assertions | ✓ Good |
+| Treat v0.2.0 as MVP closure milestone | Aligns roadmap to user-visible UX parity and observable real execution before broader expansion | ✓ Good |
+| Integrate PI packages incrementally behind adapters | Balances acceleration with isolation, testability, and rollback safety | — Pending |
+| Move desktop runtime to ESM-only pathways | Removes module-format drift and unblocks clean TypeScript-first integration | — Pending |
 
 ---
-*Last updated: 2026-02-19 after UI spec generation*
+*Last updated: 2026-02-19 after v0.2.0 milestone kickoff planning*
