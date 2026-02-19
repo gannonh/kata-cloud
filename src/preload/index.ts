@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 import type { AppState } from "../shared/state";
 import type { ShellApi } from "../shared/shell-api";
 import type { ProviderStatusRequest, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest } from "../shared/shell-api";
-import type { ContextRetrievalRequest } from "../context/types";
+import type { ContextRetrievalRequest, ContextRetrievalResult } from "../context/types";
 import type {
   GitHubSessionRequest,
   SpaceGitChangesRequest,
@@ -71,7 +71,7 @@ const shellApi: ShellApi = {
   createPullRequest: async (request: SpaceGitCreatePullRequestRequest) =>
     ipcRenderer.invoke(PRELOAD_IPC_CHANNELS.createPullRequest, request),
   retrieveContext: async (request: ContextRetrievalRequest) =>
-    ipcRenderer.invoke(PRELOAD_IPC_CHANNELS.retrieveContext, request),
+    ipcRenderer.invoke(PRELOAD_IPC_CHANNELS.retrieveContext, request) as Promise<ContextRetrievalResult>,
   providerResolveAuth: async (request: ProviderStatusRequest) =>
     ipcRenderer.invoke(PRELOAD_IPC_CHANNELS.providerResolveAuth, request),
   providerListModels: async (request: ProviderListModelsIpcRequest) =>

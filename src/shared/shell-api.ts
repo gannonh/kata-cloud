@@ -14,7 +14,7 @@ import type {
   SpaceGitPullRequestDraftRequest,
   SpaceGitPullRequestDraftResult
 } from "../git/types";
-import type { ContextRetrievalRequest, ContextSnippet } from "../context/types";
+import type { ContextRetrievalRequest, ContextRetrievalResult } from "../context/types";
 import type {
   ProviderModelDescriptor,
   ProviderExecuteResult,
@@ -77,7 +77,7 @@ export interface ShellApi {
   createPullRequest: (
     request: SpaceGitCreatePullRequestRequest
   ) => Promise<SpaceGitCreatePullRequestResult>;
-  retrieveContext: (request: ContextRetrievalRequest) => Promise<ContextSnippet[]>;
+  retrieveContext: (request: ContextRetrievalRequest) => Promise<ContextRetrievalResult>;
   providerResolveAuth: (request: ProviderStatusRequest) => Promise<ProviderStatusResult>;
   providerListModels: (request: ProviderListModelsIpcRequest) => Promise<ProviderModelDescriptor[]>;
   providerExecute: (request: ProviderExecuteIpcRequest) => Promise<ProviderExecuteResult>;
