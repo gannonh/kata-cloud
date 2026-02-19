@@ -1,10 +1,10 @@
 import type React from "react";
 import type {
-  CoordinatorShellStatusTone,
   CoordinatorSidebarAgent,
   CoordinatorSidebarContextItem,
   CoordinatorSidebarSectionId
 } from "./types.js";
+import { toStatusClassName } from "./types.js";
 
 type LeftSidebarProps = {
   title: string;
@@ -16,21 +16,6 @@ type LeftSidebarProps = {
   onCreateAgent: () => void;
   onAddContext: () => void;
 };
-
-function toStatusClassName(status: CoordinatorShellStatusTone): string {
-  switch (status) {
-    case "idle":
-      return "is-idle";
-    case "running":
-      return "is-running";
-    case "complete":
-      return "is-complete";
-    case "warning":
-      return "is-warning";
-    case "error":
-      return "is-error";
-  }
-}
 
 function SectionHeader(props: {
   sectionId: CoordinatorSidebarSectionId;

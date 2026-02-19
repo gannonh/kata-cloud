@@ -364,6 +364,7 @@ function App(): React.JSX.Element {
   const [pullRequestDraft, setPullRequestDraft] = useState<SpaceGitPullRequestDraftResult | null>(null);
   const [createdPullRequest, setCreatedPullRequest] = useState<SpaceGitCreatePullRequestResult | null>(null);
   const [pullRequestStatusMessage, setPullRequestStatusMessage] = useState<string | null>(null);
+  const [coordinatorStatusMessage, setCoordinatorStatusMessage] = useState<string | null>(null);
   const changesSnapshotRequestIdRef = useRef(0);
   const [browserNavigation, setBrowserNavigation] = useState(() => createInitialBrowserNavigationState());
   const [browserInput, setBrowserInput] = useState(DEFAULT_LOCAL_PREVIEW_URL);
@@ -586,6 +587,7 @@ function App(): React.JSX.Element {
     [latestRunViewModel?.contextProvenance]
   );
   const latestDraftForActiveSession = latestRunForActiveSession?.draft;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- state.lastOpenedAt used as cache-buster to re-read spec from localStorage after persist
   const specNoteSnapshot = useMemo(() => loadSpecNote(window.localStorage), [state.lastOpenedAt]);
   const coordinatorShellViewModel = useMemo(
     () =>
@@ -610,7 +612,7 @@ function App(): React.JSX.Element {
     () =>
       latestRunViewModel?.providerExecution
         ? `${latestRunViewModel.providerExecution.providerId} / ${latestRunViewModel.providerExecution.modelId}`
-        : "GPT-5.3 Codex",
+        : "Not configured",
     [latestRunViewModel?.providerExecution]
   );
 
@@ -1441,11 +1443,11 @@ function App(): React.JSX.Element {
   }, []);
 
   const onCreateCoordinatorAgent = useCallback(() => {
-    setPullRequestStatusMessage("Agent creation flows are planned for a follow-up phase.");
+    setCoordinatorStatusMessage("Agent creation flows are planned for a follow-up phase.");
   }, []);
 
   const onAddCoordinatorContext = useCallback(() => {
-    setPullRequestStatusMessage("Add context by pasting content or typing @ in the composer.");
+    setCoordinatorStatusMessage("Add context by pasting content or typing @ in the composer.");
   }, []);
 
   const onOpenEditSpaceForm = useCallback((space: SpaceRecord) => {
@@ -1614,6 +1616,9 @@ function App(): React.JSX.Element {
                     void onRunOrchestrator();
                   }}
                 />
+                {coordinatorStatusMessage ? (
+                  <p className="coordinator-status-message">{coordinatorStatusMessage}</p>
+                ) : null}
               </>
             ) : (
               <div className="coordinator-spec">

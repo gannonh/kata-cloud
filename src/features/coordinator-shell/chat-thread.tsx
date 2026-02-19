@@ -1,5 +1,6 @@
 import type React from "react";
-import type { CoordinatorChatEntry, CoordinatorShellStatusTone } from "./types.js";
+import type { CoordinatorChatEntry } from "./types.js";
+import { toStatusClassName } from "./types.js";
 
 type ChatThreadProps = {
   entries: CoordinatorChatEntry[];
@@ -7,21 +8,6 @@ type ChatThreadProps = {
   expandedMessageIds: string[];
   onToggleMessage: (messageId: string) => void;
 };
-
-function toStatusClassName(status: CoordinatorShellStatusTone): string {
-  switch (status) {
-    case "idle":
-      return "is-idle";
-    case "running":
-      return "is-running";
-    case "complete":
-      return "is-complete";
-    case "warning":
-      return "is-warning";
-    case "error":
-      return "is-error";
-  }
-}
 
 function shouldAllowCollapse(content: string): boolean {
   return content.length > 220 || content.split("\n").length > 4;

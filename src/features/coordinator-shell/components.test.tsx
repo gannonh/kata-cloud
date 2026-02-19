@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { CoordinatorChatThread } from "./chat-thread.js";
 import { CoordinatorLeftSidebar } from "./left-sidebar.js";
+import { CoordinatorMessageInputBar } from "./message-input-bar.js";
 import { CoordinatorWorkflowPanel } from "./workflow-panel.js";
 
 describe("coordinator-shell components", () => {
@@ -115,7 +116,63 @@ describe("coordinator-shell components", () => {
     expect(screen.getByText("Creating Spec")).toBeInTheDocument();
     expect(screen.getByText("Implement")).toBeInTheDocument();
     expect(screen.getByText("Accept changes")).toBeInTheDocument();
-    expect(document.querySelectorAll(".coordinator-workflow__step.is-active")).toHaveLength(1);
-    expect(document.querySelectorAll(".coordinator-workflow__step.is-complete")).toHaveLength(1);
+    // Verify the active step is flagged via aria-current and the complete step is not
+    const items = screen.getAllByRole("listitem");
+    const activeItems = items.filter((el) => el.getAttribute("aria-current") === "step");
+    const completeItems = items.filter((el) => el.classList.contains("is-complete"));
+    expect(activeItems).toHaveLength(1);
+    expect(completeItems).toHaveLength(1);
+  });
+
+  it("renders message input bar with accessible textarea and model label", () => {
+    render(
+      <CoordinatorMessageInputBar
+        prompt=""
+        modelLabel="openai / gpt-4o"
+        disabled={false}
+        onPromptChange={() => {}}
+        onSubmitPrompt={() => {}}
+      />
+    );
+
+    expect(screen.getByRole("textbox", { name: "Prompt" })).toBeInTheDocument();
+    expect(screen.getByText("openai / gpt-4o")).toBeInTheDocument();
+  });
+
+  it("does not call onSubmitPrompt when message input bar is disabled", async () => {
+    const user = userEvent.setup();
+    const onSubmitPrompt = vi.fn();
+
+    render(
+      <CoordinatorMessageInputBar
+        prompt="hello"
+        modelLabel="openai / gpt-4o"
+        disabled={true}
+        onPromptChange={() => {}}
+        onSubmitPrompt={onSubmitPrompt}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Run Orchestrator" }));
+    expect(onSubmitPrompt).not.toHaveBeenCalled();
+  });
+
+  it("calls onSubmitPrompt when message input bar is submitted while enabled", async () => {
+    const user = userEvent.setup();
+    const onSubmitPrompt = vi.fn();
+    const onPromptChange = vi.fn();
+
+    render(
+      <CoordinatorMessageInputBar
+        prompt="build a new feature"
+        modelLabel="openai / gpt-4o"
+        disabled={false}
+        onPromptChange={onPromptChange}
+        onSubmitPrompt={onSubmitPrompt}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Run Orchestrator" }));
+    expect(onSubmitPrompt).toHaveBeenCalledTimes(1);
   });
 });

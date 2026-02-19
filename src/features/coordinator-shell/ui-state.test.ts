@@ -49,6 +49,16 @@ describe("coordinator shell UI reducer", () => {
     expect(collapsed.expandedMessageIds).toEqual([]);
   });
 
+  it("returns same state reference when set-active-tab dispatched with current tab", () => {
+    const state = createInitialCoordinatorShellUiState();
+    const result = coordinatorShellUiStateReducer(state, {
+      type: "set-active-tab",
+      tab: state.activeCenterTab
+    });
+
+    expect(result).toBe(state);
+  });
+
   it("exposes stable sidebar section identifiers", () => {
     expect(getSidebarSections()).toEqual(["agents", "context"]);
   });

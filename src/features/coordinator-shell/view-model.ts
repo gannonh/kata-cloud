@@ -107,8 +107,7 @@ function toLatestEntries(
 }
 
 function toHistoricalEntries(
-  priorRunHistoryViewModels: OrchestratorRunViewModel[],
-  _now: Date
+  priorRunHistoryViewModels: OrchestratorRunViewModel[]
 ): CoordinatorChatEntry[] {
   return priorRunHistoryViewModels.map((run) => {
     const lines = [
@@ -186,7 +185,8 @@ function toWorkflowSteps(input: ProjectCoordinatorShellViewModelInput): Coordina
   const latestStatus = input.latestRunViewModel?.status ?? "none";
   const hasDelegatedTasks = (input.latestRunViewModel?.delegatedTasks.length ?? 0) > 0;
   const delegatedCompleted = Boolean(
-    input.latestRunViewModel?.delegatedTasks.some((task) => task.status === "completed")
+    input.latestRunViewModel?.delegatedTasks.length &&
+    input.latestRunViewModel.delegatedTasks.every((task) => task.status === "completed")
   );
   const specReady = toSpecReady(input.specContent) || Boolean(input.latestRunRecord?.draftAppliedAt);
 
@@ -244,7 +244,7 @@ export function projectCoordinatorShellViewModel(
     sidebarAgents: toSidebarAgents(input),
     sidebarContext: toSidebarContext(input),
     latestEntries: toLatestEntries(input, now),
-    historicalEntries: toHistoricalEntries(input.priorRunHistoryViewModels, now),
+    historicalEntries: toHistoricalEntries(input.priorRunHistoryViewModels),
     workflowSteps: toWorkflowSteps(input),
     latestRunStatus
   };

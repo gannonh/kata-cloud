@@ -36,8 +36,12 @@ export function CoordinatorWorkflowPanel(props: WorkflowPanelProps): React.JSX.E
       {!collapsed ? (
         <ol className="coordinator-workflow__steps">
           {steps.map((step) => (
-            <li key={step.id} className={`coordinator-workflow__step ${toStatusClassName(step.status)}`}>
-              <span className="coordinator-workflow__dot" />
+            <li
+              key={step.id}
+              className={`coordinator-workflow__step ${toStatusClassName(step.status)}`}
+              aria-current={step.status === "active" ? "step" : undefined}
+            >
+              <span className="coordinator-workflow__dot" aria-hidden="true" />
               <div>
                 <p className="coordinator-workflow__title">{step.title}</p>
                 <p className="coordinator-workflow__description">{step.description}</p>

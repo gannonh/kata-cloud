@@ -25,6 +25,7 @@ export function CoordinatorMessageInputBar(props: MessageInputBarProps): React.J
       <label htmlFor="space-prompt-input" className="coordinator-input__field">
         <textarea
           id="space-prompt-input"
+          aria-label="Prompt"
           value={prompt}
           onChange={(event) => onPromptChange(event.target.value)}
           placeholder="Ask anything or type @ for context"
