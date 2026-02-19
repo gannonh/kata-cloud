@@ -53,6 +53,28 @@ function toLatestEntries(
       label: snippet.path.split("/").filter(Boolean).slice(-1)[0] ?? snippet.path
     })) ?? [];
 
+  const statusLines = [
+    `Run ${latestRunViewModel.id} is ${latestRunViewModel.statusLabel}.`,
+    `Lifecycle: ${latestRunViewModel.lifecycleText}`,
+    `Context preview: ${latestRunViewModel.contextPreview}`
+  ];
+  if (latestRunViewModel.providerExecution) {
+    statusLines.push(
+      `Provider: ${latestRunViewModel.providerExecution.providerId} / ${latestRunViewModel.providerExecution.modelId} (${latestRunViewModel.providerExecution.runtimeMode}) ${latestRunViewModel.providerExecution.status}`
+    );
+  }
+  if (latestRunViewModel.errorMessage) {
+    statusLines.push(latestRunViewModel.errorMessage);
+  }
+  if (latestRunViewModel.contextDiagnostics) {
+    statusLines.push(
+      `Context (${latestRunViewModel.contextDiagnostics.providerId} / ${latestRunViewModel.contextDiagnostics.code}): ${latestRunViewModel.contextDiagnostics.message}`
+    );
+    statusLines.push(
+      `Remediation: ${latestRunViewModel.contextDiagnostics.remediation} ${latestRunViewModel.contextDiagnostics.retryable ? "(retryable)" : "(not retryable)"}`
+    );
+  }
+
   return [
     {
       id: `${latestRunRecord.id}-prompt`,
@@ -68,7 +90,7 @@ function toLatestEntries(
       role: "coordinator",
       authorLabel: "Coordinator",
       timestampLabel: toTimestampLabel(updatedAt, now),
-      content: `Run ${latestRunViewModel.id} is ${latestRunViewModel.statusLabel}.\nLifecycle: ${latestRunViewModel.lifecycleText}`,
+      content: statusLines.join("\n"),
       status: {
         label:
           latestRunViewModel.status === "running" || latestRunViewModel.status === "queued"
@@ -86,18 +108,31 @@ function toLatestEntries(
 
 function toHistoricalEntries(
   priorRunHistoryViewModels: OrchestratorRunViewModel[],
-  now: Date
+  _now: Date
 ): CoordinatorChatEntry[] {
   return priorRunHistoryViewModels.map((run) => {
-    const updatedAt = new Date(run.id.split("run-")[1] ?? now.toISOString());
+    const lines = [
+      `Run ${run.id} is ${run.statusLabel}.`,
+      `Lifecycle: ${run.lifecycleText}`
+    ];
+    if (run.errorMessage) {
+      lines.push(run.errorMessage);
+    }
+    if (run.contextDiagnostics) {
+      lines.push(
+        `Context (${run.contextDiagnostics.providerId} / ${run.contextDiagnostics.code}): ${run.contextDiagnostics.message}`
+      );
+      lines.push(
+        `Remediation: ${run.contextDiagnostics.remediation} ${run.contextDiagnostics.retryable ? "(retryable)" : "(not retryable)"}`
+      );
+    }
+
     return {
       id: `${run.id}-history`,
       role: "system",
       authorLabel: "Run History",
-      timestampLabel: Number.isNaN(updatedAt.getTime())
-        ? "Earlier"
-        : toTimestampLabel(updatedAt, now),
-      content: `Run ${run.id} is ${run.statusLabel}.\nLifecycle: ${run.lifecycleText}`,
+      timestampLabel: "Earlier",
+      content: lines.join("\n"),
       contextChips: []
     };
   });
