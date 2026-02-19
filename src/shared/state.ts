@@ -351,7 +351,17 @@ export function normalizeAppState(input: unknown): AppState {
   const usableSessions = linkedSessions.length > 0 ? linkedSessions : fallback.sessions;
   const allowedSessionIds = new Set(usableSessions.map((session) => session.id));
   const orchestratorRuns = Array.isArray(input.orchestratorRuns)
-    ? input.orchestratorRuns.filter(isOrchestratorRunRecord)
+    ? input.orchestratorRuns.filter((entry) => {
+        if (isOrchestratorRunRecord(entry)) {
+          return true;
+        }
+        const id =
+          isObject(entry) && isString((entry as Record<string, unknown>).id)
+            ? (entry as Record<string, unknown>).id
+            : "(unknown)";
+        console.warn(`normalizeAppState: dropping invalid orchestrator run record (id=${id})`);
+        return false;
+      })
     : [];
   const linkedOrchestratorRuns = orchestratorRuns.filter(
     (run) => allowedSpaceIds.has(run.spaceId) && allowedSessionIds.has(run.sessionId)
