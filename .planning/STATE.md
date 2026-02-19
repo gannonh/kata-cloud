@@ -2,22 +2,22 @@
 
 ## Current Position
 
-Phase: 8 — Verification Sweep and Guardrail Codification (completed)
-Plan: All Phase 8 plans executed; verification artifacts and quality-gate evidence captured
-Status: Milestone v0.1.0 phase execution complete - ready for acceptance and milestone closeout
-Last activity: 2026-02-19 - Phase 8 verification and guardrail codification completed
+Phase: 8 of 8 (Verification Sweep and Guardrail Codification) — milestone complete
+Plan: All plans complete
+Status: Between milestones — v0.1.0 shipped, next milestone not yet started
+Last activity: 2026-02-19 — v0.1.0 milestone complete
 
 ## Milestone Progress
 
 Progress: 4/4 phases complete (100%)
-Bar: [####################]
+Bar: [####################] SHIPPED
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-02-18)
+See: `.planning/PROJECT.md` (updated 2026-02-19)
 
 Core value: The spec remains aligned with implementation while agent execution consistently yields reviewable pull requests.
-Current focus: Milestone v0.1.0 Orchestrator and Context Engine Expansion
+Current focus: Planning next milestone
 
 ## Milestone Scope Issues
 
@@ -25,13 +25,10 @@ No backlog issues selected yet for this milestone scope.
 
 ## Accumulated Context
 
-- Provider runtime and PR workflow foundations are already present and validated.
-- Phase 5 delivered deterministic run lifecycle transitions, shared run/task projections, and renderer wiring for lifecycle/status display.
-- Phase 6 delivered typed context retrieval contracts, structured context IPC diagnostics, and recoverable run-history persistence semantics.
-- Phase 7 delivered startup interrupted-run recovery, interrupted lifecycle normalization, and context provenance capture/rendering in orchestrator views.
-- ORCH-01, ORCH-02, ORCH-03, ORCH-04, CTX-01, CTX-02, CTX-03, CTX-04, SESS-01, SESS-02, and SESS-03 are now complete and reflected in requirements traceability.
-- VERI-01, VERI-02, and VERI-03 are verified with command-level evidence and integrated Electron UAT coverage.
+- v0.1.0 shipped with deterministic orchestrator lifecycle, typed context contracts, and interrupted-run recovery.
+- All 14 requirements satisfied. 2 non-critical tech debt items documented in milestone audit.
+- Provider runtime and PR workflow foundations remain validated from prior work.
 - UAT-to-E2E policy remains active: manual UAT outcomes must be codified into Playwright coverage.
 
 ---
-Last updated: 2026-02-19 after Phase 8 completion
+Last updated: 2026-02-19 after v0.1.0 milestone completion
