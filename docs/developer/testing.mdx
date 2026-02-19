@@ -159,6 +159,23 @@ Tests are organized by tag:
 | `@uat` | `e2e:electron:uat` | Manual UAT sessions |
 | Full | `e2e:electron:full` | Main branch pushes, nightly |
 
+### Electron Scenario Matrix
+
+The Electron suite is organized by scenario IDs in `bin/playwright-electron-runner.mjs`:
+
+| Scenario ID | Purpose | Included in `smoke` | Included in `uat` | Included in `full` |
+|---|---|---|---|---|
+| `bridge-smoke` | Validate preload bridge wiring and Changes view shell availability | Yes | No | Yes |
+| `orchestrator-uat-lifecycle-persistence` | Validate run lifecycle transitions, failure diagnostics, and persistence after restart | No | Yes | Yes |
+| `orchestrator-context-diagnostics-uat` | Validate context diagnostics (provider, code, remediation, retryable), history movement, and restart persistence | No | Yes | Yes |
+| `changes-no-repo-link-uat` | Validate Changes flow when root path is configured without repo URL metadata | No | Yes | Yes |
+| `pr-redaction-uat` | Validate PR draft sensitive-file diff redaction/suppression behavior | No | Yes | Yes |
+
+Matrix policy:
+1. Any scenario created from manual UAT verification must be tagged for `uat`.
+2. Every `uat` scenario must also run under `full`.
+3. Pull request CI runs `smoke`; `main` and scheduled runs run `full`.
+
 ### Writing E2E Tests
 
 E2E tests live in `e2e/` (or colocated with features, following the project convention). They use Playwright's Electron driver:

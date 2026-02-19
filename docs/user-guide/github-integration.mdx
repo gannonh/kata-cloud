@@ -92,6 +92,21 @@ To disconnect from GitHub or switch accounts:
 2. Click **Clear GitHub Session**
 3. The next PR creation will prompt you to re-authenticate
 
+## PR Diff Redaction Guardrails
+
+When you click **Generate Description**, Kata Cloud sanitizes staged diff previews before they are sent for draft generation.
+
+Current default guardrails:
+- **Secret-pattern redaction** for token/key/password-like assignments and known token signatures
+- **Sensitive-path suppression** for files such as `.env*`, `.npmrc`, `.aws/credentials`, and key/certificate-like extensions (`.pem`, `.p12`, `.pfx`, `.key`, `.jks`)
+- **Preview truncation limits** of 80 lines and 3000 characters after sanitization
+
+If a file is suppressed, the PR draft includes a placeholder so you can still see that a diff section existed without exposing its contents.
+
+<Note>
+Always review generated PR text before submission, especially when staging config or credential-adjacent files.
+</Note>
+
 ## Privacy and Security
 
 - OAuth tokens are stored locally using Electron's secure storage

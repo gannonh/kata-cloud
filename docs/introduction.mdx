@@ -39,6 +39,10 @@ When you submit a prompt, Kata's **Coordination Agent**:
 2. Drafts a **Spec** — a living document describing goals, tasks, decisions, and progress
 3. Delegates tasks to **Specialist Agents** (Investigate, Implement, Verify, Critique, Debug, Code Review)
 
+### Context Engine Retrieval
+
+Orchestrator planning is grounded in context retrieval. Kata Cloud resolves relevant snippets from your workspace (and, when configured, MCP-backed sources) and includes that context in run diagnostics so you can see which provider was used and whether fallback occurred.
+
 ### Pull Request as Output
 
 Every Kata Cloud workflow produces an atomic pull request. The PR is the deliverable — not a pile of uncommitted files. Review diffs in the **Changes tab**, auto-generate a PR description, and push to GitHub in one click.
@@ -53,6 +57,9 @@ Every Kata Cloud workflow produces an atomic pull request. The PR is the deliver
 | **Changes Tab** | Visual diff viewer with selective staging and one-click PR creation |
 | **GitHub Integration** | Branch management, PR creation, and auto-generated descriptions |
 | **MCP Support** | Connect external tool servers to extend agent capabilities |
+| **In-App Browser** | Preview local app output without leaving your Space |
+| **Built-In Code Editing** | Inspect and edit files directly in the desktop workflow |
+| **Flexible Model Routing** | Route different task types to different model providers |
 | **Resumable Sessions** | Persistent state — pick up exactly where you left off |
 | **Notes** | Markdown notes with tags and full-text search |
 

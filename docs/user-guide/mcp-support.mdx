@@ -78,6 +78,30 @@ When an Orchestrator run starts, Kata Cloud:
 
 Agents can then call MCP tools the same way they use built-in tools.
 
+## Kata Context Direction
+
+Kata Cloud's longer-term context architecture is **Kata Context**: a shared context platform for agents and apps.
+
+### Context Engine MCP
+
+Kata Context will expose high-quality retrieval through MCP so external tools can consume the same context quality used in Kata workflows.
+
+### Context Engine SDK
+
+Kata Context is planned to provide SDKs for building context-aware agents and apps with:
+- Local filesystem indexing
+- Direct indexing from non-filesystem sources
+- Typed retrieval APIs for app integration
+
+### Context Connectors
+
+Kata Context connectors are intended to index and search sources such as:
+- GitHub, GitLab, and Bitbucket repositories
+- Documentation websites and runbooks
+- Schemas, configs, and local project files
+
+Connector-backed indexes are designed for use through CLI, SDK, HTTP, and MCP interfaces.
+
 ## Tool Annotations
 
 Kata Cloud respects MCP tool annotations:
