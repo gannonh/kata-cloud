@@ -46,6 +46,50 @@ describe("orchestrator run lifecycle transitions", () => {
     expect(completed.run.errorMessage).toBeUndefined();
   });
 
+  it("applies queued -> interrupted transition", () => {
+    const queuedRun = createQueuedRun();
+    const interrupted = transitionOrchestratorRunStatus(
+      queuedRun,
+      "interrupted",
+      "2026-02-19T00:00:01.000Z"
+    );
+    expect(interrupted.ok).toBe(true);
+    if (!interrupted.ok) {
+      return;
+    }
+
+    expect(interrupted.run.status).toBe("interrupted");
+    expect(interrupted.run.statusTimeline).toEqual(["queued", "interrupted"]);
+    expect(interrupted.run.interruptedAt).toBe("2026-02-19T00:00:01.000Z");
+  });
+
+  it("applies running -> interrupted transition", () => {
+    const queuedRun = createQueuedRun();
+    const running = transitionOrchestratorRunStatus(
+      queuedRun,
+      "running",
+      "2026-02-19T00:00:01.000Z"
+    );
+    expect(running.ok).toBe(true);
+    if (!running.ok) {
+      return;
+    }
+
+    const interrupted = transitionOrchestratorRunStatus(
+      running.run,
+      "interrupted",
+      "2026-02-19T00:00:02.000Z"
+    );
+    expect(interrupted.ok).toBe(true);
+    if (!interrupted.ok) {
+      return;
+    }
+
+    expect(interrupted.run.status).toBe("interrupted");
+    expect(interrupted.run.statusTimeline).toEqual(["queued", "running", "interrupted"]);
+    expect(interrupted.run.interruptedAt).toBe("2026-02-19T00:00:02.000Z");
+  });
+
   it("is idempotent for duplicate statuses", () => {
     const queuedRun = createQueuedRun();
     const first = transitionOrchestratorRunStatus(
@@ -158,6 +202,31 @@ describe("orchestrator run lifecycle transitions", () => {
 
     expect(result.reason).toContain("failed -> running");
     expect(result.run.status).toBe("failed");
+  });
+
+  it("rejects interrupted -> running transition", () => {
+    const queuedRun = createQueuedRun();
+    const interrupted = transitionOrchestratorRunStatus(
+      queuedRun,
+      "interrupted",
+      "2026-02-19T00:00:01.000Z"
+    );
+    expect(interrupted.ok).toBe(true);
+    if (!interrupted.ok) {
+      return;
+    }
+
+    const result = transitionOrchestratorRunStatus(
+      interrupted.run,
+      "running",
+      "2026-02-19T00:00:02.000Z"
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      return;
+    }
+
+    expect(result.reason).toContain("interrupted -> running");
   });
 
   it("preserves failure context in failed terminal state", () => {

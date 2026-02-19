@@ -386,6 +386,97 @@ describe("shared state helpers", () => {
     expect(state.orchestratorRuns[1]?.contextRetrievalError).toBeUndefined();
   });
 
+  it("normalizes persisted interrupted run records through round-trip", () => {
+    const state = normalizeAppState({
+      activeView: "orchestrator",
+      activeSpaceId: "space-1",
+      activeSessionId: "session-1",
+      lastOpenedAt: "2026-02-19T00:00:00.000Z",
+      spaces: [
+        {
+          id: "space-1",
+          name: "Space 1",
+          rootPath: "/tmp/space-1",
+          description: "",
+          tags: [],
+          createdAt: "2026-02-19T00:00:00.000Z",
+          updatedAt: "2026-02-19T00:00:00.000Z"
+        }
+      ],
+      sessions: [
+        {
+          id: "session-1",
+          spaceId: "space-1",
+          label: "Session 1",
+          createdAt: "2026-02-19T00:00:00.000Z",
+          updatedAt: "2026-02-19T00:00:00.000Z"
+        }
+      ],
+      orchestratorRuns: [
+        {
+          id: "run-interrupted",
+          spaceId: "space-1",
+          sessionId: "session-1",
+          prompt: "resume pending work",
+          status: "interrupted",
+          statusTimeline: ["queued", "running", "interrupted"],
+          createdAt: "2026-02-19T00:00:00.000Z",
+          updatedAt: "2026-02-19T00:01:00.000Z",
+          interruptedAt: "2026-02-19T00:01:00.000Z",
+          resolvedProviderId: "filesystem"
+        }
+      ]
+    });
+
+    expect(state.orchestratorRuns).toHaveLength(1);
+    expect(state.orchestratorRuns[0]?.status).toBe("interrupted");
+    expect(state.orchestratorRuns[0]?.interruptedAt).toBe("2026-02-19T00:01:00.000Z");
+    expect(state.orchestratorRuns[0]?.resolvedProviderId).toBe("filesystem");
+  });
+
+  it("drops interrupted runs missing interruptedAt", () => {
+    const state = normalizeAppState({
+      activeView: "orchestrator",
+      activeSpaceId: "space-1",
+      activeSessionId: "session-1",
+      lastOpenedAt: "2026-02-19T00:00:00.000Z",
+      spaces: [
+        {
+          id: "space-1",
+          name: "Space 1",
+          rootPath: "/tmp/space-1",
+          description: "",
+          tags: [],
+          createdAt: "2026-02-19T00:00:00.000Z",
+          updatedAt: "2026-02-19T00:00:00.000Z"
+        }
+      ],
+      sessions: [
+        {
+          id: "session-1",
+          spaceId: "space-1",
+          label: "Session 1",
+          createdAt: "2026-02-19T00:00:00.000Z",
+          updatedAt: "2026-02-19T00:00:00.000Z"
+        }
+      ],
+      orchestratorRuns: [
+        {
+          id: "run-interrupted-missing-timestamp",
+          spaceId: "space-1",
+          sessionId: "session-1",
+          prompt: "resume pending work",
+          status: "interrupted",
+          statusTimeline: ["queued", "running", "interrupted"],
+          createdAt: "2026-02-19T00:00:00.000Z",
+          updatedAt: "2026-02-19T00:01:00.000Z"
+        }
+      ]
+    });
+
+    expect(state.orchestratorRuns).toHaveLength(0);
+  });
+
   it("drops persisted runs with inconsistent lifecycle timeline metadata", () => {
     const state = normalizeAppState({
       activeView: "orchestrator",

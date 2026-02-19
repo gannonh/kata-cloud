@@ -1,10 +1,11 @@
 import type { OrchestratorRunRecord, OrchestratorRunStatus } from "./state";
 
 export const ALLOWED_RUN_TRANSITIONS: Record<OrchestratorRunStatus, readonly OrchestratorRunStatus[]> = {
-  queued: ["running"],
-  running: ["completed", "failed"],
+  queued: ["running", "interrupted"],
+  running: ["completed", "failed", "interrupted"],
   completed: [],
-  failed: []
+  failed: [],
+  interrupted: []
 };
 
 export interface OrchestratorRunTransitionSuccess {
@@ -23,7 +24,7 @@ export type OrchestratorRunTransitionResult =
   | OrchestratorRunTransitionFailure;
 
 function isTerminalRunStatus(status: OrchestratorRunStatus): boolean {
-  return status === "completed" || status === "failed";
+  return status === "completed" || status === "failed" || status === "interrupted";
 }
 
 function appendRunTimelineStatus(
@@ -49,7 +50,11 @@ export function transitionOrchestratorRunStatus(
         ...run,
         statusTimeline: timeline,
         updatedAt,
-        completedAt: isTerminalRunStatus(nextStatus) ? updatedAt : run.completedAt,
+        completedAt:
+          isTerminalRunStatus(nextStatus) && nextStatus !== "interrupted"
+            ? updatedAt
+            : run.completedAt,
+        interruptedAt: nextStatus === "interrupted" ? updatedAt : run.interruptedAt,
         errorMessage: nextStatus === "failed" ? failureMessage ?? run.errorMessage : undefined
       }
     };
@@ -71,7 +76,9 @@ export function transitionOrchestratorRunStatus(
       status: nextStatus,
       statusTimeline: timeline,
       updatedAt,
-      completedAt: isTerminalRunStatus(nextStatus) ? updatedAt : undefined,
+      completedAt:
+        isTerminalRunStatus(nextStatus) && nextStatus !== "interrupted" ? updatedAt : undefined,
+      interruptedAt: nextStatus === "interrupted" ? updatedAt : undefined,
       errorMessage: nextStatus === "failed" ? failureMessage ?? run.errorMessage : undefined
     }
   };

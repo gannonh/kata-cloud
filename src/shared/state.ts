@@ -13,7 +13,7 @@ import { ALLOWED_RUN_TRANSITIONS } from "./orchestrator-run-lifecycle";
 export const APP_STATE_VERSION = 1;
 
 export type NavigationView = "explorer" | "orchestrator" | "spec" | "changes" | "browser";
-export type OrchestratorRunStatus = "queued" | "running" | "completed" | "failed";
+export type OrchestratorRunStatus = "queued" | "running" | "completed" | "failed" | "interrupted";
 export type OrchestratorTaskType = "implement" | "verify" | "debug";
 export type OrchestratorTaskStatus =
   | "queued"
@@ -74,7 +74,9 @@ export interface OrchestratorRunRecord {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  interruptedAt?: string;
   errorMessage?: string;
+  resolvedProviderId?: ContextProviderId;
   contextRetrievalError?: ContextRetrievalError;
   contextSnippets?: ContextSnippet[];
   draft?: OrchestratorSpecDraft;
@@ -117,7 +119,13 @@ function isNavigationView(value: unknown): value is NavigationView {
 }
 
 function isOrchestratorRunStatus(value: unknown): value is OrchestratorRunStatus {
-  return value === "queued" || value === "running" || value === "completed" || value === "failed";
+  return (
+    value === "queued" ||
+    value === "running" ||
+    value === "completed" ||
+    value === "failed" ||
+    value === "interrupted"
+  );
 }
 
 function isContextProviderId(value: unknown): value is ContextProviderId {
@@ -315,13 +323,21 @@ function normalizeOrchestratorRunRecord(value: unknown): OrchestratorRunRecord |
   }
 
   const terminalStatus = runStatus === "completed" || runStatus === "failed";
+  const interruptedStatus = runStatus === "interrupted";
   const completedAt = isString(value.completedAt) ? value.completedAt : undefined;
+  const interruptedAt = isString(value.interruptedAt) ? value.interruptedAt : undefined;
   if (terminalStatus && !completedAt) {
+    return null;
+  }
+  if (interruptedStatus && !interruptedAt) {
     return null;
   }
 
   const contextSnippets = Array.isArray(value.contextSnippets)
     ? value.contextSnippets.filter(isContextSnippet)
+    : undefined;
+  const resolvedProviderId = isContextProviderId(value.resolvedProviderId)
+    ? value.resolvedProviderId
     : undefined;
   const draft = isOrchestratorSpecDraft(value.draft) ? value.draft : undefined;
   const draftAppliedAt = isString(value.draftAppliedAt) ? value.draftAppliedAt : undefined;
@@ -340,7 +356,9 @@ function normalizeOrchestratorRunRecord(value: unknown): OrchestratorRunRecord |
     createdAt: value.createdAt,
     updatedAt: value.updatedAt,
     completedAt,
+    interruptedAt,
     errorMessage: isString(value.errorMessage) ? value.errorMessage : undefined,
+    resolvedProviderId,
     contextRetrievalError: isContextRetrievalError(value.contextRetrievalError)
       ? value.contextRetrievalError
       : undefined,
