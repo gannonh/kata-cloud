@@ -90,6 +90,49 @@ describe("orchestrator run lifecycle transitions", () => {
     expect(invalid.run.statusTimeline).toEqual(["queued"]);
   });
 
+  it("rejects queued -> failed (skips running)", () => {
+    const queuedRun = createQueuedRun();
+    const result = transitionOrchestratorRunStatus(queuedRun, "failed", "2026-02-18T00:00:01.000Z");
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.reason).toContain("queued -> failed");
+    expect(result.run.status).toBe("queued");
+  });
+
+  it("rejects completed -> running (re-queue attempt)", () => {
+    const queuedRun = createQueuedRun();
+    const running = transitionOrchestratorRunStatus(queuedRun, "running", "2026-02-18T00:00:01.000Z");
+    if (!running.ok) return;
+    const completed = transitionOrchestratorRunStatus(running.run, "completed", "2026-02-18T00:00:02.000Z");
+    if (!completed.ok) return;
+
+    const result = transitionOrchestratorRunStatus(completed.run, "running", "2026-02-18T00:00:03.000Z");
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.reason).toContain("completed -> running");
+    expect(result.run.status).toBe("completed");
+  });
+
+  it("rejects failed -> running (retry attempt)", () => {
+    const queuedRun = createQueuedRun();
+    const running = transitionOrchestratorRunStatus(queuedRun, "running", "2026-02-18T00:00:01.000Z");
+    if (!running.ok) return;
+    const failed = transitionOrchestratorRunStatus(running.run, "failed", "2026-02-18T00:00:02.000Z", "err");
+    if (!failed.ok) return;
+
+    const result = transitionOrchestratorRunStatus(failed.run, "running", "2026-02-18T00:00:03.000Z");
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.reason).toContain("failed -> running");
+    expect(result.run.status).toBe("failed");
+  });
+
   it("preserves failure context in failed terminal state", () => {
     const queuedRun = createQueuedRun();
     const running = transitionOrchestratorRunStatus(
