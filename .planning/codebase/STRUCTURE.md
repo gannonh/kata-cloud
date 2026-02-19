@@ -8,7 +8,7 @@
 kata-cloud/
 ├── src/                     # Electron app source (main, preload, renderer, domains)
 ├── packages/task-parser/    # Reusable parser package (ESM)
-├── scripts/                 # Dev/test/e2e orchestration scripts
+├── bin/                 # Dev/test/e2e orchestration scripts
 ├── notes/                   # Spec/task markdown artifacts
 ├── docs/                    # Product/PRD/research/design docs
 ├── .github/workflows/       # CI and automation workflows
@@ -53,7 +53,7 @@ kata-cloud/
 - `src/main.tsx`: renderer app root
 
 **Configuration:**
-- `package.json`: scripts/dependencies
+- `package.json`: bin/dependencies
 - `eslint.config.mjs`: lint rules
 - `vitest.config.ts`: test and coverage config
 - `tsconfig.main.json`, `tsconfig.renderer.json`: build/typecheck splits
@@ -65,7 +65,7 @@ kata-cloud/
 
 **Testing:**
 - Co-located `*.test.ts`, `*.test.tsx`, and `*.node.test.ts`
-- E2E command drivers in `scripts/playwright-electron-smoke.mjs` and `scripts/playwright-electron-e2e.mjs`
+- E2E command drivers in `bin/playwright-electron-smoke.mjs` and `bin/playwright-electron-e2e.mjs`
 
 ## Naming Conventions
 

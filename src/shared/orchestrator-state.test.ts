@@ -117,7 +117,7 @@ describe("orchestrator run state normalization", () => {
     expect(state.orchestratorRuns).toHaveLength(0);
   });
 
-  it("drops runs with invalid draft artifacts", () => {
+  it("preserves runs with invalid optional nested artifacts by stripping malformed fields", () => {
     const state = normalizeAppState({
       activeView: "orchestrator",
       activeSpaceId: "space-1",
@@ -158,12 +158,26 @@ describe("orchestrator run state normalization", () => {
             runId: "run-1",
             generatedAt: "",
             content: "## Goal\nDraft goal"
-          }
+          },
+          delegatedTasks: [
+            {
+              id: "run-1-plan",
+              runId: "run-1",
+              type: "plan",
+              specialist: "planner",
+              status: "completed",
+              statusTimeline: ["queued", "completed"],
+              createdAt: "2026-02-16T00:00:00.000Z",
+              updatedAt: "2026-02-16T00:00:00.000Z"
+            }
+          ]
         }
       ]
     });
 
-    expect(state.orchestratorRuns).toHaveLength(0);
+    expect(state.orchestratorRuns).toHaveLength(1);
+    expect(state.orchestratorRuns[0]?.draft).toBeUndefined();
+    expect(state.orchestratorRuns[0]?.delegatedTasks).toEqual([]);
   });
 
   it("drops terminal runs without completedAt timestamp", () => {

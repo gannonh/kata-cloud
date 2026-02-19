@@ -28,6 +28,11 @@ import {
   getRunsForActiveSession
 } from "./shared/orchestrator-run-history";
 import {
+  applyOrchestratorRunUpdate,
+  completeOrchestratorRun,
+  enqueueOrchestratorRun
+} from "./shared/orchestrator-run-persistence";
+import {
   projectOrchestratorRunHistory,
   projectOrchestratorRunViewModel
 } from "./shared/orchestrator-run-view-model";
@@ -60,6 +65,8 @@ import {
   resolveContextProviderId
 } from "./context/context-adapter";
 import type { ContextSnippet } from "./context/types";
+import type { ContextIpcErrorPayload } from "./shared/context-ipc";
+import { parseContextIpcError } from "./shared/context-ipc";
 import "./styles.css";
 import { resolveRunFailure } from "./shared/orchestrator-failure";
 
@@ -871,7 +878,7 @@ function App(): React.JSX.Element {
 
     const queuedState: AppState = {
       ...state,
-      orchestratorRuns: [...state.orchestratorRuns, queuedRun],
+      orchestratorRuns: enqueueOrchestratorRun(state.orchestratorRuns, queuedRun),
       lastOpenedAt: startedAt
     };
     await persistState(queuedState);
@@ -891,7 +898,7 @@ function App(): React.JSX.Element {
       };
       await persistState({
         ...queuedState,
-        orchestratorRuns: queuedState.orchestratorRuns.map((run) => (run.id === runId ? failedRun : run)),
+        orchestratorRuns: applyOrchestratorRunUpdate(queuedState.orchestratorRuns, failedRun),
         lastOpenedAt: failedAt
       });
       return;
@@ -900,9 +907,7 @@ function App(): React.JSX.Element {
     const runningRun = runningTransition.run;
     const runningState: AppState = {
       ...queuedState,
-      orchestratorRuns: queuedState.orchestratorRuns.map((run) =>
-        run.id === runId ? runningRun : run
-      ),
+      orchestratorRuns: applyOrchestratorRunUpdate(queuedState.orchestratorRuns, runningRun),
       lastOpenedAt: runningAt
     };
     await persistState(runningState);
@@ -912,9 +917,10 @@ function App(): React.JSX.Element {
       activeSession.contextProvider
     );
     let contextSnippets: ContextSnippet[] = [];
+    let contextRetrievalError: ContextIpcErrorPayload | undefined;
     if (window.kataShell) {
       try {
-        contextSnippets = await window.kataShell.retrieveContext({
+        const contextResult = await window.kataShell.retrieveContext({
           prompt,
           rootPath: activeSpace.rootPath,
           spaceId: activeSpace.id,
@@ -922,9 +928,24 @@ function App(): React.JSX.Element {
           providerId: contextProviderId,
           limit: 3
         });
+        if (contextResult.ok) {
+          contextSnippets = contextResult.snippets;
+        } else {
+          contextRetrievalError = contextResult.error;
+          console.warn("Context retrieval completed with diagnostics.", contextResult.error);
+        }
       } catch (error) {
         console.error("Failed to retrieve context snippets.", error);
-        contextSnippets = [];
+        const parsedError = parseContextIpcError(error);
+        contextRetrievalError =
+          parsedError ??
+          {
+            code: "io_failure",
+            message: "Context retrieval failed due to an unexpected IPC error.",
+            remediation: "Retry context retrieval and inspect logs if this persists.",
+            retryable: true,
+            providerId: contextProviderId
+          };
       }
     }
     const endedAt = new Date().toISOString();
@@ -952,11 +973,12 @@ function App(): React.JSX.Element {
         updatedAt: endedAt,
         completedAt: endedAt,
         errorMessage: endedTransition.reason,
+        contextRetrievalError,
         delegatedTasks: delegationOutcome.tasks
       };
       await persistState({
         ...runningState,
-        orchestratorRuns: runningState.orchestratorRuns.map((run) => (run.id === runId ? failedRun : run)),
+        orchestratorRuns: applyOrchestratorRunUpdate(runningState.orchestratorRuns, failedRun),
         lastOpenedAt: endedAt
       });
       return;
@@ -964,20 +986,20 @@ function App(): React.JSX.Element {
 
     const endedRun = endedTransition.run;
     const draft = failureMessage ? undefined : createSpecDraft(endedRun, endedAt, contextSnippets);
+    const runsWithTerminalUpdate = applyOrchestratorRunUpdate(runningState.orchestratorRuns, {
+      ...endedRun,
+      contextRetrievalError
+    });
     const endedState: AppState = {
       ...runningState,
-      orchestratorRuns: runningState.orchestratorRuns.map((run) =>
-        run.id === runId
-          ? {
-              ...endedRun,
-              contextSnippets: failureMessage ? undefined : contextSnippets,
-              draft,
-              draftAppliedAt: undefined,
-              draftApplyError: undefined,
-              delegatedTasks: delegationOutcome.tasks
-            }
-          : run
-      ),
+      orchestratorRuns: completeOrchestratorRun(runsWithTerminalUpdate, runId, {
+        contextRetrievalError,
+        contextSnippets: failureMessage ? undefined : contextSnippets,
+        draft,
+        draftAppliedAt: undefined,
+        draftApplyError: undefined,
+        delegatedTasks: delegationOutcome.tasks
+      }),
       lastOpenedAt: endedAt
     };
     await persistState(endedState);
@@ -1545,6 +1567,18 @@ function App(): React.JSX.Element {
                   {latestRunViewModel.errorMessage ? (
                     <p className="field-error">{latestRunViewModel.errorMessage}</p>
                   ) : null}
+                  {latestRunViewModel.contextDiagnostics ? (
+                    <>
+                      <p className="field-error">
+                        Context ({latestRunViewModel.contextDiagnostics.providerId} / {latestRunViewModel.contextDiagnostics.code}
+                        ): {latestRunViewModel.contextDiagnostics.message}
+                      </p>
+                      <p>
+                        Remediation: {latestRunViewModel.contextDiagnostics.remediation}{" "}
+                        {latestRunViewModel.contextDiagnostics.retryable ? "(retryable)" : "(not retryable)"}
+                      </p>
+                    </>
+                  ) : null}
                   {latestRunForActiveSession.draftApplyError ? (
                     <p className="field-error">{latestRunForActiveSession.draftApplyError}</p>
                   ) : null}
@@ -1587,6 +1621,18 @@ function App(): React.JSX.Element {
                         </div>
                       ) : null}
                       {run.errorMessage ? <p className="field-error">{run.errorMessage}</p> : null}
+                      {run.contextDiagnostics ? (
+                        <>
+                          <p className="field-error">
+                            Context ({run.contextDiagnostics.providerId} / {run.contextDiagnostics.code}):{" "}
+                            {run.contextDiagnostics.message}
+                          </p>
+                          <p>
+                            Remediation: {run.contextDiagnostics.remediation}{" "}
+                            {run.contextDiagnostics.retryable ? "(retryable)" : "(not retryable)"}
+                          </p>
+                        </>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

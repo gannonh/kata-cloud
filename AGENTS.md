@@ -98,21 +98,38 @@ The git feature is the most complex domain. Key files:
 - Coverage thresholds: 80% statements/functions/lines, 70% branches (enforced by `vitest.config.ts`).
 - Main process and preload code (`src/main/**`, `src/preload/**`) are excluded from coverage.
 
-### UAT to E2E Policy
-- Every UAT session must be followed by codifying the exercised behavior as Playwright end-to-end coverage.
-- For each manual UAT scenario that passes or finds a regression, add/update a Playwright scenario that reproduces the same flow and expected result.
-- UAT scenarios are a subset of the unified E2E suite, not a separate permanent test system.
-- Keep naming split by intent:
-  - `e2e:electron:smoke`: fast baseline gate.
-  - `e2e:electron:uat`: automated UAT verification scenarios.
-  - `e2e:electron:full`: all Electron E2E coverage (smoke + uat + additional scenarios).
-  - `e2e`: umbrella alias to full Electron E2E coverage.
-- CI policy:
-  - Pull requests run `e2e:electron:smoke`.
-  - `main` pushes and nightly schedule run full `e2e`.
-- Prefer shipping the Playwright coverage in the same PR as the fix; if scope is too large, open a follow-up task/issue before merge and link it in the PR.
-- Keep Playwright artifacts in `output/playwright/` when screenshots are needed for debugging or PR evidence.
-- Use repo-relative paths and commands in agent prompts/instructions; do not hard-code machine-specific absolute worktree paths.
+# UAT Process
+
+When the `kata-verify-work` skill is run, execute UAT in this order:
+
+1. Resolve phase context and input artifacts:
+   - Identify target phase from `.planning/STATE.md` / `.planning/ROADMAP.md`.
+   - Read phase `*-SUMMARY.md` files to derive user-observable checks.
+2. Run verification with Playwright for Electron flows:
+   - Use `pnpm run e2e:electron:uat` for the UAT-tagged suite.
+   - If needed, run targeted scenario development in `bin/playwright-electron-runner.mjs`.
+3. Record UAT evidence in phase tracking:
+   - Create or update `{phase}-UAT.md` under `.planning/phases/{state}/{phase-name}/`.
+   - Track expected behavior, pass/fail outcome, summary counts, and gaps.
+4. Codify UAT outcomes into automated E2E coverage:
+   - Add or update scenario coverage in `bin/playwright-electron-runner.mjs`.
+   - Update `docs/e2e-electron-matrix.md` so suite membership is explicit.
+5. Re-run quality gates after coverage updates:
+   - `pnpm run e2e:electron:uat`
+   - `pnpm run desktop:typecheck`
+6. Keep policy constraints:
+   - UAT scenarios are part of the unified Electron E2E suite, not a separate permanent test system.
+   - Naming split remains:
+     - `e2e:electron:smoke`: fast baseline gate.
+     - `e2e:electron:uat`: automated UAT verification scenarios.
+     - `e2e:electron:full`: all Electron E2E coverage (smoke + uat + additional scenarios).
+     - `e2e`: umbrella alias to full Electron E2E coverage.
+   - CI policy:
+     - Pull requests run `e2e:electron:smoke`.
+     - `main` pushes and nightly schedule run full `e2e`.
+   - Prefer shipping Playwright coverage in the same PR as the verified change.
+   - Keep Playwright artifacts in `output/playwright/` for debugging/PR evidence.
+   - Use repo-relative paths/commands in prompts and instructions.
 
 ## TypeScript Configuration
 - `tsconfig.main.json`: CommonJS, Node/Electron types, outputs to `dist/`.
@@ -146,11 +163,44 @@ Location: `docs/`
 - Research: `docs/research.md`
 
 
-## Resolving Agent Skills Resources
+## Skill Resource Resolution (Non-Negotiable)
 
-Sometimes you may erroneously think that a skill resource is unavailable. They are available at the following locations:
+When a `<skill>` is active, all skill-internal paths are resolved **RELATIVE TO THE INVOKED SKILL DIRECTORY, NOT THE PROJECT ROOT.**
 
-- `/Users/gannonhall/.codex/skills/`, or
-- `/Users/gannonhall/.agents/skills/`
+- `SKILL_PATH` = absolute path to invoked `SKILL.md`
+- `SKILL_BASE_DIR` = `dirname(SKILL_PATH)`
 
-Always check these locations. If you can't find the skill resource, let the user know and wait for them to help you before moving on. 
+### Mandatory path resolution
+Treat these as `SKILL_BASE_DIR`-relative unless the skill explicitly says “project root”:
+
+- `./scripts/...`
+- `scripts/...`
+- `references/...`
+- `assets/...`
+- `templates/...`
+- any other relative subfolder path shown in `SKILL.md`
+
+### Forbidden during skill execution
+Do **not** run project-root script paths for skill internals:
+
+- `node scripts/...`
+- `python3 scripts/...`
+- `bash scripts/...`
+
+This is forbidden unless the skill explicitly requires a project-root path.
+
+### Lookup roots (only to find installed skills)
+1. `/Users/gannonhall/.agents/skills/`
+2. `/Users/gannonhall/.codex/skills/`
+
+Once the skill is found, use only that skill’s directory for its internal resources.
+
+### Pre-execution guard
+Before running any command containing `scripts/`, verify it points to `${SKILL_BASE_DIR}/scripts/...` (or an absolute path inside `SKILL_BASE_DIR`).  
+If not, stop and correct the command before execution.
+
+### Example
+If invoked skill is `/Users/gannonhall/.agents/skills/kata-plan-phase/SKILL.md`, then:
+- `scripts/kata-lib.cjs` means  
+`/Users/gannonhall/.agents/skills/kata-plan-phase/scripts/kata-lib.cjs`  
+- never `./scripts/kata-lib.cjs` from repo root.

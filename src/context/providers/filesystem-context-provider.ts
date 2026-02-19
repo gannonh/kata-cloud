@@ -1,7 +1,13 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { ContextProvider, ContextQuery, ContextSnippet } from "../types";
+import type {
+  ContextProvider,
+  ContextQuery,
+  ContextRetrievalErrorCode,
+  ContextRetrievalResult,
+  ContextSnippet
+} from "../types";
 
 const DEFAULT_LIMIT = 5;
 const MAX_FILE_BYTES = 200_000;
@@ -94,13 +100,87 @@ async function collectFiles(rootPath: string): Promise<string[]> {
 export class FilesystemContextProvider implements ContextProvider {
   readonly id = "filesystem" as const;
 
-  async retrieve(query: ContextQuery): Promise<ContextSnippet[]> {
+  private createFailure(
+    code: ContextRetrievalErrorCode,
+    message: string,
+    remediation: string,
+    retryable: boolean
+  ): ContextRetrievalResult {
+    return {
+      ok: false,
+      providerId: this.id,
+      snippets: [],
+      error: {
+        code,
+        message,
+        remediation,
+        retryable,
+        providerId: this.id
+      }
+    };
+  }
+
+  private createSuccess(snippets: ContextSnippet[]): ContextRetrievalResult {
+    return {
+      ok: true,
+      providerId: this.id,
+      snippets
+    };
+  }
+
+  async retrieve(query: ContextQuery): Promise<ContextRetrievalResult> {
     const terms = toSearchTerms(query.prompt);
     if (terms.length === 0) {
-      return [];
+      return this.createFailure(
+        "invalid_query",
+        "Context query did not include searchable terms.",
+        "Provide a prompt with at least one meaningful search term.",
+        false
+      );
     }
 
-    const files = await collectFiles(expandTilde(query.rootPath));
+    const requestRootPath = expandTilde(query.rootPath);
+    if (requestRootPath.length === 0) {
+      return this.createFailure(
+        "invalid_root_path",
+        "Context retrieval root path is empty.",
+        "Select a space with a valid workspace root path before running orchestration.",
+        false
+      );
+    }
+
+    try {
+      const rootMetadata = await stat(requestRootPath);
+      if (!rootMetadata.isDirectory()) {
+        return this.createFailure(
+          "invalid_root_path",
+          `Context retrieval root path is not a directory: ${requestRootPath}`,
+          "Update the space root path to a readable project directory.",
+          false
+        );
+      }
+    } catch {
+      return this.createFailure(
+        "invalid_root_path",
+        `Context retrieval root path is unavailable: ${requestRootPath}`,
+        "Update the space root path to an existing directory.",
+        false
+      );
+    }
+
+    if (
+      query.limit !== undefined &&
+      (!Number.isFinite(query.limit) || !Number.isInteger(query.limit) || query.limit < 1)
+    ) {
+      return this.createFailure(
+        "invalid_query",
+        "Context retrieval limit must be a positive integer.",
+        "Use a positive integer limit value when requesting context snippets.",
+        false
+      );
+    }
+
+    const files = await collectFiles(requestRootPath);
     const snippets: ContextSnippet[] = [];
     const maxResults = query.limit ?? DEFAULT_LIMIT;
 
@@ -138,6 +218,6 @@ export class FilesystemContextProvider implements ContextProvider {
       }
     }
 
-    return snippets;
+    return this.createSuccess(snippets);
   }
 }

@@ -23,6 +23,13 @@ export interface OrchestratorRunViewModel {
   lifecycleText: string;
   contextPreview: string;
   errorMessage?: string;
+  contextDiagnostics?: {
+    code: string;
+    providerId: string;
+    message: string;
+    remediation: string;
+    retryable: boolean;
+  };
   delegatedTasks: OrchestratorDelegatedTaskViewModel[];
 }
 
@@ -99,6 +106,15 @@ export function projectOrchestratorRunViewModel(run: OrchestratorRunRecord): Orc
     lifecycleText: run.statusTimeline.join(" -> "),
     contextPreview: toContextPreview(run.contextSnippets),
     errorMessage: failedTaskError ?? run.errorMessage,
+    contextDiagnostics: run.contextRetrievalError
+      ? {
+          code: run.contextRetrievalError.code,
+          providerId: run.contextRetrievalError.providerId,
+          message: run.contextRetrievalError.message,
+          remediation: run.contextRetrievalError.remediation,
+          retryable: run.contextRetrievalError.retryable
+        }
+      : undefined,
     delegatedTasks
   };
 }
