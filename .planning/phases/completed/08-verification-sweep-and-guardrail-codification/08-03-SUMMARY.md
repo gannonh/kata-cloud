@@ -18,9 +18,9 @@ tech-stack:
   patterns: [command-level evidence capture, requirement traceability, milestone handoff docs]
 key-files:
   created:
-    - .planning/phases/active/08-verification-sweep-and-guardrail-codification/08-UAT.md
-    - .planning/phases/active/08-verification-sweep-and-guardrail-codification/08-VERIFICATION.md
-    - .planning/phases/active/08-verification-sweep-and-guardrail-codification/08-quality-gates.log
+    - .planning/phases/completed/08-verification-sweep-and-guardrail-codification/08-UAT.md
+    - .planning/phases/completed/08-verification-sweep-and-guardrail-codification/08-VERIFICATION.md
+    - .planning/phases/completed/08-verification-sweep-and-guardrail-codification/08-quality-gates.log
   modified:
     - .planning/REQUIREMENTS.md
     - .planning/ROADMAP.md
@@ -68,9 +68,9 @@ completed: 2026-02-19
 
 ## Files Created/Modified
 
-- `.planning/phases/active/08-verification-sweep-and-guardrail-codification/08-UAT.md`
-- `.planning/phases/active/08-verification-sweep-and-guardrail-codification/08-VERIFICATION.md`
-- `.planning/phases/active/08-verification-sweep-and-guardrail-codification/08-quality-gates.log`
+- `.planning/phases/completed/08-verification-sweep-and-guardrail-codification/08-UAT.md`
+- `.planning/phases/completed/08-verification-sweep-and-guardrail-codification/08-VERIFICATION.md`
+- `.planning/phases/completed/08-verification-sweep-and-guardrail-codification/08-quality-gates.log`
 - `.planning/REQUIREMENTS.md`
 - `.planning/ROADMAP.md`
 - `.planning/STATE.md`

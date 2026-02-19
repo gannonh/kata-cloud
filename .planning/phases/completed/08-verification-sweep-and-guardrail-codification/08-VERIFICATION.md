@@ -55,15 +55,15 @@ Evidence:
 
 Additional artifacts:
 - `output/playwright/electron-smoke-2026-02-19T16-09-34-071Z.png`
-- `.planning/phases/active/08-verification-sweep-and-guardrail-codification/08-quality-gates.log`
+- `.planning/phases/completed/08-verification-sweep-and-guardrail-codification/08-quality-gates.log`
 
 ## Key Artifacts Verified
 
 - `package.json`
 - `docs/developer/testing.mdx`
 - `bin/playwright-electron-runner.mjs`
-- `.planning/phases/active/08-verification-sweep-and-guardrail-codification/08-UAT.md`
-- `.planning/phases/active/08-verification-sweep-and-guardrail-codification/08-quality-gates.log`
+- `.planning/phases/completed/08-verification-sweep-and-guardrail-codification/08-UAT.md`
+- `.planning/phases/completed/08-verification-sweep-and-guardrail-codification/08-quality-gates.log`
 
 ## Gaps
 

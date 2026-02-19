@@ -34,7 +34,7 @@ result: pass
 - Smoke baseline: `pnpm run e2e:electron:smoke` (pass)
 - UAT screenshot: `output/playwright/electron-uat-2026-02-19T16-09-37-676Z.png`
 - Smoke screenshot: `output/playwright/electron-smoke-2026-02-19T16-09-34-071Z.png`
-- Command log: `.planning/phases/active/08-verification-sweep-and-guardrail-codification/08-quality-gates.log`
+- Command log: `.planning/phases/completed/08-verification-sweep-and-guardrail-codification/08-quality-gates.log`
 
 ## Summary
 
