@@ -16,7 +16,7 @@ Current focus is making orchestrator and context behavior deterministic before b
 
 - [x] Phase 5: Orchestrator Lifecycle Determinism (3/3 plans) — completed 2026-02-18
 - [x] Phase 6: Delegation + Context Contract Hardening (3/3 plans) — completed 2026-02-19
-- [ ] Phase 7: Resume Integrity and Context Consistency
+- [ ] Phase 7: Resume Integrity and Context Consistency (2 plans)
 - [ ] Phase 8: Verification Sweep and Guardrail Codification
 
 ### Phase 7: Resume Integrity and Context Consistency
@@ -24,6 +24,12 @@ Current focus is making orchestrator and context behavior deterministic before b
 **Goal**: Guarantee restart/resume safety and stable context grounding across repeated orchestration runs.
 
 **Requirements**: CTX-03, CTX-04, SESS-01, SESS-02, SESS-03
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Interrupted status and context provenance shared contracts
+- [ ] 07-02-PLAN.md — Main process startup recovery and renderer provenance wiring
 
 **Success Criteria** (what must be TRUE):
   1. App restart preserves orchestrator run history, delegated summaries, and active workflow linkage.
@@ -54,4 +60,4 @@ Current focus is making orchestrator and context behavior deterministic before b
 
 ---
 *Roadmap created: 2026-02-18*
-*Last updated: 2026-02-19 — phase 06 completed*
+*Last updated: 2026-02-19 — phase 07 planned*
