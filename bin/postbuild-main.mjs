@@ -1,15 +1,13 @@
 #!/usr/bin/env node
 
-import { copyFile, rm } from "node:fs/promises";
+import { access } from "node:fs/promises";
 import process from "node:process";
 
-const source = "dist/preload-cjs/preload/index.js";
-const target = "dist/preload/index.cjs";
+const preloadOutput = "dist/preload/index.js";
 
 try {
-  await copyFile(source, target);
-  await rm("dist/preload-cjs", { recursive: true, force: true });
+  await access(preloadOutput);
 } catch (error) {
-  console.error(`[desktop:build-main] Unable to create ${target} from ${source}.`, error);
+  console.error(`[desktop:build-main] Missing preload output at ${preloadOutput}.`, error);
   process.exit(1);
 }
