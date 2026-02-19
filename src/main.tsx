@@ -142,6 +142,25 @@ function formatContextSnippetSection(snippets: ContextSnippet[]): string {
   ].join("\n");
 }
 
+function formatContextProvenanceLine(
+  contextProvenance:
+    | {
+        resolvedProviderId: string;
+        snippetCount: number;
+        fallbackFromProviderId?: string;
+      }
+    | undefined
+): string | null {
+  if (!contextProvenance) {
+    return null;
+  }
+
+  const fallbackNote = contextProvenance.fallbackFromProviderId
+    ? ` (fallback from ${contextProvenance.fallbackFromProviderId})`
+    : "";
+  return `Context: ${contextProvenance.resolvedProviderId} (${contextProvenance.snippetCount} snippets)${fallbackNote}`;
+}
+
 function createSpecDraft(
   run: OrchestratorRunRecord,
   generatedAt: string,
@@ -865,6 +884,10 @@ function App(): React.JSX.Element {
 
     const startedAt = new Date().toISOString();
     const runId = createOrchestratorRunId();
+    const contextProviderId = resolveContextProviderId(
+      activeSpace.contextProvider,
+      activeSession.contextProvider
+    );
     const queuedRun: OrchestratorRunRecord = {
       id: runId,
       spaceId: activeSpace.id,
@@ -873,7 +896,8 @@ function App(): React.JSX.Element {
       status: "queued",
       statusTimeline: ["queued"],
       createdAt: startedAt,
-      updatedAt: startedAt
+      updatedAt: startedAt,
+      resolvedProviderId: contextProviderId
     };
 
     const queuedState: AppState = {
@@ -912,10 +936,6 @@ function App(): React.JSX.Element {
     };
     await persistState(runningState);
 
-    const contextProviderId = resolveContextProviderId(
-      activeSpace.contextProvider,
-      activeSession.contextProvider
-    );
     let contextSnippets: ContextSnippet[] = [];
     let contextRetrievalError: ContextIpcErrorPayload | undefined;
     if (window.kataShell) {
@@ -1528,11 +1548,17 @@ function App(): React.JSX.Element {
             </div>
             <div className="info-card">
               <h3>Status</h3>
-              <p>
-                {latestRunViewModel
-                  ? `Run ${latestRunViewModel.id} is ${latestRunViewModel.statusLabel}.`
-                  : "No orchestrator runs yet."}
-              </p>
+              {latestRunViewModel ? (
+                <p>
+                  Run {latestRunViewModel.id} is {latestRunViewModel.statusLabel}
+                  {latestRunViewModel.status === "interrupted" ? (
+                    <span className="field-error"> (app exited)</span>
+                  ) : null}
+                  .
+                </p>
+              ) : (
+                <p>No orchestrator runs yet.</p>
+              )}
               {/* latestRunViewModel is derived from latestRunForActiveSession; both are null/non-null
                   simultaneously. Draft fields (draft, draftAppliedAt, draftApplyError) are not projected
                   into the view model, so the raw record is used for those fields only. */}
@@ -1540,6 +1566,10 @@ function App(): React.JSX.Element {
                 <>
                   <p>Prompt: {latestRunViewModel.prompt}</p>
                   <p>Lifecycle: {latestRunViewModel.lifecycleText}</p>
+                  <p>Context preview: {latestRunViewModel.contextPreview}</p>
+                  {formatContextProvenanceLine(latestRunViewModel.contextProvenance) ? (
+                    <p>{formatContextProvenanceLine(latestRunViewModel.contextProvenance)}</p>
+                  ) : null}
                   {latestRunViewModel.delegatedTasks.length > 0 ? (
                     <div>
                       <p>Delegated tasks</p>
@@ -1598,10 +1628,17 @@ function App(): React.JSX.Element {
                   {priorRunHistoryViewModels.map((run) => (
                     <li key={run.id}>
                       <p>
-                        <strong>{run.id}</strong> - {run.status}
+                        <strong>{run.id}</strong> - {run.statusLabel}
+                        {run.status === "interrupted" ? (
+                          <span className="field-error"> (app exited)</span>
+                        ) : null}
                       </p>
                       <p>Prompt: {run.prompt}</p>
                       <p>Lifecycle: {run.lifecycleText}</p>
+                      <p>Context preview: {run.contextPreview}</p>
+                      {formatContextProvenanceLine(run.contextProvenance) ? (
+                        <p>{formatContextProvenanceLine(run.contextProvenance)}</p>
+                      ) : null}
                       {run.delegatedTasks.length > 0 ? (
                         <div>
                           <p>Delegated tasks</p>
