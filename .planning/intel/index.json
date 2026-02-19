@@ -644,7 +644,6 @@
       "exports": [],
       "imports": {
         "packages": [
-          "openai",
           "vitest"
         ],
         "local": [

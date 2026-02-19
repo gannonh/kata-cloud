@@ -205,6 +205,10 @@ describe("orchestrator run view model projections", () => {
     expect(projection.providerExecution?.runtimeMode).toBe("pi");
     expect(projection.providerExecution?.status).toBe("failed");
     expect(projection.providerExecution?.errorCode).toBe("missing_auth");
+    expect(projection.providerExecution?.modelId).toBe("gpt-4o-mini");
+    expect(projection.providerExecution?.remediation).toBe(
+      "Configure provider credentials and retry."
+    );
     expect(projection.providerExecution?.retryable).toBe(false);
   });
 

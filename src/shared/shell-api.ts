@@ -18,6 +18,7 @@ import type { ContextRetrievalRequest, ContextRetrievalResult } from "../context
 import type {
   ModelProviderId,
   ProviderAuthInput,
+  ProviderRuntimeMode,
   ProviderModelDescriptor,
   ProviderExecuteResult,
   ProviderStatusRequest,
@@ -43,6 +44,7 @@ export const IPC_CHANNELS = {
   retrieveContext: "kata-cloud/context:retrieve",
   providerResolveAuth: "kata-cloud/provider:resolve-auth",
   providerListModels: "kata-cloud/provider:list-models",
+  providerGetRuntimeMode: "kata-cloud/provider:get-runtime-mode",
   providerExecute: "kata-cloud/provider:execute",
   openExternalUrl: "kata-cloud/system:open-external-url"
 } as const;
@@ -52,6 +54,7 @@ export const IPC_CHANNELS = {
 export type {
   ModelProviderId,
   ProviderAuthInput,
+  ProviderRuntimeMode,
   ProviderStatusRequest,
   ProviderStatusResult,
   ProviderListModelsIpcRequest,
@@ -91,6 +94,7 @@ export interface ShellApi {
   retrieveContext: (request: ContextRetrievalRequest) => Promise<ContextRetrievalResult>;
   providerResolveAuth: (request: ProviderStatusRequest) => Promise<ProviderStatusResult>;
   providerListModels: (request: ProviderListModelsIpcRequest) => Promise<ProviderModelDescriptor[]>;
+  providerGetRuntimeMode: () => Promise<ProviderRuntimeMode>;
   providerExecute: (request: ProviderExecuteIpcRequest) => Promise<ProviderExecuteResult>;
   openExternalUrl: (url: string) => Promise<void>;
 }

@@ -1061,11 +1061,17 @@ function App(): React.JSX.Element {
     const shellApi = window.kataShell;
     const providerId = await resolveOrchestratorProviderId(shellApi);
     let providerModelId = DEFAULT_ORCHESTRATOR_MODELS[providerId];
+    let runtimeModeHint: "native" | "pi" | undefined;
     let providerText: string | undefined;
     let providerExecution: OrchestratorRunRecord["providerExecution"];
 
     let failureMessage = resolveRunFailure(prompt) ?? undefined;
     if (!failureMessage && shellApi) {
+      try {
+        runtimeModeHint = await shellApi.providerGetRuntimeMode();
+      } catch (error) {
+        console.warn("Failed to resolve provider runtime mode before execution.", error);
+      }
       const auth: ProviderAuthInput = {
         preferredMode: "api_key"
       };
@@ -1078,6 +1084,7 @@ function App(): React.JSX.Element {
         });
         providerModelId = result.model;
         const runtimeMode = result.runtimeMode ?? "native";
+        runtimeModeHint = runtimeMode;
         providerText = result.text;
         providerExecution = {
           providerId: result.providerId,
@@ -1103,7 +1110,7 @@ function App(): React.JSX.Element {
         failureMessage = parsedProviderError
           ? `Provider execution failed (${parsedProviderError.code}): ${providerErrorMessage}`
           : `Provider execution failed: ${providerErrorMessage}`;
-        const runtimeMode = parsedProviderError?.runtimeMode ?? "native";
+        const runtimeMode = parsedProviderError?.runtimeMode ?? runtimeModeHint;
         const shouldRetryWithAlternateProvider =
           parsedProviderError &&
           PROVIDER_AUTH_FAILURE_CODES.has(parsedProviderError.code) &&
@@ -1121,6 +1128,7 @@ function App(): React.JSX.Element {
             providerModelId = fallbackResult.model;
             providerText = fallbackResult.text;
             const fallbackRuntimeMode = fallbackResult.runtimeMode ?? "native";
+            runtimeModeHint = fallbackRuntimeMode;
             providerExecution = {
               providerId: fallbackResult.providerId,
               modelId: fallbackResult.model,

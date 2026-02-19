@@ -3,7 +3,6 @@ import type { ProviderRuntimeRegistry } from "./registry.js";
 import type {
   ModelProviderId,
   ProviderAuthInput,
-  ProviderAuthMode,
   ProviderModelDescriptor,
   ProviderExecuteResult,
   ProviderRuntimeMode,
@@ -131,7 +130,7 @@ async function listPiModels(providerId: ModelProviderId): Promise<ProviderModelD
 }
 
 async function executeWithPi(request: ProviderExecuteIpcRequest): Promise<ProviderExecuteResult> {
-  const authMode = resolvePiAuthMode(request.auth);
+  const authMode = "api_key";
   const apiKey = request.auth.apiKey?.trim();
   if (!apiKey) {
     throw createProviderRuntimeError({
@@ -145,11 +144,20 @@ async function executeWithPi(request: ProviderExecuteIpcRequest): Promise<Provid
 
   const piAi = await import("@mariozechner/pi-ai");
   const models = piAi.getModels(request.providerId as Parameters<typeof piAi.getModels>[0]);
+  if (models.length === 0) {
+    throw createProviderRuntimeError({
+      providerId: request.providerId,
+      code: "provider_unavailable",
+      message: `No PI models are available for provider "${request.providerId}".`,
+      remediation: "Switch runtime mode to native or configure PI provider support.",
+      retryable: false
+    });
+  }
   const model = models.find((entry) => entry.id === request.model);
   if (!model) {
     throw createProviderRuntimeError({
       providerId: request.providerId,
-      code: "unexpected_error",
+      code: "provider_unavailable",
       message: `Requested PI model "${request.model}" is unavailable for provider "${request.providerId}".`,
       remediation: "Select an available model for this provider and retry execution.",
       retryable: false
@@ -196,9 +204,4 @@ async function executeWithPi(request: ProviderExecuteIpcRequest): Promise<Provid
     authMode,
     text
   };
-}
-
-function resolvePiAuthMode(auth: ProviderAuthInput): ProviderAuthMode {
-  void auth;
-  return "api_key";
 }

@@ -306,7 +306,7 @@ describe("ProviderRuntimeService.execute", () => {
         model: "missing-model-id",
         prompt: "Hello"
       })
-    ).rejects.toMatchObject({ code: "unexpected_error" });
+    ).rejects.toMatchObject({ code: "provider_unavailable" });
     expect(piMocks.complete).not.toHaveBeenCalled();
   });
 

@@ -421,6 +421,17 @@ async function ensureOrchestratorRunHelpers(page) {
         status: run.status,
         lifecycleText: run.statusTimeline.join(" -> "),
         errorMessage: run.errorMessage ?? null,
+        providerExecution: run.providerExecution
+          ? {
+              providerId: run.providerExecution.providerId,
+              modelId: run.providerExecution.modelId,
+              runtimeMode: run.providerExecution.runtimeMode,
+              status: run.providerExecution.status,
+              errorCode: run.providerExecution.errorCode ?? null,
+              remediation: run.providerExecution.remediation ?? null,
+              retryable: run.providerExecution.retryable ?? null
+            }
+          : null,
         contextRetrievalError: run.contextRetrievalError
           ? {
               code: run.contextRetrievalError.code,
@@ -725,6 +736,43 @@ async function assertOrchestratorContextDiagnosticsPersistenceAfterRestart(page,
   );
 }
 
+async function assertOrchestratorProviderExecution(page) {
+  if ((process.env.KATA_CLOUD_E2E_PROVIDER_STUB ?? "1") !== "1") {
+    throw new Error(
+      "orchestrator-provider-execution-uat requires KATA_CLOUD_E2E_PROVIDER_STUB=1."
+    );
+  }
+
+  const providerPrompt = "Capture provider execution telemetry via deterministic e2e stubs.";
+  const providerRun = await runOrchestratorPrompt(page, providerPrompt, "completed");
+  const latestSnapshot = await getLatestRunSnapshot(page);
+  if (latestSnapshot.latest?.id !== providerRun.id) {
+    throw new Error("Expected provider telemetry run to remain latest for validation.");
+  }
+
+  const providerExecution = latestSnapshot.latest?.providerExecution;
+  if (!providerExecution) {
+    throw new Error("Expected latest run snapshot to include providerExecution telemetry.");
+  }
+
+  if (providerExecution.status !== "succeeded") {
+    throw new Error(
+      `Expected providerExecution status succeeded, received ${providerExecution.status}.`
+    );
+  }
+  if (!providerExecution.providerId || !providerExecution.modelId) {
+    throw new Error("Expected providerExecution to include providerId and modelId.");
+  }
+  if (providerExecution.runtimeMode !== "native" && providerExecution.runtimeMode !== "pi") {
+    throw new Error(
+      `Expected providerExecution.runtimeMode to be native or pi, received ${providerExecution.runtimeMode}.`
+    );
+  }
+
+  await assertBodyIncludes(page, `Run ${providerRun.id} is Completed.`);
+  await assertBodyIncludes(page, "Provider:", "latest-run provider execution details");
+}
+
 function includesScenario(suite, tags) {
   if (suite === "full") {
     return true;
@@ -805,6 +853,15 @@ export async function runElectronSuite({ suite = "full", label } = {}) {
           context.page,
           coverageEvidence
         );
+      }
+    },
+    {
+      id: "orchestrator-provider-execution-uat",
+      tags: ["uat"],
+      requiresRepo: true,
+      run: async (context) => {
+        await setActiveSpace(context.page, context.repoPath, "");
+        await assertOrchestratorProviderExecution(context.page);
       }
     },
     {

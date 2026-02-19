@@ -269,6 +269,10 @@ function registerStateHandlers(
     }
   );
   ipcMain.handle(
+    IPC_CHANNELS.providerGetRuntimeMode,
+    async () => providerService.getMode()
+  );
+  ipcMain.handle(
     IPC_CHANNELS.providerExecute,
     async (_event, request: ProviderExecuteIpcRequest) => {
       try {
@@ -289,10 +293,21 @@ async function bootstrap(): Promise<void> {
   });
   const gitLifecycleService = new SpaceGitLifecycleService();
   const pullRequestWorkflowService = new PullRequestWorkflowService();
-  const useE2EProviderStub = process.env.KATA_CLOUD_E2E_PROVIDER_STUB === "1";
+  const wantsE2EProviderStub = process.env.KATA_CLOUD_E2E_PROVIDER_STUB === "1";
+  const useE2EProviderStub = !app.isPackaged && wantsE2EProviderStub;
   const providerRuntimeMode = resolveProviderRuntimeMode(process.env.KATA_CLOUD_PROVIDER_RUNTIME_MODE);
+  const providerStubConflict = useE2EProviderStub && providerRuntimeMode === "pi";
+  const enableE2EProviderStub = useE2EProviderStub && !providerStubConflict;
+  if (wantsE2EProviderStub && app.isPackaged) {
+    console.warn("Ignoring KATA_CLOUD_E2E_PROVIDER_STUB=1 in packaged builds.");
+  }
+  if (providerStubConflict) {
+    console.warn(
+      "KATA_CLOUD_E2E_PROVIDER_STUB=1 is incompatible with KATA_CLOUD_PROVIDER_RUNTIME_MODE=pi; disabling provider stubs."
+    );
+  }
   const providerRegistry = createProviderRuntimeRegistry(
-    useE2EProviderStub
+    enableE2EProviderStub
       ? [createE2EProviderRuntimeAdapter("anthropic"), createE2EProviderRuntimeAdapter("openai")]
       : [
           new AnthropicProviderAdapter(new AnthropicApiKeyClient()),
@@ -303,7 +318,7 @@ async function bootstrap(): Promise<void> {
     runtimeMode: providerRuntimeMode
   });
   console.log(`Provider runtime mode: ${providerService.getMode()}`);
-  if (useE2EProviderStub) {
+  if (enableE2EProviderStub) {
     console.log("Provider runtime adapters: e2e stubs");
   }
   await stateStore.initialize();
