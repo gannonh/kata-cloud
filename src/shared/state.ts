@@ -252,52 +252,69 @@ function hasValidRunTimeline(
   return true;
 }
 
-function isOrchestratorRunRecord(value: unknown): value is OrchestratorRunRecord {
+function normalizeOrchestratorRunRecord(value: unknown): OrchestratorRunRecord | null {
   if (!isObject(value)) {
-    return false;
+    return null;
   }
 
-  let runStatus: OrchestratorRunStatus | null = null;
-  if (isOrchestratorRunStatus(value.status)) {
-    runStatus = value.status;
+  if (
+    !isString(value.id) ||
+    !isString(value.spaceId) ||
+    !isString(value.sessionId) ||
+    typeof value.prompt !== "string" ||
+    !isString(value.createdAt) ||
+    !isString(value.updatedAt)
+  ) {
+    return null;
   }
-  const statusTimelineIsValid =
-    Array.isArray(value.statusTimeline) &&
-    value.statusTimeline.length > 0 &&
-    value.statusTimeline.every(isOrchestratorRunStatus) &&
-    runStatus !== null &&
-    hasValidRunTimeline(value.statusTimeline, runStatus);
+
+  if (!isOrchestratorRunStatus(value.status)) {
+    return null;
+  }
+  const runStatus = value.status;
+
+  if (
+    !Array.isArray(value.statusTimeline) ||
+    value.statusTimeline.length === 0 ||
+    !value.statusTimeline.every(isOrchestratorRunStatus) ||
+    !hasValidRunTimeline(value.statusTimeline, runStatus)
+  ) {
+    return null;
+  }
+
   const terminalStatus = runStatus === "completed" || runStatus === "failed";
-  const completedAtIsValid =
-    terminalStatus ? isString(value.completedAt) : value.completedAt === undefined || isString(value.completedAt);
-  const errorMessageIsValid = value.errorMessage === undefined || isString(value.errorMessage);
-  const contextSnippetsAreValid =
-    value.contextSnippets === undefined ||
-    (Array.isArray(value.contextSnippets) && value.contextSnippets.every(isContextSnippet));
-  const draftIsValid = value.draft === undefined || isOrchestratorSpecDraft(value.draft);
-  const draftAppliedAtIsValid = value.draftAppliedAt === undefined || isString(value.draftAppliedAt);
-  const draftApplyErrorIsValid = value.draftApplyError === undefined || isString(value.draftApplyError);
-  const delegatedTasksAreValid =
-    value.delegatedTasks === undefined ||
-    (Array.isArray(value.delegatedTasks) &&
-      value.delegatedTasks.every(isOrchestratorDelegatedTaskRecord));
+  const completedAt = isString(value.completedAt) ? value.completedAt : undefined;
+  if (terminalStatus && !completedAt) {
+    return null;
+  }
 
-  return (
-    isString(value.id) &&
-    isString(value.spaceId) &&
-    isString(value.sessionId) &&
-    typeof value.prompt === "string" &&
-    statusTimelineIsValid &&
-    isString(value.createdAt) &&
-    isString(value.updatedAt) &&
-    completedAtIsValid &&
-    errorMessageIsValid &&
-    contextSnippetsAreValid &&
-    draftIsValid &&
-    draftAppliedAtIsValid &&
-    draftApplyErrorIsValid &&
-    delegatedTasksAreValid
-  );
+  const contextSnippets = Array.isArray(value.contextSnippets)
+    ? value.contextSnippets.filter(isContextSnippet)
+    : undefined;
+  const draft = isOrchestratorSpecDraft(value.draft) ? value.draft : undefined;
+  const draftAppliedAt = isString(value.draftAppliedAt) ? value.draftAppliedAt : undefined;
+  const draftApplyError = isString(value.draftApplyError) ? value.draftApplyError : undefined;
+  const delegatedTasks = Array.isArray(value.delegatedTasks)
+    ? value.delegatedTasks.filter(isOrchestratorDelegatedTaskRecord)
+    : undefined;
+
+  return {
+    id: value.id,
+    spaceId: value.spaceId,
+    sessionId: value.sessionId,
+    prompt: value.prompt,
+    status: runStatus,
+    statusTimeline: value.statusTimeline,
+    createdAt: value.createdAt,
+    updatedAt: value.updatedAt,
+    completedAt,
+    errorMessage: isString(value.errorMessage) ? value.errorMessage : undefined,
+    contextSnippets,
+    draft,
+    draftAppliedAt,
+    draftApplyError,
+    delegatedTasks
+  };
 }
 
 export function createInitialAppState(nowIso = new Date().toISOString()): AppState {
@@ -351,17 +368,20 @@ export function normalizeAppState(input: unknown): AppState {
   const usableSessions = linkedSessions.length > 0 ? linkedSessions : fallback.sessions;
   const allowedSessionIds = new Set(usableSessions.map((session) => session.id));
   const orchestratorRuns = Array.isArray(input.orchestratorRuns)
-    ? input.orchestratorRuns.filter((entry) => {
-        if (isOrchestratorRunRecord(entry)) {
-          return true;
-        }
-        const id =
-          isObject(entry) && isString((entry as Record<string, unknown>).id)
-            ? (entry as Record<string, unknown>).id
-            : "(unknown)";
-        console.warn(`normalizeAppState: dropping invalid orchestrator run record (id=${id})`);
-        return false;
-      })
+    ? input.orchestratorRuns
+        .map((entry) => {
+          const normalizedEntry = normalizeOrchestratorRunRecord(entry);
+          if (normalizedEntry) {
+            return normalizedEntry;
+          }
+          const id =
+            isObject(entry) && isString((entry as Record<string, unknown>).id)
+              ? (entry as Record<string, unknown>).id
+              : "(unknown)";
+          console.warn(`normalizeAppState: dropping invalid orchestrator run record (id=${id})`);
+          return null;
+        })
+        .filter((entry): entry is OrchestratorRunRecord => entry !== null)
     : [];
   const linkedOrchestratorRuns = orchestratorRuns.filter(
     (run) => allowedSpaceIds.has(run.spaceId) && allowedSessionIds.has(run.sessionId)
