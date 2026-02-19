@@ -12,7 +12,7 @@ Current focus is executing v0.2.0 Desktop MVP Closure after shipping orchestrato
 
 ## Current Milestone: v0.2.0 Desktop MVP Closure
 
-**Status:** Active (requirements defined, phase plans pending)
+**Status:** Active (Phase 09 planned, execution pending)
 
 **Goal:** Deliver MVP UX parity with the design specs and make orchestrator execution visibly real (agent deployment + provider-backed generation) while preserving v0.1 reliability guarantees.
 
@@ -21,25 +21,35 @@ Current focus is executing v0.2.0 Desktop MVP Closure after shipping orchestrato
 - PI package integration opportunity (`pi-mono`) with ESM compatibility
 - Front-end spec corpus (`docs/design/specs/README.md` and specs 01-07)
 
-**Phase sequence (global):**
-- [ ] **Phase 9: Runtime Integration and ESM Consolidation**
-  - Lock provider-backed orchestrator execution path (replace local draft-only run path)
-  - Integrate PI runtime adapters behind feature flags
-  - Remove remaining CommonJS desktop runtime debt
-- [ ] **Phase 10: Coordinator Shell and Sidebar Semantics**
-  - Restructure workspace to spec-aligned left agent/status sidebar + center coordinator chat + right spec panel
-  - Implement chat-style renderer and agent/task status surfaces
-- [ ] **Phase 11: Agent Deployment, Waves, and Tab Expansion**
-  - Add wave-aware orchestration model (`waveId`) and deployment hierarchy views
-  - Implement center/right add-tab flows (agent/note/terminal/browser)
-  - Surface real run telemetry (provider/model/run events) in-session
-- [ ] **Phase 12: Completion Workflow and Safety UX**
-  - Implement markdown-first living spec presentation and task synchronization
-  - Add commit message + commit action flow in Changes
-  - Implement permission dialog and unblock tooling (terminal/browser interactions)
-- [ ] **Phase 13: MVP Verification and Release Handoff**
-  - Codify full v0.2 UAT/E2E + regression guardrails
-  - Capture MVP acceptance evidence, unresolved gap ledger, and release handoff packet
+### Phase 09: Runtime Integration and ESM Consolidation
+
+**Goal:** Switch orchestrator generation from local draft synthesis to provider-backed execution, introduce PI adapter mode safely, and consolidate module pathways to ESM-first.
+**Depends on:** v0.1.0 shipped foundation
+**Plans:** 3 planned (`09-01`, `09-02`, `09-03`)
+
+### Phase 10: Coordinator Shell and Sidebar Semantics
+
+**Goal:** Align shell semantics to spec-defined three-column coordinator workspace with agent/status-aware left sidebar and chat-first center pane.
+**Depends on:** Phase 09
+**Plans:** TBD
+
+### Phase 11: Agent Deployment, Waves, and Tab Expansion
+
+**Goal:** Add wave/deployment model visibility and support + flows for agent, note, terminal, and browser tab expansion.
+**Depends on:** Phases 09-10
+**Plans:** TBD
+
+### Phase 12: Completion Workflow and Safety UX
+
+**Goal:** Deliver completion parity with commit UX, permission model, markdown-first spec rendering, and unblock pathways.
+**Depends on:** Phase 11
+**Plans:** TBD
+
+### Phase 13: MVP Verification and Release Handoff
+
+**Goal:** Run release-grade UAT/E2E verification sweep and produce requirement-traceable MVP handoff artifacts.
+**Depends on:** Phases 09-12
+**Plans:** TBD
 
 ## Completed Milestones
 
@@ -71,7 +81,7 @@ No additional milestones planned yet. Next milestone definition starts after v0.
 | 6. Delegation + Context Contract Hardening | v0.1.0 | 3/3 | Complete | 2026-02-19 |
 | 7. Resume Integrity and Context Consistency | v0.1.0 | 2/2 | Complete | 2026-02-19 |
 | 8. Verification Sweep and Guardrail Codification | v0.1.0 | 3/3 | Complete | 2026-02-19 |
-| 9. Runtime Integration and ESM Consolidation | v0.2.0 | 0/TBD | Pending | — |
+| 9. Runtime Integration and ESM Consolidation | v0.2.0 | 0/3 | Pending | — |
 | 10. Coordinator Shell and Sidebar Semantics | v0.2.0 | 0/TBD | Pending | — |
 | 11. Agent Deployment, Waves, and Tab Expansion | v0.2.0 | 0/TBD | Pending | — |
 | 12. Completion Workflow and Safety UX | v0.2.0 | 0/TBD | Pending | — |
@@ -79,4 +89,4 @@ No additional milestones planned yet. Next milestone definition starts after v0.
 
 ---
 *Roadmap created: 2026-02-18*
-*Last updated: 2026-02-19 — v0.2.0 activated with phase sequence and planning inputs*
+*Last updated: 2026-02-19 — Phase 09 planning artifacts created and roadmap phase headings normalized*
