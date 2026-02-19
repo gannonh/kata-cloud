@@ -77,6 +77,7 @@ export interface OrchestratorRunRecord {
   interruptedAt?: string;
   errorMessage?: string;
   resolvedProviderId?: ContextProviderId;
+  fallbackFromProviderId?: ContextProviderId;
   contextRetrievalError?: ContextRetrievalError;
   contextSnippets?: ContextSnippet[];
   draft?: OrchestratorSpecDraft;
@@ -339,6 +340,9 @@ function normalizeOrchestratorRunRecord(value: unknown): OrchestratorRunRecord |
   const resolvedProviderId = isContextProviderId(value.resolvedProviderId)
     ? value.resolvedProviderId
     : undefined;
+  const fallbackFromProviderId = isContextProviderId(value.fallbackFromProviderId)
+    ? value.fallbackFromProviderId
+    : undefined;
   const draft = isOrchestratorSpecDraft(value.draft) ? value.draft : undefined;
   const draftAppliedAt = isString(value.draftAppliedAt) ? value.draftAppliedAt : undefined;
   const draftApplyError = isString(value.draftApplyError) ? value.draftApplyError : undefined;
@@ -359,6 +363,7 @@ function normalizeOrchestratorRunRecord(value: unknown): OrchestratorRunRecord |
     interruptedAt,
     errorMessage: isString(value.errorMessage) ? value.errorMessage : undefined,
     resolvedProviderId,
+    fallbackFromProviderId,
     contextRetrievalError: isContextRetrievalError(value.contextRetrievalError)
       ? value.contextRetrievalError
       : undefined,

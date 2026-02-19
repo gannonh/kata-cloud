@@ -423,7 +423,8 @@ describe("shared state helpers", () => {
           createdAt: "2026-02-19T00:00:00.000Z",
           updatedAt: "2026-02-19T00:01:00.000Z",
           interruptedAt: "2026-02-19T00:01:00.000Z",
-          resolvedProviderId: "filesystem"
+          resolvedProviderId: "filesystem",
+          fallbackFromProviderId: "mcp"
         }
       ]
     });
@@ -432,6 +433,7 @@ describe("shared state helpers", () => {
     expect(state.orchestratorRuns[0]?.status).toBe("interrupted");
     expect(state.orchestratorRuns[0]?.interruptedAt).toBe("2026-02-19T00:01:00.000Z");
     expect(state.orchestratorRuns[0]?.resolvedProviderId).toBe("filesystem");
+    expect(state.orchestratorRuns[0]?.fallbackFromProviderId).toBe("mcp");
   });
 
   it("drops interrupted runs missing interruptedAt", () => {

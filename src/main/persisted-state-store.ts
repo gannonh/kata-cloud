@@ -60,6 +60,8 @@ export class PersistedStateStore {
     const recoveredRuns = runs.map((run) =>
       run.status === "queued" || run.status === "running"
         ? {
+            // Recovery operates on persisted snapshots before the runtime is rehydrated,
+            // so we mark in-flight runs directly instead of replaying lifecycle transitions.
             ...run,
             status: "interrupted" as const,
             statusTimeline: [...run.statusTimeline, "interrupted" as const],

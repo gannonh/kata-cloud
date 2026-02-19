@@ -64,7 +64,7 @@ import {
 import {
   resolveContextProviderId
 } from "./context/context-adapter";
-import type { ContextSnippet } from "./context/types";
+import type { ContextProviderId, ContextSnippet } from "./context/types";
 import type { ContextIpcErrorPayload } from "./shared/context-ipc";
 import { parseContextIpcError } from "./shared/context-ipc";
 import "./styles.css";
@@ -486,6 +486,7 @@ function App(): React.JSX.Element {
     () => projectOrchestratorRunHistory(priorRunHistoryForActiveSession),
     [priorRunHistoryForActiveSession]
   );
+  const latestRunProvenanceLine = formatContextProvenanceLine(latestRunViewModel?.contextProvenance);
   const latestDraftForActiveSession = latestRunForActiveSession?.draft;
 
   const sessionsForActiveSpace = useMemo(
@@ -938,6 +939,8 @@ function App(): React.JSX.Element {
 
     let contextSnippets: ContextSnippet[] = [];
     let contextRetrievalError: ContextIpcErrorPayload | undefined;
+    let contextRunProviderId: ContextProviderId = contextProviderId;
+    let fallbackFromProviderId: ContextProviderId | undefined;
     if (window.kataShell) {
       try {
         const contextResult = await window.kataShell.retrieveContext({
@@ -948,6 +951,8 @@ function App(): React.JSX.Element {
           providerId: contextProviderId,
           limit: 3
         });
+        contextRunProviderId = contextResult.providerId;
+        fallbackFromProviderId = contextResult.fallbackFromProviderId;
         if (contextResult.ok) {
           contextSnippets = contextResult.snippets;
         } else {
@@ -993,6 +998,8 @@ function App(): React.JSX.Element {
         updatedAt: endedAt,
         completedAt: endedAt,
         errorMessage: endedTransition.reason,
+        resolvedProviderId: contextRunProviderId,
+        fallbackFromProviderId,
         contextRetrievalError,
         delegatedTasks: delegationOutcome.tasks
       };
@@ -1008,6 +1015,8 @@ function App(): React.JSX.Element {
     const draft = failureMessage ? undefined : createSpecDraft(endedRun, endedAt, contextSnippets);
     const runsWithTerminalUpdate = applyOrchestratorRunUpdate(runningState.orchestratorRuns, {
       ...endedRun,
+      resolvedProviderId: contextRunProviderId,
+      fallbackFromProviderId,
       contextRetrievalError
     });
     const endedState: AppState = {
@@ -1567,9 +1576,7 @@ function App(): React.JSX.Element {
                   <p>Prompt: {latestRunViewModel.prompt}</p>
                   <p>Lifecycle: {latestRunViewModel.lifecycleText}</p>
                   <p>Context preview: {latestRunViewModel.contextPreview}</p>
-                  {formatContextProvenanceLine(latestRunViewModel.contextProvenance) ? (
-                    <p>{formatContextProvenanceLine(latestRunViewModel.contextProvenance)}</p>
-                  ) : null}
+                  {latestRunProvenanceLine ? <p>{latestRunProvenanceLine}</p> : null}
                   {latestRunViewModel.delegatedTasks.length > 0 ? (
                     <div>
                       <p>Delegated tasks</p>
@@ -1625,53 +1632,54 @@ function App(): React.JSX.Element {
               <div className="info-card">
                 <h3>Run History</h3>
                 <ul>
-                  {priorRunHistoryViewModels.map((run) => (
-                    <li key={run.id}>
-                      <p>
-                        <strong>{run.id}</strong> - {run.statusLabel}
-                        {run.status === "interrupted" ? (
-                          <span className="field-error"> (app exited)</span>
+                  {priorRunHistoryViewModels.map((run) => {
+                    const runProvenanceLine = formatContextProvenanceLine(run.contextProvenance);
+                    return (
+                      <li key={run.id}>
+                        <p>
+                          <strong>{run.id}</strong> - {run.statusLabel}
+                          {run.status === "interrupted" ? (
+                            <span className="field-error"> (app exited)</span>
+                          ) : null}
+                        </p>
+                        <p>Prompt: {run.prompt}</p>
+                        <p>Lifecycle: {run.lifecycleText}</p>
+                        <p>Context preview: {run.contextPreview}</p>
+                        {runProvenanceLine ? <p>{runProvenanceLine}</p> : null}
+                        {run.delegatedTasks.length > 0 ? (
+                          <div>
+                            <p>Delegated tasks</p>
+                            <ul>
+                              {run.delegatedTasks.map((task) => (
+                                <li key={task.id}>
+                                  {task.type} ({task.specialist}): {task.status} [{task.lifecycleText}]
+                                  {task.errorMessage ? (
+                                    <>
+                                      {" "}
+                                      - <span className="field-error">{task.errorMessage}</span>
+                                    </>
+                                  ) : null}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         ) : null}
-                      </p>
-                      <p>Prompt: {run.prompt}</p>
-                      <p>Lifecycle: {run.lifecycleText}</p>
-                      <p>Context preview: {run.contextPreview}</p>
-                      {formatContextProvenanceLine(run.contextProvenance) ? (
-                        <p>{formatContextProvenanceLine(run.contextProvenance)}</p>
-                      ) : null}
-                      {run.delegatedTasks.length > 0 ? (
-                        <div>
-                          <p>Delegated tasks</p>
-                          <ul>
-                            {run.delegatedTasks.map((task) => (
-                              <li key={task.id}>
-                                {task.type} ({task.specialist}): {task.status} [{task.lifecycleText}]
-                                {task.errorMessage ? (
-                                  <>
-                                    {" "}
-                                    - <span className="field-error">{task.errorMessage}</span>
-                                  </>
-                                ) : null}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                      {run.errorMessage ? <p className="field-error">{run.errorMessage}</p> : null}
-                      {run.contextDiagnostics ? (
-                        <>
-                          <p className="field-error">
-                            Context ({run.contextDiagnostics.providerId} / {run.contextDiagnostics.code}):{" "}
-                            {run.contextDiagnostics.message}
-                          </p>
-                          <p>
-                            Remediation: {run.contextDiagnostics.remediation}{" "}
-                            {run.contextDiagnostics.retryable ? "(retryable)" : "(not retryable)"}
-                          </p>
-                        </>
-                      ) : null}
-                    </li>
-                  ))}
+                        {run.errorMessage ? <p className="field-error">{run.errorMessage}</p> : null}
+                        {run.contextDiagnostics ? (
+                          <>
+                            <p className="field-error">
+                              Context ({run.contextDiagnostics.providerId} / {run.contextDiagnostics.code}):{" "}
+                              {run.contextDiagnostics.message}
+                            </p>
+                            <p>
+                              Remediation: {run.contextDiagnostics.remediation}{" "}
+                              {run.contextDiagnostics.retryable ? "(retryable)" : "(not retryable)"}
+                            </p>
+                          </>
+                        ) : null}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ) : null}

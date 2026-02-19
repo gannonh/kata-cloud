@@ -106,14 +106,16 @@ function projectDelegatedTask(
 export function projectOrchestratorRunViewModel(run: OrchestratorRunRecord): OrchestratorRunViewModel {
   const delegatedTasks = run.delegatedTasks?.map(projectDelegatedTask) ?? [];
   const failedTaskError = delegatedTasks.find((task) => task.status === "failed")?.errorMessage;
+  // Preserve compatibility for older persisted runs that predate fallbackFromProviderId.
+  const legacyFallbackFromSnippet =
+    run.contextSnippets?.[0]?.provider !== run.resolvedProviderId
+      ? run.contextSnippets?.[0]?.provider
+      : undefined;
   const contextProvenance: OrchestratorRunContextProvenance | undefined = run.resolvedProviderId
     ? {
         resolvedProviderId: run.resolvedProviderId,
         snippetCount: run.contextSnippets?.length ?? 0,
-        fallbackFromProviderId:
-          run.contextSnippets?.[0]?.provider !== run.resolvedProviderId
-            ? run.contextSnippets?.[0]?.provider
-            : undefined
+        fallbackFromProviderId: run.fallbackFromProviderId ?? legacyFallbackFromSnippet
       }
     : undefined;
 

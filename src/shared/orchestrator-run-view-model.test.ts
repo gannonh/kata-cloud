@@ -194,7 +194,20 @@ describe("orchestrator run view model projections", () => {
     expect(projection.contextProvenance?.fallbackFromProviderId).toBeUndefined();
   });
 
-  it("projects fallback provenance when snippet provider differs from resolved", () => {
+  it("projects fallback provenance from explicit run metadata", () => {
+    const projection = projectOrchestratorRunViewModel(
+      createRun({
+        resolvedProviderId: "filesystem",
+        fallbackFromProviderId: "mcp",
+        contextSnippets: []
+      })
+    );
+
+    expect(projection.contextProvenance?.resolvedProviderId).toBe("filesystem");
+    expect(projection.contextProvenance?.fallbackFromProviderId).toBe("mcp");
+  });
+
+  it("infers fallback provenance from snippets for legacy runs", () => {
     const projection = projectOrchestratorRunViewModel(
       createRun({
         resolvedProviderId: "mcp",
