@@ -1,4 +1,4 @@
-import type { ContextSnippet } from "../context/types";
+import type { ContextProviderId, ContextSnippet } from "../context/types";
 import type {
   OrchestratorDelegatedTaskRecord,
   OrchestratorRunRecord,
@@ -30,7 +30,14 @@ export interface OrchestratorRunViewModel {
     remediation: string;
     retryable: boolean;
   };
+  contextProvenance?: OrchestratorRunContextProvenance;
   delegatedTasks: OrchestratorDelegatedTaskViewModel[];
+}
+
+export interface OrchestratorRunContextProvenance {
+  resolvedProviderId: ContextProviderId;
+  snippetCount: number;
+  fallbackFromProviderId?: ContextProviderId;
 }
 
 function toStatusLabel(status: OrchestratorRunStatus): string {
@@ -43,6 +50,8 @@ function toStatusLabel(status: OrchestratorRunStatus): string {
       return "Completed";
     case "failed":
       return "Failed";
+    case "interrupted":
+      return "Interrupted";
   }
 }
 
@@ -97,6 +106,16 @@ function projectDelegatedTask(
 export function projectOrchestratorRunViewModel(run: OrchestratorRunRecord): OrchestratorRunViewModel {
   const delegatedTasks = run.delegatedTasks?.map(projectDelegatedTask) ?? [];
   const failedTaskError = delegatedTasks.find((task) => task.status === "failed")?.errorMessage;
+  const contextProvenance: OrchestratorRunContextProvenance | undefined = run.resolvedProviderId
+    ? {
+        resolvedProviderId: run.resolvedProviderId,
+        snippetCount: run.contextSnippets?.length ?? 0,
+        fallbackFromProviderId:
+          run.contextSnippets?.[0]?.provider !== run.resolvedProviderId
+            ? run.contextSnippets?.[0]?.provider
+            : undefined
+      }
+    : undefined;
 
   return {
     id: run.id,
@@ -115,6 +134,7 @@ export function projectOrchestratorRunViewModel(run: OrchestratorRunRecord): Orc
           retryable: run.contextRetrievalError.retryable
         }
       : undefined,
+    contextProvenance,
     delegatedTasks
   };
 }
