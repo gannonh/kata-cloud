@@ -40,7 +40,7 @@ function ChatEntry(props: {
   onToggleMessage: (messageId: string) => void;
 }): React.JSX.Element {
   const { entry, expandedMessageIds, onToggleMessage } = props;
-  const canCollapse = shouldAllowCollapse(entry.content);
+  const canCollapse = entry.role === "user" && shouldAllowCollapse(entry.content);
   const isExpanded = expandedMessageIds.includes(entry.id);
 
   return (
