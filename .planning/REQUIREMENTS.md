@@ -9,11 +9,11 @@ Requirements for milestone v0.2.0 Desktop MVP Closure.
 
 ### Experience Parity (Design-Spec Aligned)
 
-- [ ] **UX-01**: User can work in a three-column coordinator layout where left is agent/status context, center is coordinator conversation, and right is the living spec panel.
+- [x] **UX-01**: User can work in a three-column coordinator layout where left is agent/status context, center is coordinator conversation, and right is the living spec panel.
 - [ ] **UX-02**: User can add center/right workspace tabs from `+` actions (agent, note, terminal, browser) within an active coordinator session.
-- [ ] **UX-03**: User can read and send messages in a chat-style thread with role attribution and timestamps instead of status-card-only rendering.
-- [ ] **UX-04**: User can inspect active agent deployments, task states, and completion status from the left sidebar and completion views.
-- [ ] **UX-05**: User can see guided workflow progression (Creating Spec, Implement, Accept changes) in the right panel when spec content is not yet finalized.
+- [x] **UX-03**: User can read and send messages in a chat-style thread with role attribution and timestamps instead of status-card-only rendering.
+- [x] **UX-04**: User can inspect active agent deployments, task states, and completion status from the left sidebar and completion views.
+- [x] **UX-05**: User can see guided workflow progression (Creating Spec, Implement, Accept changes) in the right panel when spec content is not yet finalized.
 
 ### Real Orchestration and Observability
 
@@ -75,10 +75,10 @@ Deferred beyond v0.2.0:
 | PI-03 | Phase 9 | Complete |
 | ORCH-01 | Phase 9 | Complete |
 | ORCH-04 | Phase 9 | Complete |
-| UX-01 | Phase 10 | Pending |
-| UX-03 | Phase 10 | Pending |
-| UX-04 | Phase 10 | Pending |
-| UX-05 | Phase 10 | Pending |
+| UX-01 | Phase 10 | Complete |
+| UX-03 | Phase 10 | Complete |
+| UX-04 | Phase 10 | Complete |
+| UX-05 | Phase 10 | Complete |
 | UX-02 | Phase 11 | Pending |
 | ORCH-02 | Phase 11 | Pending |
 | ORCH-03 | Phase 11 | Pending |
@@ -98,4 +98,4 @@ Coverage:
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-19 after v0.2.0 milestone kickoff planning*
+*Last updated: 2026-02-19 after Phase 10 completion*

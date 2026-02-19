@@ -12,7 +12,7 @@ Current focus is executing v0.2.0 Desktop MVP Closure after shipping orchestrato
 
 ## Current Milestone: v0.2.0 Desktop MVP Closure
 
-**Status:** Active (Phase 09 complete, Phase 10 pending planning/execution)
+**Status:** Active (Phases 09-10 complete, Phase 11 pending planning/execution)
 
 **Goal:** Deliver MVP UX parity with the design specs and make orchestrator execution visibly real (agent deployment + provider-backed generation) while preserving v0.1 reliability guarantees.
 
@@ -23,14 +23,14 @@ Current focus is executing v0.2.0 Desktop MVP Closure after shipping orchestrato
 
 ### Phase 10: Coordinator Shell and Sidebar Semantics
 
-**Goal:** Align shell semantics to spec-defined three-column coordinator workspace with agent/status-aware left sidebar and chat-first center pane.
+**Status:** Complete — 2026-02-19
 **Depends on:** Phase 09
-**Plans:** 3 plans
+**Plans:** 3/3 complete
 
 Plans:
-- [ ] 10-01-PLAN.md — Coordinator shell projection and transient UI state contracts
-- [ ] 10-02-PLAN.md — Sidebar/chat/workflow component primitives with accessibility semantics
-- [ ] 10-03-PLAN.md — App integration, three-column wiring, and UAT coverage
+- [x] 10-01-PLAN.md — Coordinator shell projection and transient UI state contracts
+- [x] 10-02-PLAN.md — Sidebar/chat/workflow component primitives with accessibility semantics
+- [x] 10-03-PLAN.md — App integration, three-column wiring, and UAT coverage
 
 ### Phase 11: Agent Deployment, Waves, and Tab Expansion
 
@@ -81,11 +81,11 @@ No additional milestones planned yet. Next milestone definition starts after v0.
 | 7. Resume Integrity and Context Consistency | v0.1.0 | 2/2 | Complete | 2026-02-19 |
 | 8. Verification Sweep and Guardrail Codification | v0.1.0 | 3/3 | Complete | 2026-02-19 |
 | 9. Runtime Integration and ESM Consolidation | v0.2.0 | 3/3 | Complete | 2026-02-19 |
-| 10. Coordinator Shell and Sidebar Semantics | v0.2.0 | 0/TBD | Pending | — |
+| 10. Coordinator Shell and Sidebar Semantics | v0.2.0 | 3/3 | Complete | 2026-02-19 |
 | 11. Agent Deployment, Waves, and Tab Expansion | v0.2.0 | 0/TBD | Pending | — |
 | 12. Completion Workflow and Safety UX | v0.2.0 | 0/TBD | Pending | — |
 | 13. MVP Verification and Release Handoff | v0.2.0 | 0/TBD | Pending | — |
 
 ---
 *Roadmap created: 2026-02-18*
-*Last updated: 2026-02-19 — Phase 09 completed (plans 09-01, 09-02, 09-03)*
+*Last updated: 2026-02-19 — Phase 10 completed (plans 10-01, 10-02, 10-03)*
