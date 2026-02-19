@@ -1,6 +1,6 @@
 import type { OrchestratorRunRecord, OrchestratorRunStatus } from "./state";
 
-const ALLOWED_RUN_TRANSITIONS: Record<OrchestratorRunStatus, readonly OrchestratorRunStatus[]> = {
+export const ALLOWED_RUN_TRANSITIONS: Record<OrchestratorRunStatus, readonly OrchestratorRunStatus[]> = {
   queued: ["running"],
   running: ["completed", "failed"],
   completed: [],
@@ -32,7 +32,9 @@ function appendRunTimelineStatus(
   statusTimeline: OrchestratorRunStatus[],
   nextStatus: OrchestratorRunStatus
 ): OrchestratorRunStatus[] {
-  return statusTimeline.includes(nextStatus) ? statusTimeline : [...statusTimeline, nextStatus];
+  return statusTimeline[statusTimeline.length - 1] === nextStatus
+    ? statusTimeline
+    : [...statusTimeline, nextStatus];
 }
 
 export function transitionOrchestratorRunStatus(

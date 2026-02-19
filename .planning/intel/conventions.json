@@ -16,7 +16,7 @@
   },
   "directories": {
     "src/shared/": {
-      "purpose": "test files",
+      "purpose": "shared domain logic and colocated tests",
       "detectedBy": "suffix-analysis",
       "fileCount": 10,
       "dominantSuffix": ".ts"

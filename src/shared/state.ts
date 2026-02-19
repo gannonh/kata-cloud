@@ -3,6 +3,7 @@ import {
   type SpaceGitLifecycleStatus
 } from "../git/types";
 import type { ContextProviderId, ContextSnippet } from "../context/types";
+import { ALLOWED_RUN_TRANSITIONS } from "./orchestrator-run-lifecycle";
 
 export const APP_STATE_VERSION = 1;
 
@@ -221,13 +222,6 @@ function isSessionRecord(value: unknown): value is SessionRecord {
   );
 }
 
-const ORCHESTRATOR_RUN_TRANSITIONS: Record<OrchestratorRunStatus, readonly OrchestratorRunStatus[]> = {
-  queued: ["running"],
-  running: ["completed", "failed"],
-  completed: [],
-  failed: []
-};
-
 function hasValidRunTimeline(
   statusTimeline: OrchestratorRunStatus[],
   status: OrchestratorRunStatus
@@ -250,7 +244,7 @@ function hasValidRunTimeline(
   for (let index = 1; index < dedupedTimeline.length; index += 1) {
     const from = dedupedTimeline[index - 1];
     const to = dedupedTimeline[index];
-    if (!ORCHESTRATOR_RUN_TRANSITIONS[from].includes(to)) {
+    if (!ALLOWED_RUN_TRANSITIONS[from].includes(to)) {
       return false;
     }
   }

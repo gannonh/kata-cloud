@@ -877,6 +877,20 @@ function App(): React.JSX.Element {
     const runningTransition = transitionOrchestratorRunStatus(queuedRun, "running", runningAt);
     if (!runningTransition.ok) {
       console.error(runningTransition.reason);
+      const failedAt = new Date().toISOString();
+      const failedRun: OrchestratorRunRecord = {
+        ...queuedRun,
+        status: "failed",
+        statusTimeline: ["queued", "running", "failed"],
+        updatedAt: failedAt,
+        completedAt: failedAt,
+        errorMessage: runningTransition.reason
+      };
+      await persistState({
+        ...queuedState,
+        orchestratorRuns: queuedState.orchestratorRuns.map((run) => (run.id === runId ? failedRun : run)),
+        lastOpenedAt: failedAt
+      });
       return;
     }
 
@@ -884,7 +898,7 @@ function App(): React.JSX.Element {
     const runningState: AppState = {
       ...queuedState,
       orchestratorRuns: queuedState.orchestratorRuns.map((run) =>
-        run.id === runId ? { ...runningRun, updatedAt: runningAt } : run
+        run.id === runId ? runningRun : run
       ),
       lastOpenedAt: runningAt
     };
@@ -926,6 +940,22 @@ function App(): React.JSX.Element {
     );
     if (!endedTransition.ok) {
       console.error(endedTransition.reason);
+      const failedRun: OrchestratorRunRecord = {
+        ...runningRun,
+        status: "failed",
+        statusTimeline: runningRun.statusTimeline.includes("failed")
+          ? runningRun.statusTimeline
+          : [...runningRun.statusTimeline, "failed"],
+        updatedAt: endedAt,
+        completedAt: endedAt,
+        errorMessage: endedTransition.reason,
+        delegatedTasks: delegationOutcome.tasks
+      };
+      await persistState({
+        ...runningState,
+        orchestratorRuns: runningState.orchestratorRuns.map((run) => (run.id === runId ? failedRun : run)),
+        lastOpenedAt: endedAt
+      });
       return;
     }
 
@@ -937,9 +967,6 @@ function App(): React.JSX.Element {
         run.id === runId
           ? {
               ...endedRun,
-              updatedAt: endedAt,
-              completedAt: endedAt,
-              errorMessage: failureMessage ?? undefined,
               contextSnippets: failureMessage ? undefined : contextSnippets,
               draft,
               draftAppliedAt: undefined,
