@@ -25,7 +25,12 @@ Current focus is executing v0.2.0 Desktop MVP Closure after shipping orchestrato
 
 **Goal:** Align shell semantics to spec-defined three-column coordinator workspace with agent/status-aware left sidebar and chat-first center pane.
 **Depends on:** Phase 09
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Coordinator shell projection and transient UI state contracts
+- [ ] 10-02-PLAN.md — Sidebar/chat/workflow component primitives with accessibility semantics
+- [ ] 10-03-PLAN.md — App integration, three-column wiring, and UAT coverage
 
 ### Phase 11: Agent Deployment, Waves, and Tab Expansion
 
