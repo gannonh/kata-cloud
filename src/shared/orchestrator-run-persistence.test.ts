@@ -7,11 +7,12 @@ import {
 import type {
   OrchestratorDelegatedTaskRecord,
   OrchestratorRunRecord,
+  OrchestratorRunStatus,
   OrchestratorSpecDraft
 } from "./state";
 
 function createRun(id: string, status: OrchestratorRunRecord["status"] = "queued"): OrchestratorRunRecord {
-  const statusTimeline =
+  const statusTimeline: OrchestratorRunStatus[] =
     status === "queued"
       ? ["queued"]
       : status === "running"
@@ -47,7 +48,7 @@ describe("orchestrator run persistence helpers", () => {
     const runningRun = {
       ...runs[0],
       status: "running" as const,
-      statusTimeline: ["queued", "running"],
+      statusTimeline: ["queued", "running"] as OrchestratorRunStatus[],
       updatedAt: "2026-02-19T00:01:00.000Z"
     };
 
@@ -93,6 +94,13 @@ describe("orchestrator run persistence helpers", () => {
     const nextRuns = completeOrchestratorRun(runs, "run-1", {
       delegatedTasks,
       draft,
+      contextRetrievalError: {
+        code: "provider_unavailable",
+        message: "MCP runtime unavailable.",
+        remediation: "Retry with filesystem provider or configure MCP runtime.",
+        retryable: true,
+        providerId: "mcp"
+      },
       contextSnippets: [
         {
           id: "snippet-1",
@@ -109,8 +117,8 @@ describe("orchestrator run persistence helpers", () => {
 
     expect(nextRuns[0]?.delegatedTasks).toHaveLength(1);
     expect(nextRuns[0]?.draft?.runId).toBe("run-1");
+    expect(nextRuns[0]?.contextRetrievalError?.providerId).toBe("mcp");
     expect(nextRuns[0]?.contextSnippets?.[0]?.id).toBe("snippet-1");
     expect(nextRuns[1]?.id).toBe("run-2");
   });
 });
-

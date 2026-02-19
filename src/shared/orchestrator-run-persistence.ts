@@ -1,4 +1,4 @@
-import type { ContextSnippet } from "../context/types";
+import type { ContextRetrievalError, ContextSnippet } from "../context/types";
 import type {
   OrchestratorDelegatedTaskRecord,
   OrchestratorRunRecord,
@@ -6,6 +6,7 @@ import type {
 } from "./state";
 
 export interface OrchestratorRunCompletionUpdate {
+  contextRetrievalError?: ContextRetrievalError;
   contextSnippets?: ContextSnippet[];
   draft?: OrchestratorSpecDraft;
   draftAppliedAt?: string;
@@ -48,6 +49,7 @@ export function completeOrchestratorRun(
     run.id === runId
       ? {
           ...run,
+          contextRetrievalError: update.contextRetrievalError,
           contextSnippets: update.contextSnippets,
           draft: update.draft,
           draftAppliedAt: update.draftAppliedAt,
@@ -57,4 +59,3 @@ export function completeOrchestratorRun(
       : run
   );
 }
-

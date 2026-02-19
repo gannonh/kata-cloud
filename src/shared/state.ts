@@ -2,7 +2,7 @@ import {
   isSpaceGitLifecycleStatus,
   type SpaceGitLifecycleStatus
 } from "../git/types";
-import type { ContextProviderId, ContextSnippet } from "../context/types";
+import type { ContextProviderId, ContextRetrievalError, ContextSnippet } from "../context/types";
 import { ALLOWED_RUN_TRANSITIONS } from "./orchestrator-run-lifecycle";
 
 export const APP_STATE_VERSION = 1;
@@ -70,6 +70,7 @@ export interface OrchestratorRunRecord {
   updatedAt: string;
   completedAt?: string;
   errorMessage?: string;
+  contextRetrievalError?: ContextRetrievalError;
   contextSnippets?: ContextSnippet[];
   draft?: OrchestratorSpecDraft;
   draftAppliedAt?: string;
@@ -131,6 +132,20 @@ function isContextSnippet(value: unknown): value is ContextSnippet {
     typeof value.content === "string" &&
     typeof value.score === "number" &&
     Number.isFinite(value.score)
+  );
+}
+
+function isContextRetrievalError(value: unknown): value is ContextRetrievalError {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.code === "string" &&
+    isString(value.message) &&
+    isString(value.remediation) &&
+    typeof value.retryable === "boolean" &&
+    isContextProviderId(value.providerId)
   );
 }
 
@@ -309,6 +324,9 @@ function normalizeOrchestratorRunRecord(value: unknown): OrchestratorRunRecord |
     updatedAt: value.updatedAt,
     completedAt,
     errorMessage: isString(value.errorMessage) ? value.errorMessage : undefined,
+    contextRetrievalError: isContextRetrievalError(value.contextRetrievalError)
+      ? value.contextRetrievalError
+      : undefined,
     contextSnippets,
     draft,
     draftAppliedAt,
