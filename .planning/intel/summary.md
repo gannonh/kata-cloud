@@ -3,14 +3,14 @@
 Generated: 2026-02-19 | Source: code-scan (brownfield enrichment)
 
 ## Stack
-- 33 source files indexed
-- .ts: 24 files
+- 34 source files indexed
+- .ts: 25 files
 - .tsx: 1 files
 - .js: 1 files
 - .mjs: 7 files
 
 ## Architecture
-- shared: 29 files
+- shared: 30 files
 - domain: 2 files
 - main: 1 files
 - package: 1 files
@@ -24,7 +24,7 @@ Generated: 2026-02-19 | Source: code-scan (brownfield enrichment)
 ## Key Patterns
 - File types: util: 21
 - File types: undefined: 4
-- File types: test: 7
+- File types: test: 8
 - File types: config: 1
 
 ## Concerns

@@ -1,0 +1,173 @@
+=== test:orchestrator-context ===
+start=2026-02-19T16:09:24Z
+cmd=pnpm run test:orchestrator-context
+! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-10.6.2.tgz
+
+> kata-cloud@0.0.0 test:orchestrator-context /Users/gannonhall/dev/kata/kata-cloud.worktrees/wt-a
+> vitest run src/shared/orchestrator-run-lifecycle.test.ts src/shared/orchestrator-run-view-model.test.ts src/main/persisted-state-store.node.test.ts src/context/context-adapter.node.test.ts
+
+
+ RUN  v3.2.4 /Users/gannonhall/dev/kata/kata-cloud.worktrees/wt-a
+
+ ✓ src/shared/orchestrator-run-lifecycle.test.ts (11 tests) 3ms
+ ✓ src/shared/orchestrator-run-view-model.test.ts (12 tests) 3ms
+ ✓ src/context/context-adapter.node.test.ts (7 tests) 8ms
+ ✓ src/main/persisted-state-store.node.test.ts (2 tests) 4ms
+
+ Test Files  4 passed (4)
+      Tests  32 passed (32)
+   Start at  08:09:25
+   Duration  941ms (transform 163ms, setup 422ms, collect 175ms, tests 17ms, environment 2.08s, prepare 310ms)
+
+exit=0
+end=2026-02-19T16:09:26Z
+
+=== test ===
+start=2026-02-19T16:09:26Z
+cmd=pnpm test
+
+> kata-cloud@0.0.0 test /Users/gannonhall/dev/kata/kata-cloud.worktrees/wt-a
+> vitest run
+
+
+ RUN  v3.2.4 /Users/gannonhall/dev/kata/kata-cloud.worktrees/wt-a
+
+ ✓ src/shared/orchestrator-run-view-model.test.ts (12 tests) 3ms
+ ✓ src/main/providers/anthropic/api-key-client.node.test.ts (9 tests) 4ms
+ ✓ src/git/git-cli.test.ts (14 tests) 3ms
+stderr | src/shared/state.test.ts > shared state helpers > normalizes records and filters invalid spaces and sessions
+normalizeAppState: dropping invalid orchestrator run record (id=run-3)
+
+stderr | src/shared/state.test.ts > shared state helpers > drops interrupted runs missing interruptedAt
+normalizeAppState: dropping invalid orchestrator run record (id=run-interrupted-missing-timestamp)
+
+stderr | src/shared/state.test.ts > shared state helpers > drops persisted runs with inconsistent lifecycle timeline metadata
+normalizeAppState: dropping invalid orchestrator run record (id=run-bad)
+
+ ✓ src/shared/state.test.ts (9 tests) 4ms
+ ✓ src/main/provider-runtime/service.node.test.ts (11 tests) 3ms
+ ✓ src/git/space-git-service.test.ts (7 tests) 3ms
+ ✓ src/git/pr-workflow.test.ts (13 tests) 8ms
+ ✓ src/context/context-adapter.node.test.ts (7 tests) 20ms
+ ✓ src/main/persisted-state-store.node.test.ts (2 tests) 10ms
+ ✓ src/main/providers/openai/api-key-client.node.test.ts (9 tests) 7ms
+ ✓ src/main/provider-runtime/auth.node.test.ts (7 tests) 2ms
+stderr | src/shared/orchestrator-state.test.ts > orchestrator run state normalization > drops runs with unknown lifecycle states
+normalizeAppState: dropping invalid orchestrator run record (id=run-1)
+
+stderr | src/shared/orchestrator-state.test.ts > orchestrator run state normalization > drops terminal runs without completedAt timestamp
+normalizeAppState: dropping invalid orchestrator run record (id=run-1)
+
+ ✓ src/shared/orchestrator-state.test.ts (4 tests) 5ms
+ ✓ src/shared/orchestrator-run-persistence.test.ts (4 tests) 3ms
+ ✓ src/main/providers/anthropic/adapter.node.test.ts (9 tests) 4ms
+ ✓ src/shared/orchestrator-run-lifecycle.test.ts (11 tests) 5ms
+ ✓ src/main/providers/openai/adapter.node.test.ts (7 tests) 4ms
+ ✓ packages/task-parser/test/task-parser.test.js (4 tests) 7ms
+stderr | src/features/spec-panel/spec-note-panel.test.tsx > SpecNotePanel > autosaves edited spec content
+`ReactDOMTestUtils.act` is deprecated in favor of `React.act`. Import `act` from `react` instead of `react-dom/test-utils`. See https://react.dev/warnings/react-dom-test-utils for more info.
+
+ ✓ src/features/spec-panel/spec-note-panel.test.tsx (5 tests) 485ms
+ ✓ src/main/provider-runtime/registry.node.test.ts (6 tests) 4ms
+ ✓ src/main/provider-runtime/errors.node.test.ts (11 tests) 6ms
+ ✓ src/git/changes-diff-highlighting.test.ts (7 tests) 5ms
+ ✓ src/shared/orchestrator-run-history.test.ts (3 tests) 19ms
+ ✓ src/notes/store.test.ts (3 tests) 15ms
+ ✓ src/git/changes.test.ts (4 tests) 12ms
+stderr | src/notes/spec-note-panel.test.tsx > SpecNotePanel > autosaves edited spec content
+`ReactDOMTestUtils.act` is deprecated in favor of `React.act`. Import `act` from `react` instead of `react-dom/test-utils`. See https://react.dev/warnings/react-dom-test-utils for more info.
+
+ ✓ src/notes/spec-note-panel.test.tsx (3 tests) 293ms
+ ✓ src/space/store.test.ts (2 tests) 4ms
+ ✓ src/shared/orchestrator-delegation.test.ts (3 tests) 5ms
+ ✓ src/git/space-git-service.node.test.ts (2 tests) 3ms
+ ✓ src/browser/local-dev-browser.test.ts (4 tests) 4ms
+ ✓ src/shared/orchestrator-failure.test.ts (5 tests) 3ms
+ ✓ src/space/validation.test.ts (4 tests) 2ms
+ ✓ src/git/types.test.ts (3 tests) 4ms
+ ✓ src/features/spec-panel/store.test.ts (1 test) 9ms
+ ✓ src/git/types.node.test.ts (2 tests) 1ms
+ ✓ src/space/create-space-flow.test.tsx (2 tests) 1054ms
+   ✓ CreateSpaceFlow > creates a space from a prompt-driven workflow  895ms
+ ✓ src/git/space-git-ui-state.test.ts (2 tests) 1ms
+ ✓ src/preload/index.test.ts (1 test) 4ms
+
+ Test Files  37 passed (37)
+      Tests  212 passed (212)
+   Start at  08:09:27
+   Duration  4.12s (transform 653ms, setup 3.13s, collect 1.52s, tests 2.03s, environment 19.06s, prepare 2.98s)
+
+exit=0
+end=2026-02-19T16:09:31Z
+
+=== desktop:typecheck ===
+start=2026-02-19T16:09:31Z
+cmd=pnpm run desktop:typecheck
+
+> kata-cloud@0.0.0 desktop:typecheck /Users/gannonhall/dev/kata/kata-cloud.worktrees/wt-a
+> tsc --noEmit -p tsconfig.main.json && tsc --noEmit -p tsconfig.renderer.json
+
+exit=0
+end=2026-02-19T16:09:33Z
+
+=== e2e:electron:smoke ===
+start=2026-02-19T16:09:33Z
+cmd=pnpm run e2e:electron:smoke
+
+> kata-cloud@0.0.0 e2e:electron:smoke /Users/gannonhall/dev/kata/kata-cloud.worktrees/wt-a
+> node bin/playwright-electron-runner.mjs --suite smoke
+
+[electron-smoke] Building Electron main/preload bundle...
+
+> kata-cloud@0.0.0 desktop:build-main /Users/gannonhall/dev/kata/kata-cloud.worktrees/wt-a
+> tsc -p tsconfig.main.json
+
+[electron-smoke] Starting Vite on http://127.0.0.1:4174...
+
+  VITE v6.4.1  ready in 78 ms
+
+  ➜  Local:   http://127.0.0.1:4174/
+[electron-smoke] Launching Electron through Playwright...
+[electron-smoke] Scenario: bridge-smoke
+[electron-smoke] Scenario passed: bridge-smoke
+[electron-smoke] PASS
+[electron-smoke] Screenshot: /Users/gannonhall/dev/kata/kata-cloud.worktrees/wt-a/output/playwright/electron-smoke-2026-02-19T16-09-34-071Z.png
+exit=0
+end=2026-02-19T16:09:37Z
+
+=== e2e:electron:uat ===
+start=2026-02-19T16:09:37Z
+cmd=pnpm run e2e:electron:uat
+
+> kata-cloud@0.0.0 e2e:electron:uat /Users/gannonhall/dev/kata/kata-cloud.worktrees/wt-a
+> node bin/playwright-electron-runner.mjs --suite uat
+
+[electron-uat] Building Electron main/preload bundle...
+
+> kata-cloud@0.0.0 desktop:build-main /Users/gannonhall/dev/kata/kata-cloud.worktrees/wt-a
+> tsc -p tsconfig.main.json
+
+[electron-uat] Creating temporary git repository...
+Initialized empty Git repository in /private/var/folders/d7/p8j2hgrd7b7c89fxsxlbwptm0000gn/T/kata-cloud-electron-e2e-4MhCoS/repo/.git/
+[main (root-commit) d28fcd6] init
+ 1 file changed, 1 insertion(+)
+ create mode 100644 README.md
+[electron-uat] Starting Vite on http://127.0.0.1:4174...
+
+  VITE v6.4.1  ready in 62 ms
+
+  ➜  Local:   http://127.0.0.1:4174/
+[electron-uat] Launching Electron through Playwright...
+[electron-uat] Scenario: orchestrator-uat-lifecycle-persistence
+[electron-uat] Scenario passed: orchestrator-uat-lifecycle-persistence
+[electron-uat] Scenario: orchestrator-context-diagnostics-uat
+[electron-uat] Scenario passed: orchestrator-context-diagnostics-uat
+[electron-uat] Scenario: changes-no-repo-link-uat
+[electron-uat] Scenario passed: changes-no-repo-link-uat
+[electron-uat] Scenario: pr-redaction-uat
+[electron-uat] Scenario passed: pr-redaction-uat
+[electron-uat] PASS
+[electron-uat] Screenshot: /Users/gannonhall/dev/kata/kata-cloud.worktrees/wt-a/output/playwright/electron-uat-2026-02-19T16-09-37-676Z.png
+exit=0
+end=2026-02-19T16:09:44Z
+

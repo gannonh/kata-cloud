@@ -1,9 +1,9 @@
 {
   "version": 2,
-  "generated": "2026-02-19T13:55:40.220Z",
+  "generated": "2026-02-19T16:12:40.080Z",
   "source": "code-scan",
   "generatedBy": "scan-codebase",
-  "commitHash": "d8c76ab",
+  "commitHash": "9ca1077",
   "files": {
     "src/main/index.ts": {
       "exports": [],
@@ -90,8 +90,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "d8c76ab",
-      "indexedAt": "2026-02-19T13:55:40.220Z"
+      "lastIndexed": "9ca1077",
+      "indexedAt": "2026-02-19T16:12:40.080Z"
     },
     "src/shared/state.ts": {
       "exports": [
@@ -119,8 +119,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "d8c76ab",
-      "indexedAt": "2026-02-19T13:55:40.220Z"
+      "lastIndexed": "9ca1077",
+      "indexedAt": "2026-02-19T16:12:40.080Z"
     },
     "src/shared/shell-api.ts": {
       "exports": [
@@ -214,8 +214,8 @@
       },
       "type": "test",
       "layer": "shared",
-      "lastIndexed": "d8c76ab",
-      "indexedAt": "2026-02-19T13:55:40.220Z"
+      "lastIndexed": "9ca1077",
+      "indexedAt": "2026-02-19T16:12:40.080Z"
     },
     "src/shared/orchestrator-run-lifecycle.ts": {
       "exports": [
@@ -249,8 +249,8 @@
       },
       "type": "test",
       "layer": "shared",
-      "lastIndexed": "d8c76ab",
-      "indexedAt": "2026-02-19T13:55:40.220Z"
+      "lastIndexed": "9ca1077",
+      "indexedAt": "2026-02-19T16:12:40.080Z"
     },
     "src/shared/orchestrator-run-view-model.ts": {
       "exports": [
@@ -269,8 +269,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "d8c76ab",
-      "indexedAt": "2026-02-19T13:55:40.220Z"
+      "lastIndexed": "9ca1077",
+      "indexedAt": "2026-02-19T16:12:40.080Z"
     },
     "src/shared/orchestrator-state.test.ts": {
       "exports": [],
@@ -299,8 +299,8 @@
       },
       "type": "test",
       "layer": "shared",
-      "lastIndexed": "d8c76ab",
-      "indexedAt": "2026-02-19T13:55:40.220Z"
+      "lastIndexed": "9ca1077",
+      "indexedAt": "2026-02-19T16:12:40.080Z"
     },
     "bin/dev-desktop.mjs": {
       "exports": [],
@@ -353,8 +353,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "d8c76ab",
-      "indexedAt": "2026-02-19T13:55:40.220Z"
+      "lastIndexed": "9ca1077",
+      "indexedAt": "2026-02-19T16:12:40.080Z"
     },
     "bin/playwright-electron-smoke.mjs": {
       "exports": [],
@@ -532,8 +532,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "d8c76ab",
-      "indexedAt": "2026-02-19T13:55:40.220Z"
+      "lastIndexed": "9ca1077",
+      "indexedAt": "2026-02-19T16:12:40.080Z"
     },
     "src/shared/context-ipc.ts": {
       "exports": [
@@ -588,24 +588,43 @@
       "layer": "shared",
       "lastIndexed": "d8c76ab",
       "indexedAt": "2026-02-19T13:55:40.220Z"
+    },
+    "src/main/persisted-state-store.node.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "node:fs/promises",
+          "node:os",
+          "node:path",
+          "vitest"
+        ],
+        "local": [
+          "../shared/state",
+          "./persisted-state-store"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "9ca1077",
+      "indexedAt": "2026-02-19T16:12:40.080Z"
     }
   },
   "stats": {
-    "totalFiles": 33,
+    "totalFiles": 34,
     "byType": {
       "util": 21,
       "undefined": 4,
-      "test": 7,
+      "test": 8,
       "config": 1
     },
     "byLayer": {
-      "shared": 29,
+      "shared": 30,
       "domain": 2,
       "main": 1,
       "package": 1
     },
     "byExtension": {
-      ".ts": 24,
+      ".ts": 25,
       ".tsx": 1,
       ".js": 1,
       ".mjs": 7

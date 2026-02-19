@@ -16,6 +16,7 @@ const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 const rendererPort = process.env.KATA_CLOUD_E2E_PORT ?? process.env.KATA_CLOUD_UAT_PORT ?? "4174";
 const rendererUrl = `http://127.0.0.1:${rendererPort}`;
 const outputDir = path.join(process.cwd(), "output", "playwright");
+const ORCHESTRATOR_RUN_HELPERS_KEY = "__kataCloudOrchestratorRunHelpers";
 
 let viteProcess;
 let viteStartupError;
@@ -391,53 +392,99 @@ async function assertPrRedaction(page, repoPath) {
   }
 }
 
-async function getLatestRunSnapshot(page) {
-  return page.evaluate(async () => {
+async function ensureOrchestratorRunHelpers(page) {
+  await page.evaluate((helpersKey) => {
+    if (window[helpersKey]) {
+      return;
+    }
+
+    const sortRunsByRecency = (runs) =>
+      [...runs].sort((leftRun, rightRun) => {
+        if (rightRun.updatedAt !== leftRun.updatedAt) {
+          return rightRun.updatedAt < leftRun.updatedAt ? -1 : 1;
+        }
+        if (rightRun.createdAt !== leftRun.createdAt) {
+          return rightRun.createdAt < leftRun.createdAt ? -1 : 1;
+        }
+        return rightRun.id.localeCompare(leftRun.id);
+      });
+
+    const projectRunSnapshot = (run) => {
+      if (!run) {
+        return null;
+      }
+
+      return {
+        id: run.id,
+        prompt: run.prompt,
+        status: run.status,
+        lifecycleText: run.statusTimeline.join(" -> "),
+        errorMessage: run.errorMessage ?? null,
+        contextRetrievalError: run.contextRetrievalError
+          ? {
+              code: run.contextRetrievalError.code,
+              message: run.contextRetrievalError.message,
+              remediation: run.contextRetrievalError.remediation,
+              retryable: run.contextRetrievalError.retryable,
+              providerId: run.contextRetrievalError.providerId
+            }
+          : null
+      };
+    };
+
+    const getRunsForActiveContext = (state) =>
+      state.orchestratorRuns.filter(
+        (run) => run.spaceId === state.activeSpaceId && run.sessionId === state.activeSessionId
+      );
+
+    window[helpersKey] = {
+      sortRunsByRecency,
+      projectRunSnapshot,
+      getRunsForActiveContext
+    };
+  }, ORCHESTRATOR_RUN_HELPERS_KEY);
+}
+
+async function getRunSnapshot(page, targetPrompt = null) {
+  await ensureOrchestratorRunHelpers(page);
+
+  return page.evaluate(async ({ helpersKey, prompt }) => {
     const shell = window.kataShell;
     if (!shell) {
       throw new Error("kataShell bridge unavailable.");
     }
 
-    const state = await shell.getState();
-    const runs = state.orchestratorRuns.filter(
-      (run) => run.spaceId === state.activeSpaceId && run.sessionId === state.activeSessionId
-    );
-    const sortedRuns = [...runs].sort((leftRun, rightRun) => {
-      if (rightRun.updatedAt !== leftRun.updatedAt) {
-        return rightRun.updatedAt < leftRun.updatedAt ? -1 : 1;
-      }
-      if (rightRun.createdAt !== leftRun.createdAt) {
-        return rightRun.createdAt < leftRun.createdAt ? -1 : 1;
-      }
-      return rightRun.id.localeCompare(leftRun.id);
-    });
+    const helpers = window[helpersKey];
+    if (!helpers) {
+      throw new Error("Orchestrator run helpers unavailable.");
+    }
 
+    const state = await shell.getState();
+    const allRuns = helpers.getRunsForActiveContext(state);
+    const runs =
+      typeof prompt === "string"
+        ? allRuns.filter((run) => run.prompt === prompt)
+        : allRuns;
+    const sortedRuns = helpers.sortRunsByRecency(runs);
     const latestRun = sortedRuns[0];
+
     return {
       count: sortedRuns.length,
-      latest: latestRun
-        ? {
-            id: latestRun.id,
-            prompt: latestRun.prompt,
-            status: latestRun.status,
-            lifecycleText: latestRun.statusTimeline.join(" -> "),
-            errorMessage: latestRun.errorMessage ?? null,
-            contextRetrievalError: latestRun.contextRetrievalError
-              ? {
-                  code: latestRun.contextRetrievalError.code,
-                  message: latestRun.contextRetrievalError.message,
-                  remediation: latestRun.contextRetrievalError.remediation,
-                  retryable: latestRun.contextRetrievalError.retryable,
-                  providerId: latestRun.contextRetrievalError.providerId
-                }
-              : null
-          }
-        : null
+      latest: helpers.projectRunSnapshot(latestRun)
     };
+  }, {
+    helpersKey: ORCHESTRATOR_RUN_HELPERS_KEY,
+    prompt: targetPrompt
   });
 }
 
+async function getLatestRunSnapshot(page) {
+  return getRunSnapshot(page);
+}
+
 async function runOrchestratorPrompt(page, prompt, expectedStatus) {
+  await ensureOrchestratorRunHelpers(page);
+
   await page.getByRole("button", { name: "Orchestrator", exact: true }).click();
   await page.locator("#space-prompt-input").fill(prompt);
 
@@ -451,51 +498,53 @@ async function runOrchestratorPrompt(page, prompt, expectedStatus) {
   await page.getByRole("button", { name: "Run Orchestrator", exact: true }).click();
 
   await page.waitForFunction(
-    async ({ previousRunCount, targetStatus }) => {
+    async ({ previousRunCount, targetStatus, targetPrompt, helpersKey }) => {
       const shell = window.kataShell;
       if (!shell) {
-        return false;
+        throw new Error("kataShell bridge unavailable.");
+      }
+
+      const helpers = window[helpersKey];
+      if (!helpers) {
+        throw new Error("Orchestrator run helpers unavailable.");
       }
 
       const state = await shell.getState();
-      const runs = state.orchestratorRuns.filter(
-        (run) => run.spaceId === state.activeSpaceId && run.sessionId === state.activeSessionId
-      );
+      const runs = helpers.getRunsForActiveContext(state);
       if (runs.length <= previousRunCount) {
         return false;
       }
 
-      const latestRun = [...runs].sort((leftRun, rightRun) => {
-        if (rightRun.updatedAt !== leftRun.updatedAt) {
-          return rightRun.updatedAt < leftRun.updatedAt ? -1 : 1;
-        }
-        if (rightRun.createdAt !== leftRun.createdAt) {
-          return rightRun.createdAt < leftRun.createdAt ? -1 : 1;
-        }
-        return rightRun.id.localeCompare(leftRun.id);
-      })[0];
+      const matchingRuns = runs.filter((run) => run.prompt === targetPrompt);
+      if (matchingRuns.length === 0) {
+        return false;
+      }
 
-      return Boolean(latestRun && latestRun.status === targetStatus);
+      const latestMatchingRun = helpers.sortRunsByRecency(matchingRuns)[0];
+
+      return Boolean(latestMatchingRun && latestMatchingRun.status === targetStatus);
     },
     {
       previousRunCount: before.count,
-      targetStatus: expectedStatus
+      targetStatus: expectedStatus,
+      targetPrompt: prompt,
+      helpersKey: ORCHESTRATOR_RUN_HELPERS_KEY
     }
   );
 
-  const after = await getLatestRunSnapshot(page);
-  const latestRun = after.latest;
-  if (!latestRun) {
-    throw new Error("Expected a latest run after orchestrator execution.");
+  const matchingRunSnapshot = await getRunSnapshot(page, prompt);
+  const matchingRun = matchingRunSnapshot.latest;
+
+  if (!matchingRun) {
+    throw new Error(`Expected run for prompt "${prompt}" after orchestrator execution.`);
   }
-  if (latestRun.status !== expectedStatus) {
-    throw new Error(`Expected latest run status ${expectedStatus}, received ${latestRun.status}.`);
-  }
-  if (latestRun.prompt !== prompt) {
-    throw new Error("Latest run prompt did not match submitted prompt.");
+  if (matchingRun.status !== expectedStatus) {
+    throw new Error(
+      `Expected run status ${expectedStatus}, received ${matchingRun.status}. Lifecycle: ${matchingRun.lifecycleText}. Error: ${matchingRun.errorMessage ?? "none"}.`
+    );
   }
 
-  return latestRun;
+  return matchingRun;
 }
 
 async function assertOrchestratorPhaseCoverage(page) {
@@ -528,31 +577,28 @@ async function assertOrchestratorPhaseCoverage(page) {
 }
 
 async function assertOrchestratorPersistenceAfterRestart(page, coverageEvidence) {
+  await ensureOrchestratorRunHelpers(page);
+
   await page.getByRole("button", { name: "Orchestrator", exact: true }).click();
   await page.waitForFunction(
-    async ({ latestCompletedRunId, failedRunId }) => {
+    async ({ latestCompletedRunId, failedRunId, helpersKey }) => {
       const shell = window.kataShell;
       if (!shell) {
         return false;
       }
 
+      const helpers = window[helpersKey];
+      if (!helpers) {
+        return false;
+      }
+
       const state = await shell.getState();
-      const runs = state.orchestratorRuns.filter(
-        (run) => run.spaceId === state.activeSpaceId && run.sessionId === state.activeSessionId
-      );
+      const runs = helpers.getRunsForActiveContext(state);
       if (runs.length < 3) {
         return false;
       }
 
-      const latestRun = [...runs].sort((leftRun, rightRun) => {
-        if (rightRun.updatedAt !== leftRun.updatedAt) {
-          return rightRun.updatedAt < leftRun.updatedAt ? -1 : 1;
-        }
-        if (rightRun.createdAt !== leftRun.createdAt) {
-          return rightRun.createdAt < leftRun.createdAt ? -1 : 1;
-        }
-        return rightRun.id.localeCompare(leftRun.id);
-      })[0];
+      const latestRun = helpers.sortRunsByRecency(runs)[0];
       const failedRun = runs.find((run) => run.id === failedRunId);
 
       return Boolean(
@@ -565,7 +611,8 @@ async function assertOrchestratorPersistenceAfterRestart(page, coverageEvidence)
     },
     {
       latestCompletedRunId: coverageEvidence.latestCompletedRunId,
-      failedRunId: coverageEvidence.failedRunId
+      failedRunId: coverageEvidence.failedRunId,
+      helpersKey: ORCHESTRATOR_RUN_HELPERS_KEY
     }
   );
 
@@ -585,6 +632,9 @@ async function assertOrchestratorContextDiagnostics(page) {
   const diagnosticRun = await runOrchestratorPrompt(page, mcpPrompt, "completed");
 
   const latestWithDiagnostic = await getLatestRunSnapshot(page);
+  if (latestWithDiagnostic.latest?.id !== diagnosticRun.id) {
+    throw new Error("Expected diagnostic run to remain latest during diagnostics validation.");
+  }
   if (!latestWithDiagnostic.latest?.contextRetrievalError) {
     throw new Error("Expected latest run to persist context retrieval diagnostics.");
   }
@@ -624,31 +674,28 @@ async function assertOrchestratorContextDiagnostics(page) {
 }
 
 async function assertOrchestratorContextDiagnosticsPersistenceAfterRestart(page, coverageEvidence) {
+  await ensureOrchestratorRunHelpers(page);
+
   await page.getByRole("button", { name: "Orchestrator", exact: true }).click();
   await page.waitForFunction(
-    async ({ latestRunId, diagnosticRunId }) => {
+    async ({ latestRunId, diagnosticRunId, helpersKey }) => {
       const shell = window.kataShell;
       if (!shell) {
         return false;
       }
 
+      const helpers = window[helpersKey];
+      if (!helpers) {
+        return false;
+      }
+
       const state = await shell.getState();
-      const runs = state.orchestratorRuns.filter(
-        (run) => run.spaceId === state.activeSpaceId && run.sessionId === state.activeSessionId
-      );
+      const runs = helpers.getRunsForActiveContext(state);
       if (runs.length < 2) {
         return false;
       }
 
-      const latestRun = [...runs].sort((leftRun, rightRun) => {
-        if (rightRun.updatedAt !== leftRun.updatedAt) {
-          return rightRun.updatedAt < leftRun.updatedAt ? -1 : 1;
-        }
-        if (rightRun.createdAt !== leftRun.createdAt) {
-          return rightRun.createdAt < leftRun.createdAt ? -1 : 1;
-        }
-        return rightRun.id.localeCompare(leftRun.id);
-      })[0];
+      const latestRun = helpers.sortRunsByRecency(runs)[0];
 
       const diagnosticRun = runs.find((run) => run.id === diagnosticRunId);
       return Boolean(
@@ -664,7 +711,8 @@ async function assertOrchestratorContextDiagnosticsPersistenceAfterRestart(page,
     },
     {
       latestRunId: coverageEvidence.latestRunId,
-      diagnosticRunId: coverageEvidence.diagnosticRunId
+      diagnosticRunId: coverageEvidence.diagnosticRunId,
+      helpersKey: ORCHESTRATOR_RUN_HELPERS_KEY
     }
   );
 
@@ -740,6 +788,16 @@ export async function runElectronSuite({ suite = "full", label } = {}) {
       requiresRepo: true,
       run: async (context) => {
         await setActiveSpace(context.page, context.repoPath, "");
+        // Run lifecycle coverage as a precondition; persisted runs from this phase remain after relaunch
+        // but do not interfere with context diagnostics because runOrchestratorPrompt matches by prompt text.
+        let lifecycleEvidence;
+        try {
+          lifecycleEvidence = await assertOrchestratorPhaseCoverage(context.page);
+        } catch (err) {
+          throw new Error(`Lifecycle precondition failed before context diagnostics: ${err.message}`);
+        }
+        await context.relaunch();
+        await assertOrchestratorPersistenceAfterRestart(context.page, lifecycleEvidence);
         const coverageEvidence = await assertOrchestratorContextDiagnostics(context.page);
         await context.relaunch();
         await assertOrchestratorContextDiagnosticsPersistenceAfterRestart(
