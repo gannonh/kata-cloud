@@ -146,11 +146,44 @@ Location: `docs/`
 - Research: `docs/research.md`
 
 
-## Resolving Agent Skills Resources
+## Skill Resource Resolution (Non-Negotiable)
 
-Sometimes you may erroneously think that a skill resource is unavailable. They are available at the following locations:
+When a `<skill>` is active, all skill-internal paths are resolved **RELATIVE TO THE INVOKED SKILL DIRECTORY, NOT THE PROJECT ROOT.**
 
-- `/Users/gannonhall/.codex/skills/`, or
-- `/Users/gannonhall/.agents/skills/`
+- `SKILL_PATH` = absolute path to invoked `SKILL.md`
+- `SKILL_BASE_DIR` = `dirname(SKILL_PATH)`
 
-Always check these locations. If you can't find the skill resource, let the user know and wait for them to help you before moving on. 
+### Mandatory path resolution
+Treat these as `SKILL_BASE_DIR`-relative unless the skill explicitly says “project root”:
+
+- `./scripts/...`
+- `scripts/...`
+- `references/...`
+- `assets/...`
+- `templates/...`
+- any other relative subfolder path shown in `SKILL.md`
+
+### Forbidden during skill execution
+Do **not** run project-root script paths for skill internals:
+
+- `node scripts/...`
+- `python3 scripts/...`
+- `bash scripts/...`
+
+This is forbidden unless the skill explicitly requires a project-root path.
+
+### Lookup roots (only to find installed skills)
+1. `/Users/gannonhall/.agents/skills/`
+2. `/Users/gannonhall/.codex/skills/`
+
+Once the skill is found, use only that skill’s directory for its internal resources.
+
+### Pre-execution guard
+Before running any command containing `scripts/`, verify it points to `${SKILL_BASE_DIR}/scripts/...` (or an absolute path inside `SKILL_BASE_DIR`).  
+If not, stop and correct the command before execution.
+
+### Example
+If invoked skill is `/Users/gannonhall/.agents/skills/kata-plan-phase/SKILL.md`, then:
+- `scripts/kata-lib.cjs` means  
+`/Users/gannonhall/.agents/skills/kata-plan-phase/scripts/kata-lib.cjs`  
+- never `./scripts/kata-lib.cjs` from repo root.
