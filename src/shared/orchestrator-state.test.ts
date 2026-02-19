@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeAppState } from "./state";
+import { normalizeAppState } from "./state.js";
 
 describe("orchestrator run state normalization", () => {
   it("retains explicit run lifecycle statuses for valid runs", () => {

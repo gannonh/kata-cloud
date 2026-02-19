@@ -1,5 +1,5 @@
-import { mapProviderRuntimeError } from "./errors";
-import type { ProviderRuntimeRegistry } from "./registry";
+import { mapProviderRuntimeError } from "./errors.js";
+import type { ProviderRuntimeRegistry } from "./registry.js";
 import type {
   ProviderModelDescriptor,
   ProviderExecuteResult,
@@ -7,7 +7,7 @@ import type {
   ProviderStatusResult,
   ProviderListModelsIpcRequest,
   ProviderExecuteIpcRequest
-} from "./types";
+} from "./types.js";
 
 export class ProviderRuntimeService {
   constructor(private readonly registry: ProviderRuntimeRegistry) {}

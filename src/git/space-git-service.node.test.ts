@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import type { GitCli } from "./git-cli";
-import { SpaceGitLifecycleService } from "./space-git-service";
-import { createSpaceGitRequest } from "./types";
+import type { GitCli } from "./git-cli.js";
+import { SpaceGitLifecycleService } from "./space-git-service.js";
+import { createSpaceGitRequest } from "./types.js";
 
 function createFakeGit(overrides = {}): GitCli {
   return {

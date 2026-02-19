@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
-import { addCommentReply, addCommentThread, buildCommentTree, loadSpecNote, saveSpecNote } from "./store";
-import type { OrchestratorSpecDraft } from "../../shared/state";
-import type { SpecCommentTreeNode, SpecNoteDocument } from "./types";
+import { addCommentReply, addCommentThread, buildCommentTree, loadSpecNote, saveSpecNote } from "./store.js";
+import type { OrchestratorSpecDraft } from "../../shared/state.js";
+import type { SpecCommentTreeNode, SpecNoteDocument } from "./types.js";
 
 type SpecNotePanelProps = {
   storage: Storage;

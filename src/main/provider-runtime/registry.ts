@@ -1,5 +1,5 @@
-import { createProviderRuntimeError } from "./errors";
-import type { ModelProviderId, ProviderRuntimeAdapter } from "./types";
+import { createProviderRuntimeError } from "./errors.js";
+import type { ModelProviderId, ProviderRuntimeAdapter } from "./types.js";
 
 export interface ProviderRuntimeRegistry {
   register(adapter: ProviderRuntimeAdapter): void;

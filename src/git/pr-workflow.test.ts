@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PullRequestWorkflowError, PullRequestWorkflowService, PR_WORKFLOW_ERROR_CODES, parseGitHubRepoReference } from "./pr-workflow";
+import { PullRequestWorkflowError, PullRequestWorkflowService, PR_WORKFLOW_ERROR_CODES, parseGitHubRepoReference } from "./pr-workflow.js";
 
 function mockResponse(status: number, payload: unknown) {
   return {

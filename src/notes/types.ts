@@ -5,4 +5,4 @@ export type {
   SpecNoteDocument,
   SpecTaskRecord,
   SpecTaskStatus
-} from "../features/spec-panel/types";
+} from "../features/spec-panel/types.js";

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { AnthropicApiKeyClient } from "./api-key-client";
+import { AnthropicApiKeyClient } from "./api-key-client.js";
 
 type MockFetchResponse = {
   ok: boolean;

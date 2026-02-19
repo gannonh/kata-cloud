@@ -2,7 +2,7 @@ import type {
   SpaceGitChangeFile,
   SpaceGitFileStatusCode,
   SpaceGitStagedSummary
-} from "./types";
+} from "./types.js";
 
 const MERGE_CONFLICT_CODES = new Set(["DD", "AU", "UD", "UA", "DU", "AA", "UU"]);
 const UTF8_DECODER = new TextDecoder();

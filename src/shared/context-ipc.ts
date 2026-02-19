@@ -2,7 +2,7 @@ import type {
   ContextProviderId,
   ContextRetrievalErrorCode,
   ContextRetrievalFailure
-} from "../context/types";
+} from "../context/types.js";
 
 export interface ContextIpcErrorPayload {
   code: ContextRetrievalErrorCode;

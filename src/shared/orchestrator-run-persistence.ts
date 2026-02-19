@@ -1,9 +1,9 @@
-import type { ContextRetrievalError, ContextSnippet } from "../context/types";
+import type { ContextRetrievalError, ContextSnippet } from "../context/types.js";
 import type {
   OrchestratorDelegatedTaskRecord,
   OrchestratorRunRecord,
   OrchestratorSpecDraft
-} from "./state";
+} from "./state.js";
 
 export interface OrchestratorRunCompletionUpdate {
   contextRetrievalError?: ContextRetrievalError;

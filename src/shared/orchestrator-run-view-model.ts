@@ -1,10 +1,10 @@
-import type { ContextProviderId, ContextSnippet } from "../context/types";
+import type { ContextProviderId, ContextSnippet } from "../context/types.js";
 import type {
   OrchestratorDelegatedTaskRecord,
   OrchestratorRunRecord,
   OrchestratorRunStatus,
   OrchestratorTaskStatus
-} from "./state";
+} from "./state.js";
 
 export interface OrchestratorDelegatedTaskViewModel {
   id: string;

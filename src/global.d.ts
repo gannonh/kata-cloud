@@ -1,4 +1,4 @@
-import type { ShellApi } from "./shared/shell-api";
+import type { ShellApi } from "./shared/shell-api.js";
 
 declare global {
   interface Window {

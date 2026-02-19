@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { SpaceMetadata } from "./types";
-import { validateCreateSpaceInput } from "./validation";
+import type { SpaceMetadata } from "./types.js";
+import { validateCreateSpaceInput } from "./validation.js";
 
 const existingSpaces: SpaceMetadata[] = [
   {

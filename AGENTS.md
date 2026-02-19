@@ -161,6 +161,8 @@ Location: `docs/` and `.planning/`
 - Product overview: `docs/kata-cloud-ovweview.md`
 - PRD: `.planning/PRD.md`
 - Research: `.planning/research.md`
+- Design mocks: `docs/design/mocks/` (29 screenshots, numbered by user journey)
+- UI specifications: `docs/design/specs/` (7 feature specs derived from mocks, with component inventories, state matrices, interaction maps, and implementation gap analysis)
 
 
 ## Skill Resource Resolution (Non-Negotiable)

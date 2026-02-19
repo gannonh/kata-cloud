@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildDelegatedTaskTimeline,
   ORCHESTRATOR_SPECIALIST_BY_TASK_TYPE
-} from "./orchestrator-delegation";
+} from "./orchestrator-delegation.js";
 
 describe("orchestrator delegation timeline", () => {
   it("maps implement, verify, and debug to concrete specialists", () => {

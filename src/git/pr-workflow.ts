@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { access } from "node:fs/promises";
-import { isStagedFileChange, parseGitStatusPorcelain, summarizeStagedChanges } from "./changes";
-import { GitCli, type GitCommandRunner } from "./git-cli";
+import { isStagedFileChange, parseGitStatusPorcelain, summarizeStagedChanges } from "./changes.js";
+import { GitCli, type GitCommandRunner } from "./git-cli.js";
 import type {
   GitHubSessionInfo,
   GitHubSessionRequest,
@@ -9,7 +9,7 @@ import type {
   SpaceGitCreatePullRequestResult,
   SpaceGitPullRequestDraftRequest,
   SpaceGitPullRequestDraftResult
-} from "./types";
+} from "./types.js";
 
 type GitHubFetch = (
   input: string,

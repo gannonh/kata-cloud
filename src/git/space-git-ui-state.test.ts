@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { toSpaceGitUiState } from "./space-git-ui-state";
-import { createSpaceGitStatus } from "./types";
+import { toSpaceGitUiState } from "./space-git-ui-state.js";
+import { createSpaceGitStatus } from "./types.js";
 
 describe("toSpaceGitUiState", () => {
   it("returns unlinked state when git status is missing", () => {

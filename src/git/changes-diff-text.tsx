@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { highlightDiff } from "./changes-diff-highlighting";
+import { highlightDiff } from "./changes-diff-highlighting.js";
 
 export function DiffText({ value }: { value: string }): React.JSX.Element {
   const highlightedDiff = useMemo(() => highlightDiff(value), [value]);

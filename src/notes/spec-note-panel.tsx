@@ -1,1 +1,1 @@
-export { SpecNotePanel } from "../features/spec-panel/spec-note-panel";
+export { SpecNotePanel } from "../features/spec-panel/spec-note-panel.js";

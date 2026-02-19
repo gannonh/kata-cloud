@@ -1,17 +1,17 @@
 import { access } from "node:fs/promises";
-import { GitCli, type GitCommandRunner } from "./git-cli";
+import { GitCli, type GitCommandRunner } from "./git-cli.js";
 import {
   isStagedFileChange,
   isUnstagedFileChange,
   parseGitStatusPorcelain,
   summarizeStagedChanges
-} from "./changes";
+} from "./changes.js";
 import {
   ERROR_CODES,
   SpaceGitLifecycleError,
   isSpaceGitLifecycleError
-} from "./space-git-errors";
-import { toSpaceGitUiState } from "./space-git-ui-state";
+} from "./space-git-errors.js";
+import { toSpaceGitUiState } from "./space-git-ui-state.js";
 import {
   createSpaceGitStatus,
   type SpaceGitChangesRequest,
@@ -21,7 +21,7 @@ import {
   type SpaceGitFileRequest,
   type SpaceGitLifecycleRequest,
   type SpaceGitLifecycleStatus
-} from "./types";
+} from "./types.js";
 
 export async function pathExists(targetPath: string): Promise<boolean> {
   try {

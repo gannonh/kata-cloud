@@ -1,9 +1,9 @@
-import { resolveProviderAuth, toClientAuth } from "../../provider-runtime/auth";
+import { resolveProviderAuth, toClientAuth } from "../../provider-runtime/auth.js";
 import {
   createAuthResolutionError,
   createProviderRuntimeError,
   mapProviderRuntimeError
-} from "../../provider-runtime/errors";
+} from "../../provider-runtime/errors.js";
 import type {
   ProviderAuthInput,
   ProviderAuthResolution,
@@ -14,7 +14,7 @@ import type {
   ProviderListModelsRequest,
   ProviderModelDescriptor,
   ProviderRuntimeAdapter
-} from "../../provider-runtime/types";
+} from "../../provider-runtime/types.js";
 
 export interface OpenAiClientModel {
   id: string;

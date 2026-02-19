@@ -7,7 +7,7 @@ import {
   createDefaultSpecNote,
   loadSpecNote,
   saveSpecNote
-} from "./store";
+} from "./store.js";
 
 function createMemoryStorage(seed?: Record<string, string>): Storage {
   const memory = new Map<string, string>(seed ? Object.entries(seed) : []);

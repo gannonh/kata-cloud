@@ -5,7 +5,7 @@ import type {
   SpecNoteDocument,
   SpecTaskRecord,
   SpecTaskStatus
-} from "./types";
+} from "./types.js";
 
 export const SPEC_NOTE_STORAGE_KEY = "kata-cloud.spec-note.v1";
 const TASK_BLOCK_PATTERN = /^[ \t]*@@@task[ \t]*\r?\n([\s\S]*?)^[ \t]*@@@[ \t]*(?:\r?\n|$)/gm;

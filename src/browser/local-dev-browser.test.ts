@@ -4,7 +4,7 @@ import {
   navigateBrowserHistory,
   normalizeLocalPreviewUrl,
   stepBrowserHistory
-} from "./local-dev-browser";
+} from "./local-dev-browser.js";
 
 describe("local dev browser helpers", () => {
   it("normalizes localhost urls and adds default protocol", () => {

@@ -2,7 +2,7 @@
   "name": "kata-cloud",
   "version": "0.1.0",
   "private": true,
-  "type": "commonjs",
+  "type": "module",
   "packageManager": "pnpm@10.6.2",
   "scripts": {
     "dev": "node bin/dev-desktop.mjs",
@@ -12,7 +12,7 @@
     "docs:validate": "cd docs && mint validate",
     "docs:broken-links": "cd docs && mint broken-links",
     "docs:update": "cd docs && mint update",
-    "desktop:build-main": "tsc -p tsconfig.main.json",
+    "desktop:build-main": "tsc -p tsconfig.main.json && pnpm exec tsc src/preload/index.ts --module commonjs --target es2022 --moduleResolution node --types node,electron --skipLibCheck --esModuleInterop --outDir dist/preload-cjs && node bin/postbuild-main.mjs",
     "desktop:typecheck": "tsc --noEmit -p tsconfig.main.json && tsc --noEmit -p tsconfig.renderer.json",
     "e2e:electron:smoke": "node bin/playwright-electron-runner.mjs --suite smoke",
     "e2e:electron:uat": "node bin/playwright-electron-runner.mjs --suite uat",

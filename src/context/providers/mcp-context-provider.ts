@@ -1,4 +1,4 @@
-import type { ContextProvider, ContextQuery, ContextRetrievalResult } from "../types";
+import type { ContextProvider, ContextQuery, ContextRetrievalResult } from "../types.js";
 
 export class McpCompatibleStubContextProvider implements ContextProvider {
   readonly id = "mcp" as const;

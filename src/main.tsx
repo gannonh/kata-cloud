@@ -11,38 +11,38 @@ import {
   type SpaceGitLifecycleRequest,
   type SpaceGitLifecycleStatus,
   type SpaceGitPullRequestDraftResult
-} from "./git/types";
+} from "./git/types.js";
 import {
   isStagedFileChange,
   isUnstagedFileChange,
   toGitStatusLabel
-} from "./git/changes";
-import { DiffText } from "./git/changes-diff-text";
-import { toSpaceGitUiState } from "./git/space-git-ui-state";
-import { SpecNotePanel } from "./notes/spec-note-panel";
-import { loadSpecNote } from "./notes/store";
-import { buildDelegatedTaskTimeline } from "./shared/orchestrator-delegation";
-import { transitionOrchestratorRunStatus } from "./shared/orchestrator-run-lifecycle";
+} from "./git/changes.js";
+import { DiffText } from "./git/changes-diff-text.js";
+import { toSpaceGitUiState } from "./git/space-git-ui-state.js";
+import { SpecNotePanel } from "./notes/spec-note-panel.js";
+import { loadSpecNote } from "./notes/store.js";
+import { buildDelegatedTaskTimeline } from "./shared/orchestrator-delegation.js";
+import { transitionOrchestratorRunStatus } from "./shared/orchestrator-run-lifecycle.js";
 import {
   getRunHistoryForActiveSession,
   getRunsForActiveSession
-} from "./shared/orchestrator-run-history";
+} from "./shared/orchestrator-run-history.js";
 import {
   applyOrchestratorRunUpdate,
   completeOrchestratorRun,
   enqueueOrchestratorRun
-} from "./shared/orchestrator-run-persistence";
+} from "./shared/orchestrator-run-persistence.js";
 import {
   projectOrchestratorRunHistory,
   projectOrchestratorRunViewModel
-} from "./shared/orchestrator-run-view-model";
+} from "./shared/orchestrator-run-view-model.js";
 import {
   createInitialBrowserNavigationState,
   DEFAULT_LOCAL_PREVIEW_URL,
   navigateBrowserHistory,
   normalizeLocalPreviewUrl,
   stepBrowserHistory
-} from "./browser/local-dev-browser";
+} from "./browser/local-dev-browser.js";
 import {
   AppState,
   NavigationView,
@@ -53,22 +53,22 @@ import {
   SpaceRecord,
   createInitialAppState,
   normalizeAppState
-} from "./shared/state";
-import type { CreateSpaceInput, SpaceMetadata } from "./space/types";
+} from "./shared/state.js";
+import type { CreateSpaceInput, SpaceMetadata } from "./space/types.js";
 import {
   parseTags,
   suggestSpaceNameFromPrompt,
   type SpaceValidationErrors,
   validateCreateSpaceInput
-} from "./space/validation";
+} from "./space/validation.js";
 import {
   resolveContextProviderId
-} from "./context/context-adapter";
-import type { ContextProviderId, ContextSnippet } from "./context/types";
-import type { ContextIpcErrorPayload } from "./shared/context-ipc";
-import { parseContextIpcError } from "./shared/context-ipc";
+} from "./context/context-adapter.js";
+import type { ContextProviderId, ContextSnippet } from "./context/types.js";
+import type { ContextIpcErrorPayload } from "./shared/context-ipc.js";
+import { parseContextIpcError } from "./shared/context-ipc.js";
 import "./styles.css";
-import { resolveRunFailure } from "./shared/orchestrator-failure";
+import { resolveRunFailure } from "./shared/orchestrator-failure.js";
 
 const appRoot = document.getElementById("app");
 

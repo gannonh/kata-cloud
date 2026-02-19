@@ -2,8 +2,8 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createInitialAppState } from "../shared/state";
-import type { AppState, OrchestratorRunRecord } from "../shared/state";
+import { createInitialAppState } from "../shared/state.js";
+import type { AppState, OrchestratorRunRecord } from "../shared/state.js";
 
 let userDataPath = "";
 
@@ -13,7 +13,7 @@ vi.mock("electron", () => ({
   }
 }));
 
-import { PersistedStateStore } from "./persisted-state-store";
+import { PersistedStateStore } from "./persisted-state-store.js";
 
 describe("PersistedStateStore.initialize", () => {
   beforeEach(async () => {

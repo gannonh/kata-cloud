@@ -16,6 +16,7 @@ Orchestrator lifecycle is deterministic with validated state transitions.
 Context retrieval contracts are typed with structured diagnostics.
 Interrupted-run recovery and context provenance tracking are operational.
 Integrated Electron UAT covers orchestrator + context flows end-to-end.
+UI specifications produced from 29 design mocks covering 7 feature areas (`docs/design/specs/`), with component inventories, interaction maps, and implementation gap analysis against the current codebase.
 
 ## Requirements
 
@@ -41,6 +42,8 @@ Integrated Electron UAT covers orchestrator + context flows end-to-end.
 ### Active
 
 (None — next milestone requirements to be defined via `/kata-add-milestone`)
+
+UI spec gap analysis (`docs/design/specs/README.md`) identifies cross-cutting implementation gaps that will inform v0.2.0 scope: conversation renderer, agent sidebar, wave grouping, commit interface, markdown rendering, permission dialog, terminal/browser tabs.
 
 ### Out of Scope
 
@@ -79,4 +82,4 @@ The team operates with strict branch hygiene and slice discipline: start from fr
 | State-based assertions for Electron UAT | More reliable than timing-based waits; deterministic prompt-targeted assertions | ✓ Good |
 
 ---
-*Last updated: 2026-02-19 after v0.1.0 milestone*
+*Last updated: 2026-02-19 after UI spec generation*

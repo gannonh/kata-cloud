@@ -36,8 +36,13 @@ No active milestone. Use `/kata-add-milestone` to start planning the next versio
 
 **Goal:** Complete provider-runtime UX/hardening closure and finalize release-ready desktop MVP handoff.
 
+**Input artifacts:**
+- UI specifications derived from 29 design mocks (`docs/design/specs/`), covering 7 feature areas with component inventories, state matrices, interaction maps, and implementation gap analysis
+
 **Target features:**
 - Provider runtime UX polish and resiliency
+- Cross-cutting UI gaps: chat-style conversation renderer, agent sidebar, wave grouping model
+- Feature-specific UI gaps: commit interface, markdown spec rendering, permission dialog
 - Full MVP UAT/E2E final sweep
 - Release handoff packet and prioritized follow-up backlog
 
@@ -54,4 +59,4 @@ No active milestone. Use `/kata-add-milestone` to start planning the next versio
 
 ---
 *Roadmap created: 2026-02-18*
-*Last updated: 2026-02-19 — v0.1.0 Orchestrator and Context Engine Expansion shipped*
+*Last updated: 2026-02-19 — UI specs added as v0.2.0 input artifacts*

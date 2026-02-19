@@ -1,4 +1,4 @@
-import type { CreateSpaceInput, SpaceMetadata } from "./types";
+import type { CreateSpaceInput, SpaceMetadata } from "./types.js";
 
 export type SpaceValidationErrors = Partial<
   Record<"name" | "path" | "repo", string>

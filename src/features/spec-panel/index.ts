@@ -1,4 +1,4 @@
-export { SpecNotePanel } from "./spec-note-panel";
+export { SpecNotePanel } from "./spec-note-panel.js";
 export {
   SPEC_NOTE_STORAGE_KEY,
   addCommentReply,
@@ -7,7 +7,7 @@ export {
   createDefaultSpecNote,
   loadSpecNote,
   saveSpecNote
-} from "./store";
+} from "./store.js";
 export type {
   SpecComment,
   SpecCommentThread,
@@ -15,4 +15,4 @@ export type {
   SpecNoteDocument,
   SpecTaskRecord,
   SpecTaskStatus
-} from "./types";
+} from "./types.js";

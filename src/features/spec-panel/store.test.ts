@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addCommentReply, addCommentThread, buildCommentTree, createDefaultSpecNote } from "./store";
+import { addCommentReply, addCommentThread, buildCommentTree, createDefaultSpecNote } from "./store.js";
 
 describe("spec note store helpers", () => {
   it("adds thread and nested reply in deterministic order", () => {

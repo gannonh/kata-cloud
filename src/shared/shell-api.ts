@@ -1,4 +1,4 @@
-import type { AppState } from "./state";
+import type { AppState } from "./state.js";
 import type {
   GitHubSessionInfo,
   GitHubSessionRequest,
@@ -13,8 +13,8 @@ import type {
   SpaceGitLifecycleStatus,
   SpaceGitPullRequestDraftRequest,
   SpaceGitPullRequestDraftResult
-} from "../git/types";
-import type { ContextRetrievalRequest, ContextRetrievalResult } from "../context/types";
+} from "../git/types.js";
+import type { ContextRetrievalRequest, ContextRetrievalResult } from "../context/types.js";
 import type {
   ProviderModelDescriptor,
   ProviderExecuteResult,
@@ -22,7 +22,7 @@ import type {
   ProviderStatusResult,
   ProviderListModelsIpcRequest,
   ProviderExecuteIpcRequest
-} from "../main/provider-runtime/types";
+} from "../main/provider-runtime/types.js";
 
 export const IPC_CHANNELS = {
   getState: "kata-cloud/state:get",

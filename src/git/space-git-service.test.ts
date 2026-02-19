@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { GitCli } from "./git-cli";
-import { SpaceGitLifecycleService } from "./space-git-service";
+import type { GitCli } from "./git-cli.js";
+import { SpaceGitLifecycleService } from "./space-git-service.js";
 import {
   createSpaceGitRequest,
   type SpaceGitLifecycleRequest
-} from "./types";
+} from "./types.js";
 
 function createFakeGit(
   overrides: Partial<{

@@ -790,6 +790,9 @@ The terminal has become the primary surface for agentic coding. Claude Code, Cod
 - Context Engine adapter with initial filesystem provider
 - Model provider runtime with Anthropic + OpenAI authentication
 
+**Design artifacts produced:**
+- 7 UI specification documents (`docs/design/specs/`) derived from 29 design mocks, covering: Create Space Flow, Coordinator Session, Spec & Notes Panel, Build Session, Changes & Git, Wave Execution, Completion & Verification. Each spec includes component inventories, state matrices, data dependency maps, interaction tables, and implementation gap analysis against the current codebase.
+
 ### Phase 2: Expanded Workflow + CLI
 
 **Objective:** Full spec-driven lifecycle and CLI interface.

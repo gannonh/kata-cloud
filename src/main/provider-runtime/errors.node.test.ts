@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapProviderRuntimeError, serializeProviderRuntimeError, ProviderRuntimeError } from "./errors";
+import { mapProviderRuntimeError, serializeProviderRuntimeError, ProviderRuntimeError } from "./errors.js";
 
 describe("mapProviderRuntimeError", () => {
   it("classifies token-expired 401 responses as session_expired", () => {
