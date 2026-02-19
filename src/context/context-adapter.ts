@@ -82,14 +82,15 @@ class DefaultContextAdapter implements ContextAdapter {
     providerId?: ContextProviderId
   ): Promise<ContextRetrievalResult | ContextSnippet[]> {
     if (providerId) {
+      const query = requestOrQuery as ContextQuery;
       const result = await this.retrieveResult({
-        ...requestOrQuery,
+        ...query,
         providerId
       });
       return result.ok ? result.snippets : [];
     }
 
-    return this.retrieveResult(requestOrQuery);
+    return this.retrieveResult(requestOrQuery as ContextRetrievalRequest);
   }
 }
 
