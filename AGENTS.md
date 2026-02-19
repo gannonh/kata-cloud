@@ -98,7 +98,7 @@ The git feature is the most complex domain. Key files:
 - Coverage thresholds: 80% statements/functions/lines, 70% branches (enforced by `vitest.config.ts`).
 - Main process and preload code (`src/main/**`, `src/preload/**`) are excluded from coverage.
 
-# UAT Process
+## UAT Process
 
 When the `kata-verify-work` skill is run, execute UAT in this order:
 
@@ -131,17 +131,17 @@ When the `kata-verify-work` skill is run, execute UAT in this order:
    - Keep Playwright artifacts in `output/playwright/` for debugging/PR evidence.
    - Use repo-relative paths/commands in prompts and instructions.
 
-## TypeScript Configuration
+### TypeScript Configuration
 - `tsconfig.main.json`: CommonJS, Node/Electron types, outputs to `dist/`.
 - `tsconfig.renderer.json`: ESNext/Bundler, DOM + Vite types, noEmit (Vite handles bundling).
 - Both extend `tsconfig.base.json` for shared strict settings.
 
-## Commit & Pull Request Guidelines
+### Commit & Pull Request Guidelines
 - Concise imperative commits with optional prefixes (`feat:`, `fix:`, `chore:`).
 - PRs: short purpose statement, linked issue (if available), validation steps run, screenshots for UI updates.
 - Keep PRs scoped; list follow-up work explicitly when deferring.
 
-## Key Files for Orientation
+### Key Files for Orientation
 Start here when joining the project:
 - `src/shared/state.ts` — AppState contract and normalization
 - `src/shared/shell-api.ts` — IPC channel definitions and ShellApi interface
