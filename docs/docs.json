@@ -1,0 +1,90 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Kata Cloud",
+  "colors": {
+    "primary": "#6366f1",
+    "light": "#818cf8",
+    "dark": "#4f46e5"
+  },
+  "favicon": "/assets/favicon.svg",
+  "logo": {
+    "light": "/assets/logo-light.svg",
+    "dark": "/assets/logo-dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/gannonh/kata-cloud"
+      }
+    ],
+    "primary": {
+      "label": "Download",
+      "href": "https://kata.sh",
+      "type": "button"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "User Guide",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "introduction"
+            ]
+          },
+          {
+            "group": "User Guide",
+            "pages": [
+              "user-guide/getting-started",
+              "user-guide/spaces",
+              "user-guide/orchestrator",
+              "user-guide/the-spec",
+              "user-guide/changes-tab",
+              "user-guide/agent-specialists",
+              "user-guide/github-integration",
+              "user-guide/mcp-support"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Developer Docs",
+        "groups": [
+          {
+            "group": "Developer Docs",
+            "pages": [
+              "developer/architecture",
+              "developer/development-setup",
+              "developer/project-structure",
+              "developer/shell-api",
+              "developer/state-management",
+              "developer/testing",
+              "developer/contributing"
+            ]
+          }
+        ]
+      }
+    ],
+    "anchors": [
+      {
+        "name": "GitHub",
+        "icon": "github",
+        "url": "https://github.com/gannonh/kata-cloud"
+      },
+      {
+        "name": "Issues",
+        "icon": "circle-exclamation",
+        "url": "https://github.com/gannonh/kata-cloud/issues"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/gannonh/kata-cloud"
+    }
+  }
+}
