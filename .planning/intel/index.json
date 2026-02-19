@@ -1,42 +1,43 @@
 {
   "version": 2,
-  "generated": "2026-02-19T16:12:40.080Z",
+  "generated": "2026-02-19T20:21:24.113Z",
   "source": "code-scan",
   "generatedBy": "scan-codebase",
-  "commitHash": "9ca1077",
+  "commitHash": "e08fdac",
   "files": {
     "src/main/index.ts": {
       "exports": [],
       "imports": {
         "packages": [
           "electron",
-          "node:path"
+          "node:path",
+          "node:url"
         ],
         "local": [
-          "../context/context-adapter",
-          "../context/providers/filesystem-context-provider",
-          "../context/providers/mcp-context-provider",
-          "../context/types",
-          "../git/pr-workflow",
-          "../git/space-git-service",
-          "../git/types",
-          "../shared/context-ipc",
-          "../shared/shell-api",
-          "../shared/state",
-          "./persisted-state-store",
-          "./provider-runtime/errors",
-          "./provider-runtime/registry",
-          "./provider-runtime/service",
-          "./providers/anthropic/adapter",
-          "./providers/anthropic/api-key-client",
-          "./providers/openai/adapter",
-          "./providers/openai/api-key-client"
+          "../context/context-adapter.js",
+          "../context/providers/filesystem-context-provider.js",
+          "../context/providers/mcp-context-provider.js",
+          "../context/types.js",
+          "../git/pr-workflow.js",
+          "../git/space-git-service.js",
+          "../git/types.js",
+          "../shared/context-ipc.js",
+          "../shared/shell-api.js",
+          "../shared/state.js",
+          "./persisted-state-store.js",
+          "./provider-runtime/errors.js",
+          "./provider-runtime/registry.js",
+          "./provider-runtime/service.js",
+          "./providers/anthropic/adapter.js",
+          "./providers/anthropic/api-key-client.js",
+          "./providers/openai/adapter.js",
+          "./providers/openai/api-key-client.js"
         ]
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "d8c76ab",
-      "indexedAt": "2026-02-19T13:55:40.220Z"
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
     },
     "src/preload/index.ts": {
       "exports": [
@@ -66,32 +67,34 @@
           "react-dom/client"
         ],
         "local": [
-          "./browser/local-dev-browser",
-          "./context/context-adapter",
-          "./context/types",
-          "./git/changes",
-          "./git/changes-diff-text",
-          "./git/space-git-ui-state",
-          "./git/types",
-          "./notes/spec-note-panel",
-          "./notes/store",
-          "./shared/context-ipc",
-          "./shared/orchestrator-delegation",
-          "./shared/orchestrator-failure",
-          "./shared/orchestrator-run-history",
-          "./shared/orchestrator-run-lifecycle",
-          "./shared/orchestrator-run-persistence",
-          "./shared/orchestrator-run-view-model",
-          "./shared/state",
-          "./space/types",
-          "./space/validation",
+          "./browser/local-dev-browser.js",
+          "./context/context-adapter.js",
+          "./context/types.js",
+          "./git/changes-diff-text.js",
+          "./git/changes.js",
+          "./git/space-git-ui-state.js",
+          "./git/types.js",
+          "./notes/spec-note-panel.js",
+          "./notes/store.js",
+          "./shared/context-ipc.js",
+          "./shared/orchestrator-delegation.js",
+          "./shared/orchestrator-failure.js",
+          "./shared/orchestrator-run-history.js",
+          "./shared/orchestrator-run-lifecycle.js",
+          "./shared/orchestrator-run-persistence.js",
+          "./shared/orchestrator-run-view-model.js",
+          "./shared/provider-ipc.js",
+          "./shared/shell-api.js",
+          "./shared/state.js",
+          "./space/types.js",
+          "./space/validation.js",
           "./styles.css"
         ]
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "9ca1077",
-      "indexedAt": "2026-02-19T16:12:40.080Z"
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
     },
     "src/shared/state.ts": {
       "exports": [
@@ -99,6 +102,9 @@
         "AppState",
         "NavigationView",
         "OrchestratorDelegatedTaskRecord",
+        "OrchestratorProviderExecutionRecord",
+        "OrchestratorProviderExecutionStatus",
+        "OrchestratorProviderRuntimeMode",
         "OrchestratorRunRecord",
         "OrchestratorRunStatus",
         "OrchestratorSpecDraft",
@@ -112,15 +118,15 @@
       "imports": {
         "packages": [],
         "local": [
-          "../context/types",
-          "../git/types",
-          "./orchestrator-run-lifecycle"
+          "../context/types.js",
+          "../git/types.js",
+          "./orchestrator-run-lifecycle.js"
         ]
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "9ca1077",
-      "indexedAt": "2026-02-19T16:12:40.080Z"
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
     },
     "src/shared/shell-api.ts": {
       "exports": [
@@ -130,16 +136,16 @@
       "imports": {
         "packages": [],
         "local": [
-          "../context/types",
-          "../git/types",
-          "../main/provider-runtime/types",
-          "./state"
+          "../context/types.js",
+          "../git/types.js",
+          "../main/provider-runtime/types.js",
+          "./state.js"
         ]
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "d8c76ab",
-      "indexedAt": "2026-02-19T13:55:40.220Z"
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
     },
     "src/git/space-git-service.ts": {
       "purpose": "Worktree/branch lifecycle and changes snapshots",
@@ -156,11 +162,23 @@
       ]
     },
     "src/main/provider-runtime/service.ts": {
-      "purpose": "Provider runtime orchestration",
-      "layer": "main",
       "exports": [
         "ProviderRuntimeService"
-      ]
+      ],
+      "imports": {
+        "packages": [
+          "@mariozechner/pi-ai"
+        ],
+        "local": [
+          "./errors.js",
+          "./registry.js",
+          "./types.js"
+        ]
+      },
+      "type": "service",
+      "layer": "shared",
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
     },
     "packages/task-parser/src/task-block-parser.js": {
       "purpose": "Parse task blocks from markdown",
@@ -243,14 +261,14 @@
           "vitest"
         ],
         "local": [
-          "./orchestrator-run-view-model",
-          "./state"
+          "./orchestrator-run-view-model.js",
+          "./state.js"
         ]
       },
       "type": "test",
       "layer": "shared",
-      "lastIndexed": "9ca1077",
-      "indexedAt": "2026-02-19T16:12:40.080Z"
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
     },
     "src/shared/orchestrator-run-view-model.ts": {
       "exports": [
@@ -263,14 +281,14 @@
       "imports": {
         "packages": [],
         "local": [
-          "../context/types",
-          "./state"
+          "../context/types.js",
+          "./state.js"
         ]
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "9ca1077",
-      "indexedAt": "2026-02-19T16:12:40.080Z"
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
     },
     "src/shared/orchestrator-state.test.ts": {
       "exports": [],
@@ -607,27 +625,127 @@
       "layer": "shared",
       "lastIndexed": "9ca1077",
       "indexedAt": "2026-02-19T16:12:40.080Z"
+    },
+    "bin/postbuild-main.mjs": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "node:fs/promises",
+          "node:process"
+        ],
+        "local": []
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
+    },
+    "src/main/provider-runtime/registry.node.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "openai",
+          "vitest"
+        ],
+        "local": [
+          "./errors.js",
+          "./registry.js",
+          "./types.js"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
+    },
+    "src/main/provider-runtime/registry.ts": {
+      "exports": [
+        "ProviderRuntimeRegistry",
+        "createProviderRuntimeRegistry",
+        "resolveModelProviderId",
+        "resolveProviderRuntimeMode"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "./errors.js",
+          "./types.js"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
+    },
+    "src/main/provider-runtime/service.node.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "vitest"
+        ],
+        "local": [
+          "./errors.js",
+          "./registry.js",
+          "./service.js",
+          "./types.js"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
+    },
+    "src/main/provider-runtime/types.ts": {
+      "exports": [
+        "ModelProviderId",
+        "ProviderAuthFailureCode",
+        "ProviderAuthInput",
+        "ProviderAuthMode",
+        "ProviderAuthResolution",
+        "ProviderCapabilities",
+        "ProviderClientAuth",
+        "ProviderExecuteIpcRequest",
+        "ProviderExecuteRequest",
+        "ProviderExecuteResult",
+        "ProviderListModelsIpcRequest",
+        "ProviderListModelsRequest",
+        "ProviderModelDescriptor",
+        "ProviderRuntimeAdapter",
+        "ProviderRuntimeErrorCode",
+        "ProviderRuntimeMode",
+        "ProviderStatusRequest",
+        "ProviderStatusResult",
+        "ProviderTokenSession"
+      ],
+      "imports": {
+        "packages": [],
+        "local": []
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "e08fdac",
+      "indexedAt": "2026-02-19T20:21:24.113Z"
     }
   },
   "stats": {
-    "totalFiles": 34,
+    "totalFiles": 39,
     "byType": {
-      "util": 21,
-      "undefined": 4,
-      "test": 8,
+      "util": 24,
+      "undefined": 3,
+      "service": 1,
+      "test": 10,
       "config": 1
     },
     "byLayer": {
-      "shared": 30,
+      "shared": 36,
       "domain": 2,
-      "main": 1,
       "package": 1
     },
     "byExtension": {
-      ".ts": 25,
+      ".ts": 29,
       ".tsx": 1,
       ".js": 1,
-      ".mjs": 7
+      ".mjs": 8
     }
   }
 }
