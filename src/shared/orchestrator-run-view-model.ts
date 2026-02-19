@@ -30,6 +30,15 @@ export interface OrchestratorRunViewModel {
     remediation: string;
     retryable: boolean;
   };
+  providerExecution?: {
+    providerId: string;
+    modelId: string;
+    runtimeMode: "native" | "pi";
+    status: "succeeded" | "failed";
+    errorCode?: string;
+    remediation?: string;
+    retryable?: boolean;
+  };
   contextProvenance?: OrchestratorRunContextProvenance;
   delegatedTasks: OrchestratorDelegatedTaskViewModel[];
 }
@@ -134,6 +143,17 @@ export function projectOrchestratorRunViewModel(run: OrchestratorRunRecord): Orc
           message: run.contextRetrievalError.message,
           remediation: run.contextRetrievalError.remediation,
           retryable: run.contextRetrievalError.retryable
+        }
+      : undefined,
+    providerExecution: run.providerExecution
+      ? {
+          providerId: run.providerExecution.providerId,
+          modelId: run.providerExecution.modelId,
+          runtimeMode: run.providerExecution.runtimeMode,
+          status: run.providerExecution.status,
+          errorCode: run.providerExecution.errorCode,
+          remediation: run.providerExecution.remediation,
+          retryable: run.providerExecution.retryable
         }
       : undefined,
     contextProvenance,

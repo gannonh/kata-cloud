@@ -16,6 +16,8 @@ import type {
 } from "../git/types.js";
 import type { ContextRetrievalRequest, ContextRetrievalResult } from "../context/types.js";
 import type {
+  ModelProviderId,
+  ProviderAuthInput,
   ProviderModelDescriptor,
   ProviderExecuteResult,
   ProviderStatusRequest,
@@ -47,7 +49,16 @@ export const IPC_CHANNELS = {
 
 // Re-exported so preload and renderer code can import all IPC types from the
 // shared layer without reaching into src/main/provider-runtime/ directly.
-export type { ProviderStatusRequest, ProviderStatusResult, ProviderListModelsIpcRequest, ProviderExecuteIpcRequest, ProviderModelDescriptor, ProviderExecuteResult };
+export type {
+  ModelProviderId,
+  ProviderAuthInput,
+  ProviderStatusRequest,
+  ProviderStatusResult,
+  ProviderListModelsIpcRequest,
+  ProviderExecuteIpcRequest,
+  ProviderModelDescriptor,
+  ProviderExecuteResult
+};
 
 export interface ShellApi {
   getState: () => Promise<AppState>;
