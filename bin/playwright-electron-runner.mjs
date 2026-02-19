@@ -451,7 +451,7 @@ async function runOrchestratorPrompt(page, prompt, expectedStatus) {
   await page.getByRole("button", { name: "Run Orchestrator", exact: true }).click();
 
   await page.waitForFunction(
-    async ({ previousRunCount, targetStatus }) => {
+    async ({ previousRunCount, targetStatus, targetPrompt }) => {
       const shell = window.kataShell;
       if (!shell) {
         return false;
@@ -465,7 +465,12 @@ async function runOrchestratorPrompt(page, prompt, expectedStatus) {
         return false;
       }
 
-      const latestRun = [...runs].sort((leftRun, rightRun) => {
+      const matchingRuns = runs.filter((run) => run.prompt === targetPrompt);
+      if (matchingRuns.length === 0) {
+        return false;
+      }
+
+      const latestMatchingRun = [...matchingRuns].sort((leftRun, rightRun) => {
         if (rightRun.updatedAt !== leftRun.updatedAt) {
           return rightRun.updatedAt < leftRun.updatedAt ? -1 : 1;
         }
@@ -475,27 +480,69 @@ async function runOrchestratorPrompt(page, prompt, expectedStatus) {
         return rightRun.id.localeCompare(leftRun.id);
       })[0];
 
-      return Boolean(latestRun && latestRun.status === targetStatus);
+      return Boolean(latestMatchingRun && latestMatchingRun.status === targetStatus);
     },
     {
       previousRunCount: before.count,
-      targetStatus: expectedStatus
+      targetStatus: expectedStatus,
+      targetPrompt: prompt
     }
   );
 
-  const after = await getLatestRunSnapshot(page);
-  const latestRun = after.latest;
-  if (!latestRun) {
-    throw new Error("Expected a latest run after orchestrator execution.");
+  const matchingRun = await page.evaluate(async (targetPrompt) => {
+    const shell = window.kataShell;
+    if (!shell) {
+      throw new Error("kataShell bridge unavailable.");
+    }
+
+    const state = await shell.getState();
+    const runs = state.orchestratorRuns.filter(
+      (run) =>
+        run.spaceId === state.activeSpaceId &&
+        run.sessionId === state.activeSessionId &&
+        run.prompt === targetPrompt
+    );
+    const sortedRuns = [...runs].sort((leftRun, rightRun) => {
+      if (rightRun.updatedAt !== leftRun.updatedAt) {
+        return rightRun.updatedAt < leftRun.updatedAt ? -1 : 1;
+      }
+      if (rightRun.createdAt !== leftRun.createdAt) {
+        return rightRun.createdAt < leftRun.createdAt ? -1 : 1;
+      }
+      return rightRun.id.localeCompare(leftRun.id);
+    });
+
+    const run = sortedRuns[0];
+    if (!run) {
+      return null;
+    }
+
+    return {
+      id: run.id,
+      prompt: run.prompt,
+      status: run.status,
+      lifecycleText: run.statusTimeline.join(" -> "),
+      errorMessage: run.errorMessage ?? null,
+      contextRetrievalError: run.contextRetrievalError
+        ? {
+            code: run.contextRetrievalError.code,
+            message: run.contextRetrievalError.message,
+            remediation: run.contextRetrievalError.remediation,
+            retryable: run.contextRetrievalError.retryable,
+            providerId: run.contextRetrievalError.providerId
+          }
+        : null
+    };
+  }, prompt);
+
+  if (!matchingRun) {
+    throw new Error(`Expected run for prompt "${prompt}" after orchestrator execution.`);
   }
-  if (latestRun.status !== expectedStatus) {
-    throw new Error(`Expected latest run status ${expectedStatus}, received ${latestRun.status}.`);
-  }
-  if (latestRun.prompt !== prompt) {
-    throw new Error("Latest run prompt did not match submitted prompt.");
+  if (matchingRun.status !== expectedStatus) {
+    throw new Error(`Expected run status ${expectedStatus}, received ${matchingRun.status}.`);
   }
 
-  return latestRun;
+  return matchingRun;
 }
 
 async function assertOrchestratorPhaseCoverage(page) {
@@ -740,6 +787,9 @@ export async function runElectronSuite({ suite = "full", label } = {}) {
       requiresRepo: true,
       run: async (context) => {
         await setActiveSpace(context.page, context.repoPath, "");
+        const lifecycleEvidence = await assertOrchestratorPhaseCoverage(context.page);
+        await context.relaunch();
+        await assertOrchestratorPersistenceAfterRestart(context.page, lifecycleEvidence);
         const coverageEvidence = await assertOrchestratorContextDiagnostics(context.page);
         await context.relaunch();
         await assertOrchestratorContextDiagnosticsPersistenceAfterRestart(
