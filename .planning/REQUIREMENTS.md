@@ -29,9 +29,9 @@ Requirements for milestone v0.1.0 Orchestrator and Context Engine Expansion.
 
 ### Verification and Guardrails
 
-- [ ] **VERI-01**: Targeted orchestrator/context automated tests cover normal flow, failure flow, and resume flow regressions.
-- [ ] **VERI-02**: Electron E2E scenarios verify at least one full orchestrator + context flow from prompt to reviewable status outcome.
-- [ ] **VERI-03**: Required quality gates (`pnpm test`, `pnpm run desktop:typecheck`, smoke E2E) remain green after milestone changes.
+- [x] **VERI-01**: Targeted orchestrator/context automated tests cover normal flow, failure flow, and resume flow regressions.
+- [x] **VERI-02**: Electron E2E scenarios verify at least one full orchestrator + context flow from prompt to reviewable status outcome.
+- [x] **VERI-03**: Required quality gates (`pnpm test`, `pnpm run desktop:typecheck`, smoke E2E) remain green after milestone changes.
 
 ## v2 Requirements
 
@@ -66,9 +66,9 @@ Deferred to future milestones.
 | SESS-01 | Phase 7 | Complete |
 | SESS-02 | Phase 7 | Complete |
 | SESS-03 | Phase 7 | Complete |
-| VERI-01 | Phase 8 | Pending |
-| VERI-02 | Phase 8 | Pending |
-| VERI-03 | Phase 8 | Pending |
+| VERI-01 | Phase 8 | Complete |
+| VERI-02 | Phase 8 | Complete |
+| VERI-03 | Phase 8 | Complete |
 
 Coverage:
 - v1 requirements: 14 total
@@ -77,4 +77,4 @@ Coverage:
 
 ---
 Requirements defined: 2026-02-18
-Last updated: 2026-02-19 after Phase 7 completion
+Last updated: 2026-02-19 after Phase 8 completion
