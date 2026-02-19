@@ -30,6 +30,7 @@ Each Orchestrator session is called a **Run**. Runs follow this lifecycle:
 ```
 queued → running → completed
                 └→ failed
+    └──────────→ interrupted (app exited)
 ```
 
 | Status | Description |
@@ -38,6 +39,7 @@ queued → running → completed
 | `running` | Agents are actively executing |
 | `completed` | All tasks finished successfully |
 | `failed` | One or more tasks encountered an error |
+| `interrupted` | The app exited while the run was in-flight (`queued` or `running`) |
 
 ### Run History
 
@@ -45,6 +47,8 @@ Every run is recorded in the **Orchestrator panel**. You can:
 - Browse previous runs and their outcomes
 - Inspect the Spec draft generated for each run
 - See which tasks were delegated and their final statuses
+- See context provenance for each run (provider, snippet count, and fallback source when used)
+- Distinguish recovered runs with an **`(app exited)`** annotation
 
 ## Submitting a Prompt
 
@@ -136,3 +140,7 @@ Edit the Spec directly before applying. The Coordination Agent works from availa
 ### A task got stuck in `running`
 
 Stop the run, check the partial changes in the Changes tab, and either resume with a new run or handle the remaining work manually.
+
+### A run shows `Interrupted (app exited)`
+
+The app recovered an in-flight run from persisted state during startup. Review the run history and Changes tab, then start a new run from the latest Spec/prompt to continue.

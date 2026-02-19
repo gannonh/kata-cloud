@@ -78,18 +78,33 @@ interface SessionRecord {
 A single Orchestrator execution:
 
 ```typescript
+type OrchestratorRunStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed"
+  | "interrupted";
+
 interface OrchestratorRunRecord {
   id: string;
   spaceId: string;
   sessionId: string;
   prompt: string;
   status: OrchestratorRunStatus;
-  statusTimeline: OrchestratorStatusTimelineEntry[];
-  contextSnippets: ContextSnippet[];
-  draft?: OrchestratorSpecDraft;
-  delegatedTasks: OrchestratorDelegatedTaskRecord[];
+  statusTimeline: OrchestratorRunStatus[];
   createdAt: string;
   updatedAt: string;
+  completedAt?: string;
+  interruptedAt?: string;
+  errorMessage?: string;
+  resolvedProviderId?: ContextProviderId;
+  fallbackFromProviderId?: ContextProviderId;
+  contextRetrievalError?: ContextRetrievalError;
+  contextSnippets?: ContextSnippet[];
+  draft?: OrchestratorSpecDraft;
+  draftAppliedAt?: string;
+  draftApplyError?: string;
+  delegatedTasks?: OrchestratorDelegatedTaskRecord[];
 }
 ```
 
@@ -123,6 +138,8 @@ function hasValidRunTimeline(run: unknown): boolean
 
 Type guards check every required field and its expected type. They do not coerce values — missing or wrong-typed fields cause the guard to return `false` and the record to be dropped.
 
+For run lifecycle integrity, normalization also enforces terminal timestamp rules. Example: runs with `status: "interrupted"` must include `interruptedAt`.
+
 ### `createInitialAppState()`
 
 Returns a fresh, valid `AppState` with a "Getting Started Space" as a starter:
@@ -141,14 +158,20 @@ Used when:
 
 ```typescript
 class PersistedStateStore {
+  initialize(): Promise<AppState>
   getState(): AppState
-  setState(nextState: AppState): AppState
+  save(nextState: unknown): Promise<AppState>
 }
 ```
 
 The state file location: `~/.config/kata-cloud/kata-cloud-state.json`
 
-On every `setState()` call:
+On startup (`initialize()`):
+1. State is read from disk and normalized
+2. Any in-flight run (`queued` or `running`) is recovered to `interrupted`
+3. Recovery writes the updated state back to disk before renderer hydration
+
+On every `save()` call:
 1. The new state is validated via `normalizeAppState()`
 2. Written to disk as JSON
 3. Broadcast to all Electron windows via `IPC_CHANNELS.stateChanged`
