@@ -253,7 +253,7 @@ function registerStateHandlers(
         return await providerService.resolveAuth(request);
       } catch (error) {
         console.error("provider:resolve-auth failed", { providerId: request.providerId, error });
-        throw serializeProviderRuntimeError(error);
+        throw serializeProviderRuntimeError(error, { runtimeMode: providerService.getMode() });
       }
     }
   );
@@ -264,7 +264,7 @@ function registerStateHandlers(
         return await providerService.listModels(request);
       } catch (error) {
         console.error("provider:list-models failed", { providerId: request.providerId, error });
-        throw serializeProviderRuntimeError(error);
+        throw serializeProviderRuntimeError(error, { runtimeMode: providerService.getMode() });
       }
     }
   );
@@ -275,7 +275,7 @@ function registerStateHandlers(
         return await providerService.execute(request);
       } catch (error) {
         console.error("provider:execute failed", { providerId: request.providerId, error });
-        throw serializeProviderRuntimeError(error);
+        throw serializeProviderRuntimeError(error, { runtimeMode: providerService.getMode() });
       }
     }
   );

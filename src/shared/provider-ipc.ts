@@ -13,6 +13,7 @@ export interface ProviderIpcErrorPayload {
   remediation: string;
   retryable: boolean;
   providerId: string;
+  runtimeMode?: "native" | "pi";
 }
 
 export function parseProviderIpcError(error: unknown): ProviderIpcErrorPayload | null {
@@ -30,6 +31,14 @@ export function parseProviderIpcError(error: unknown): ProviderIpcErrorPayload |
       typeof (payload as Record<string, unknown>).retryable === "boolean" &&
       typeof (payload as Record<string, unknown>).providerId === "string"
     ) {
+      const runtimeMode = (payload as Record<string, unknown>).runtimeMode;
+      if (
+        runtimeMode !== undefined &&
+        runtimeMode !== "native" &&
+        runtimeMode !== "pi"
+      ) {
+        return null;
+      }
       return payload as ProviderIpcErrorPayload;
     }
     return null;

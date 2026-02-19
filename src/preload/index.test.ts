@@ -14,8 +14,7 @@ describe("preload IPC channels", () => {
     const literal = match?.[1];
     expect(literal).toBeDefined();
     const preloadChannels = literal
-      ? // eslint-disable-next-line no-new-func
-        new Function(`return (${literal});`)()
+      ? new Function(`return (${literal});`)()
       : null;
     expect(preloadChannels).toEqual(IPC_CHANNELS);
   });

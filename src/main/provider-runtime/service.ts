@@ -145,13 +145,13 @@ async function executeWithPi(request: ProviderExecuteIpcRequest): Promise<Provid
 
   const piAi = await import("@mariozechner/pi-ai");
   const models = piAi.getModels(request.providerId as Parameters<typeof piAi.getModels>[0]);
-  const model = models.find((entry) => entry.id === request.model) ?? models[0];
+  const model = models.find((entry) => entry.id === request.model);
   if (!model) {
     throw createProviderRuntimeError({
       providerId: request.providerId,
-      code: "provider_unavailable",
-      message: `No PI models are available for provider "${request.providerId}".`,
-      remediation: "Switch runtime mode to native or configure PI provider support.",
+      code: "unexpected_error",
+      message: `Requested PI model "${request.model}" is unavailable for provider "${request.providerId}".`,
+      remediation: "Select an available model for this provider and retry execution.",
       retryable: false
     });
   }

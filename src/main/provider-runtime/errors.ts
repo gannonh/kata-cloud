@@ -1,7 +1,8 @@
 import type {
   ModelProviderId,
   ProviderAuthResolution,
-  ProviderRuntimeErrorCode
+  ProviderRuntimeErrorCode,
+  ProviderRuntimeMode
 } from "./types.js";
 
 interface ProviderRuntimeErrorInput {
@@ -144,13 +145,20 @@ function getErrorMessage(error: unknown): string | null {
   return null;
 }
 
+interface SerializeProviderRuntimeErrorOptions {
+  runtimeMode?: ProviderRuntimeMode;
+}
+
 /**
  * Electron strips custom Error subclass properties across the IPC boundary.
  * Re-throw ProviderRuntimeError as a plain Error with a JSON-encoded message
  * so the renderer can parse structured fields (code, remediation, retryable, providerId)
  * via parseProviderIpcError from src/shared/provider-ipc.ts.
  */
-export function serializeProviderRuntimeError(error: unknown): never {
+export function serializeProviderRuntimeError(
+  error: unknown,
+  options: SerializeProviderRuntimeErrorOptions = {}
+): never {
   if (error instanceof ProviderRuntimeError) {
     throw new Error(
       JSON.stringify({
@@ -158,7 +166,8 @@ export function serializeProviderRuntimeError(error: unknown): never {
         message: error.message,
         remediation: error.remediation,
         retryable: error.retryable,
-        providerId: error.providerId
+        providerId: error.providerId,
+        runtimeMode: options.runtimeMode
       })
     );
   }

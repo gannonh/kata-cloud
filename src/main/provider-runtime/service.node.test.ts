@@ -291,6 +291,25 @@ describe("ProviderRuntimeService.execute", () => {
     expect(piMocks.complete).toHaveBeenCalledTimes(1);
   });
 
+  it("throws when the requested PI model is unavailable", async () => {
+    piMocks.getModels.mockReturnValue([
+      { id: "claude-3-5-sonnet-latest", name: "Claude Sonnet" }
+    ]);
+
+    const registry = createProviderRuntimeRegistry([createMockAdapter("anthropic")]);
+    const service = new ProviderRuntimeService(registry, { runtimeMode: "pi" });
+
+    await expect(
+      service.execute({
+        providerId: "anthropic",
+        auth: MOCK_API_KEY_AUTH,
+        model: "missing-model-id",
+        prompt: "Hello"
+      })
+    ).rejects.toMatchObject({ code: "unexpected_error" });
+    expect(piMocks.complete).not.toHaveBeenCalled();
+  });
+
   it("returns missing_auth in PI mode when credentials are absent", async () => {
     piMocks.getModels.mockReturnValue([{ id: "claude-3-5-sonnet-latest", name: "Claude Sonnet" }]);
 

@@ -68,10 +68,11 @@ import type { ContextProviderId, ContextSnippet } from "./context/types.js";
 import type { ContextIpcErrorPayload } from "./shared/context-ipc.js";
 import { parseContextIpcError } from "./shared/context-ipc.js";
 import type {
+  ShellApi,
   ModelProviderId,
   ProviderAuthInput
 } from "./shared/shell-api.js";
-import { parseProviderIpcError } from "./shared/provider-ipc.js";
+import { parseProviderIpcError, type ProviderIpcErrorPayload } from "./shared/provider-ipc.js";
 import "./styles.css";
 import { resolveRunFailure } from "./shared/orchestrator-failure.js";
 
@@ -83,10 +84,12 @@ if (!appRoot) {
 
 const LOCAL_FALLBACK_KEY = "kata-cloud.local-state.v1";
 const DEFAULT_ORCHESTRATOR_PROVIDER_ID: ModelProviderId = "anthropic";
+const ORCHESTRATOR_PROVIDER_PRIORITY: ModelProviderId[] = ["anthropic", "openai"];
 const DEFAULT_ORCHESTRATOR_MODELS: Record<ModelProviderId, string> = {
   anthropic: "claude-3-5-sonnet-latest",
   openai: "gpt-4o-mini"
 };
+const PROVIDER_AUTH_FAILURE_CODES = new Set(["missing_auth", "invalid_auth", "session_expired"]);
 
 const viewOrder: NavigationView[] = ["explorer", "orchestrator", "spec", "changes", "browser"];
 
@@ -114,6 +117,48 @@ function toDraftContent(providerText: string, run: OrchestratorRunRecord, contex
   }
 
   return createSpecDraft(run, new Date().toISOString(), contextSnippets).content;
+}
+
+async function resolveOrchestratorProviderId(shellApi: ShellApi | undefined): Promise<ModelProviderId> {
+  if (!shellApi) {
+    return DEFAULT_ORCHESTRATOR_PROVIDER_ID;
+  }
+
+  const auth: ProviderAuthInput = { preferredMode: "api_key" };
+  for (const providerId of ORCHESTRATOR_PROVIDER_PRIORITY) {
+    try {
+      const status = await shellApi.providerResolveAuth({
+        providerId,
+        auth
+      });
+      if (status.status === "authenticated") {
+        return providerId;
+      }
+    } catch (error) {
+      console.warn(`Failed to resolve auth for provider "${providerId}".`, error);
+    }
+  }
+
+  return DEFAULT_ORCHESTRATOR_PROVIDER_ID;
+}
+
+function createProviderExecutionFailure(input: {
+  parsedProviderError: ProviderIpcErrorPayload | null;
+  providerId: ModelProviderId;
+  modelId: string;
+  runtimeMode?: "native" | "pi";
+}): NonNullable<OrchestratorRunRecord["providerExecution"]> {
+  return {
+    providerId: input.parsedProviderError?.providerId ?? input.providerId,
+    modelId: input.modelId,
+    runtimeMode: input.parsedProviderError?.runtimeMode ?? input.runtimeMode ?? "native",
+    status: "failed",
+    errorCode: input.parsedProviderError?.code ?? "unexpected_error",
+    remediation:
+      input.parsedProviderError?.remediation ??
+      "Configure a valid provider API key and retry the orchestrator run.",
+    retryable: input.parsedProviderError?.retryable ?? false
+  };
 }
 
 function readLocalFallbackState(): AppState {
@@ -1014,7 +1059,7 @@ function App(): React.JSX.Element {
     }
     const endedAt = new Date().toISOString();
     const shellApi = window.kataShell;
-    const providerId = DEFAULT_ORCHESTRATOR_PROVIDER_ID;
+    const providerId = await resolveOrchestratorProviderId(shellApi);
     let providerModelId = DEFAULT_ORCHESTRATOR_MODELS[providerId];
     let providerText: string | undefined;
     let providerExecution: OrchestratorRunRecord["providerExecution"];
@@ -1058,17 +1103,65 @@ function App(): React.JSX.Element {
         failureMessage = parsedProviderError
           ? `Provider execution failed (${parsedProviderError.code}): ${providerErrorMessage}`
           : `Provider execution failed: ${providerErrorMessage}`;
-        providerExecution = {
-          providerId: parsedProviderError?.providerId ?? providerId,
-          modelId: providerModelId,
-          runtimeMode: "native",
-          status: "failed",
-          errorCode: parsedProviderError?.code ?? "unexpected_error",
-          remediation:
-            parsedProviderError?.remediation ??
-            "Configure a valid provider API key and retry the orchestrator run.",
-          retryable: parsedProviderError?.retryable ?? false
-        };
+        const runtimeMode = parsedProviderError?.runtimeMode ?? "native";
+        const shouldRetryWithAlternateProvider =
+          parsedProviderError &&
+          PROVIDER_AUTH_FAILURE_CODES.has(parsedProviderError.code) &&
+          providerId !== "openai";
+        if (shouldRetryWithAlternateProvider) {
+          const fallbackProviderId: ModelProviderId = "openai";
+          const fallbackModelId = DEFAULT_ORCHESTRATOR_MODELS[fallbackProviderId];
+          try {
+            const fallbackResult = await shellApi.providerExecute({
+              providerId: fallbackProviderId,
+              auth,
+              model: fallbackModelId,
+              prompt: createProviderPrompt(prompt, contextSnippets)
+            });
+            providerModelId = fallbackResult.model;
+            providerText = fallbackResult.text;
+            const fallbackRuntimeMode = fallbackResult.runtimeMode ?? "native";
+            providerExecution = {
+              providerId: fallbackResult.providerId,
+              modelId: fallbackResult.model,
+              runtimeMode: fallbackRuntimeMode,
+              status: "succeeded"
+            };
+            if (providerText.trim().length === 0) {
+              failureMessage = "Provider execution completed with an empty response.";
+              providerExecution = {
+                providerId: fallbackResult.providerId,
+                modelId: fallbackResult.model,
+                runtimeMode: fallbackRuntimeMode,
+                status: "failed",
+                errorCode: "unexpected_error",
+                remediation: "Retry execution with additional context or adjust provider settings.",
+                retryable: true
+              };
+            } else {
+              failureMessage = undefined;
+            }
+          } catch (fallbackError) {
+            const fallbackProviderError = parseProviderIpcError(fallbackError);
+            const fallbackProviderMessage =
+              fallbackProviderError?.message ?? toErrorMessage(fallbackError);
+            failureMessage = fallbackProviderError
+              ? `Provider execution failed (${fallbackProviderError.code}): ${fallbackProviderMessage}`
+              : `Provider execution failed: ${fallbackProviderMessage}`;
+            providerExecution = createProviderExecutionFailure({
+              parsedProviderError: fallbackProviderError,
+              providerId: fallbackProviderId,
+              modelId: fallbackModelId
+            });
+          }
+        } else {
+          providerExecution = createProviderExecutionFailure({
+            parsedProviderError,
+            providerId,
+            modelId: providerModelId,
+            runtimeMode
+          });
+        }
       }
     }
 
