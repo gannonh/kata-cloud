@@ -9,13 +9,11 @@ export const ALLOWED_RUN_TRANSITIONS: Record<OrchestratorRunStatus, readonly Orc
 
 export interface OrchestratorRunTransitionSuccess {
   ok: true;
-  changed: boolean;
   run: OrchestratorRunRecord;
 }
 
 export interface OrchestratorRunTransitionFailure {
   ok: false;
-  changed: false;
   run: OrchestratorRunRecord;
   reason: string;
 }
@@ -47,11 +45,6 @@ export function transitionOrchestratorRunStatus(
     const timeline = appendRunTimelineStatus(run.statusTimeline, nextStatus);
     return {
       ok: true,
-      changed:
-        run.updatedAt !== updatedAt ||
-        run.completedAt !== (isTerminalRunStatus(nextStatus) ? updatedAt : run.completedAt) ||
-        run.errorMessage !== (nextStatus === "failed" ? failureMessage ?? run.errorMessage : undefined) ||
-        timeline !== run.statusTimeline,
       run: {
         ...run,
         statusTimeline: timeline,
@@ -65,7 +58,6 @@ export function transitionOrchestratorRunStatus(
   if (!ALLOWED_RUN_TRANSITIONS[run.status].includes(nextStatus)) {
     return {
       ok: false,
-      changed: false,
       run,
       reason: `Invalid run transition: ${run.status} -> ${nextStatus}`
     };
@@ -74,7 +66,6 @@ export function transitionOrchestratorRunStatus(
   const timeline = appendRunTimelineStatus(run.statusTimeline, nextStatus);
   return {
     ok: true,
-    changed: true,
     run: {
       ...run,
       status: nextStatus,
