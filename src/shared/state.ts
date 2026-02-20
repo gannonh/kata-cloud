@@ -12,7 +12,7 @@ import { ALLOWED_RUN_TRANSITIONS } from "./orchestrator-run-lifecycle.js";
 
 export const APP_STATE_VERSION = 1;
 
-export type NavigationView = "explorer" | "orchestrator" | "spec" | "changes" | "browser";
+export type NavigationView = "explorer" | "coordinator" | "spec" | "changes" | "browser";
 export type OrchestratorRunStatus = "queued" | "running" | "completed" | "failed" | "interrupted";
 export type OrchestratorTaskType = "implement" | "verify" | "debug";
 export type OrchestratorProviderRuntimeMode = "native" | "pi";
@@ -125,11 +125,18 @@ function isStringArray(value: unknown): value is string[] {
 function isNavigationView(value: unknown): value is NavigationView {
   return (
     value === "explorer" ||
-    value === "orchestrator" ||
+    value === "coordinator" ||
     value === "spec" ||
     value === "changes" ||
     value === "browser"
   );
+}
+
+function normalizeNavigationView(value: unknown, fallback: NavigationView): NavigationView {
+  if (value === "orchestrator") {
+    return "coordinator";
+  }
+  return isNavigationView(value) ? value : fallback;
 }
 
 function isOrchestratorRunStatus(value: unknown): value is OrchestratorRunStatus {
@@ -430,7 +437,7 @@ export function createInitialAppState(nowIso = new Date().toISOString()): AppSta
 
   return {
     version: APP_STATE_VERSION,
-    activeView: "orchestrator",
+    activeView: "coordinator",
     activeSpaceId: starterSpaceId,
     activeSessionId: starterSessionId,
     spaces: [
@@ -449,7 +456,7 @@ export function createInitialAppState(nowIso = new Date().toISOString()): AppSta
       {
         id: starterSessionId,
         spaceId: starterSpaceId,
-        label: "Initial Orchestrator Session",
+        label: "Initial Coordinator Session",
         createdAt: nowIso,
         updatedAt: nowIso
       }
@@ -504,7 +511,7 @@ export function normalizeAppState(input: unknown): AppState {
 
   return {
     version: APP_STATE_VERSION,
-    activeView: isNavigationView(input.activeView) ? input.activeView : fallback.activeView,
+    activeView: normalizeNavigationView(input.activeView, fallback.activeView),
     activeSpaceId,
     activeSessionId,
     spaces: usableSpaces,

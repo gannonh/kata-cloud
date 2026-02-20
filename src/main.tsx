@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   createSpaceGitRequest,
@@ -21,6 +21,15 @@ import { DiffText } from "./git/changes-diff-text.js";
 import { toSpaceGitUiState } from "./git/space-git-ui-state.js";
 import { SpecNotePanel } from "./notes/spec-note-panel.js";
 import { loadSpecNote } from "./notes/store.js";
+import {
+  CoordinatorChatThread,
+  CoordinatorLeftSidebar,
+  CoordinatorMessageInputBar,
+  CoordinatorWorkflowPanel,
+  coordinatorShellUiStateReducer,
+  createInitialCoordinatorShellUiState,
+  projectCoordinatorShellViewModel
+} from "./features/coordinator-shell/index.js";
 import { buildDelegatedTaskTimeline } from "./shared/orchestrator-delegation.js";
 import { transitionOrchestratorRunStatus } from "./shared/orchestrator-run-lifecycle.js";
 import {
@@ -91,7 +100,7 @@ const DEFAULT_ORCHESTRATOR_MODELS: Record<ModelProviderId, string> = {
 };
 const PROVIDER_AUTH_FAILURE_CODES = new Set(["missing_auth", "invalid_auth", "session_expired"]);
 
-const viewOrder: NavigationView[] = ["explorer", "orchestrator", "spec", "changes", "browser"];
+const viewOrder: NavigationView[] = ["explorer", "coordinator", "spec", "changes", "browser"];
 
 function createProviderPrompt(prompt: string, contextSnippets: ContextSnippet[]): string {
   const contextSection = contextSnippets.length > 0
@@ -187,8 +196,8 @@ function toViewLabel(view: NavigationView): string {
   switch (view) {
     case "explorer":
       return "Explorer";
-    case "orchestrator":
-      return "Orchestrator";
+    case "coordinator":
+      return "Coordinator";
     case "spec":
       return "Spec";
     case "changes":
@@ -355,11 +364,18 @@ function App(): React.JSX.Element {
   const [pullRequestDraft, setPullRequestDraft] = useState<SpaceGitPullRequestDraftResult | null>(null);
   const [createdPullRequest, setCreatedPullRequest] = useState<SpaceGitCreatePullRequestResult | null>(null);
   const [pullRequestStatusMessage, setPullRequestStatusMessage] = useState<string | null>(null);
+  const [coordinatorStatusMessage, setCoordinatorStatusMessage] = useState<string | null>(null);
+  const [specNoteContent, setSpecNoteContent] = useState(() => loadSpecNote(window.localStorage).content);
   const changesSnapshotRequestIdRef = useRef(0);
   const [browserNavigation, setBrowserNavigation] = useState(() => createInitialBrowserNavigationState());
   const [browserInput, setBrowserInput] = useState(DEFAULT_LOCAL_PREVIEW_URL);
   const [browserRefreshKey, setBrowserRefreshKey] = useState(0);
   const [browserError, setBrowserError] = useState<string | null>(null);
+  const [coordinatorShellUiState, dispatchCoordinatorShellUiAction] = useReducer(
+    coordinatorShellUiStateReducer,
+    undefined,
+    createInitialCoordinatorShellUiState
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -572,6 +588,37 @@ function App(): React.JSX.Element {
     [latestRunViewModel?.contextProvenance]
   );
   const latestDraftForActiveSession = latestRunForActiveSession?.draft;
+
+  useEffect(() => {
+    setSpecNoteContent(loadSpecNote(window.localStorage).content);
+  }, [state.lastOpenedAt]);
+
+  const coordinatorShellViewModel = useMemo(
+    () =>
+      projectCoordinatorShellViewModel({
+        activeSpace,
+        activeSession,
+        latestRunRecord: latestRunForActiveSession,
+        latestRunViewModel: latestRunViewModel ?? undefined,
+        priorRunHistoryViewModels,
+        specContent: specNoteContent
+      }),
+    [
+      activeSession,
+      activeSpace,
+      latestRunForActiveSession,
+      latestRunViewModel,
+      priorRunHistoryViewModels,
+      specNoteContent
+    ]
+  );
+  const coordinatorModelLabel = useMemo(
+    () =>
+      latestRunViewModel?.providerExecution
+        ? `${latestRunViewModel.providerExecution.providerId} / ${latestRunViewModel.providerExecution.modelId}`
+        : "Not configured",
+    [latestRunViewModel?.providerExecution]
+  );
 
   const sessionsForActiveSpace = useMemo(
     () => state.sessions.filter((session) => session.spaceId === state.activeSpaceId),
@@ -1315,7 +1362,7 @@ function App(): React.JSX.Element {
       const newSession: SessionRecord = {
         id: newSessionId,
         spaceId: newSpaceId,
-        label: "Initial Orchestrator Session",
+        label: "Initial Coordinator Session",
         contextProvider: "filesystem",
         createdAt: now,
         updatedAt: now
@@ -1327,7 +1374,7 @@ function App(): React.JSX.Element {
         sessions: [...state.sessions, newSession],
         activeSpaceId: newSpaceId,
         activeSessionId: newSessionId,
-        activeView: "orchestrator",
+        activeView: "coordinator",
         lastOpenedAt: now
       });
 
@@ -1370,6 +1417,41 @@ function App(): React.JSX.Element {
   const onRefreshBrowser = useCallback(() => {
     setBrowserRefreshKey((current) => current + 1);
     setBrowserError(null);
+  }, []);
+
+  const onToggleCoordinatorSection = useCallback((sectionId: "agents" | "context") => {
+    dispatchCoordinatorShellUiAction({
+      type: "toggle-sidebar-section",
+      sectionId
+    });
+  }, []);
+
+  const onToggleCoordinatorMessage = useCallback((messageId: string) => {
+    dispatchCoordinatorShellUiAction({
+      type: "toggle-message",
+      messageId
+    });
+  }, []);
+
+  const onToggleCoordinatorRightPanel = useCallback(() => {
+    dispatchCoordinatorShellUiAction({
+      type: "toggle-right-panel"
+    });
+  }, []);
+
+  const onSelectCoordinatorRightTab = useCallback((tab: "workflow" | "spec") => {
+    dispatchCoordinatorShellUiAction({
+      type: "set-active-right-tab",
+      tab
+    });
+  }, []);
+
+  const onCreateCoordinatorAgent = useCallback(() => {
+    setCoordinatorStatusMessage("Agent creation flows are planned for a follow-up phase.");
+  }, []);
+
+  const onAddCoordinatorContext = useCallback(() => {
+    setCoordinatorStatusMessage("Add context by pasting content or typing @ in the composer.");
   }, []);
 
   const onOpenEditSpaceForm = useCallback((space: SpaceRecord) => {
@@ -1477,7 +1559,94 @@ function App(): React.JSX.Element {
         <span>{isSaving ? "Saving state..." : "State synced"}</span>
       </div>
 
-      <section className="panel-grid">
+      {state.activeView === "coordinator" ? (
+        <section className="coordinator-shell-grid">
+          <section className="coordinator-column">
+            <CoordinatorLeftSidebar
+              title={coordinatorShellViewModel.shellTitle}
+              subtitle={coordinatorShellViewModel.shellSubtitle}
+              agents={coordinatorShellViewModel.sidebarAgents}
+              contextItems={coordinatorShellViewModel.sidebarContext}
+              collapsedSections={coordinatorShellUiState.collapsedSections}
+              onToggleSection={onToggleCoordinatorSection}
+              onCreateAgent={onCreateCoordinatorAgent}
+              onAddContext={onAddCoordinatorContext}
+            />
+          </section>
+
+          <section className="coordinator-column coordinator-thread-shell">
+            <header className="panel-header">
+              <h2>Coordinator</h2>
+              <p>Chat-first orchestration with run and context diagnostics.</p>
+            </header>
+            <CoordinatorChatThread
+              entries={coordinatorShellViewModel.latestEntries}
+              historyEntries={coordinatorShellViewModel.historicalEntries}
+              expandedMessageIds={coordinatorShellUiState.expandedMessageIds}
+              onToggleMessage={onToggleCoordinatorMessage}
+            />
+            <CoordinatorMessageInputBar
+              prompt={spacePrompt}
+              modelLabel={coordinatorModelLabel}
+              disabled={!activeSpace || !activeSession || !spacePrompt.trim() || isSaving}
+              onPromptChange={setSpacePrompt}
+              onSubmitPrompt={() => {
+                void onRunOrchestrator();
+              }}
+            />
+            {coordinatorStatusMessage ? (
+              <p className="coordinator-status-message">{coordinatorStatusMessage}</p>
+            ) : null}
+          </section>
+
+          <section className="coordinator-column">
+            <div className="coordinator-right">
+              <nav className="view-nav">
+                <button
+                  type="button"
+                  className={
+                    coordinatorShellUiState.activeRightTab === "workflow"
+                      ? "nav-button is-active"
+                      : "nav-button"
+                  }
+                  onClick={() => onSelectCoordinatorRightTab("workflow")}
+                >
+                  Workflow
+                </button>
+                <button
+                  type="button"
+                  className={
+                    coordinatorShellUiState.activeRightTab === "spec"
+                      ? "nav-button is-active"
+                      : "nav-button"
+                  }
+                  onClick={() => onSelectCoordinatorRightTab("spec")}
+                >
+                  Spec
+                </button>
+              </nav>
+              {coordinatorShellUiState.activeRightTab === "workflow" ? (
+                <CoordinatorWorkflowPanel
+                  steps={coordinatorShellViewModel.workflowSteps}
+                  collapsed={coordinatorShellUiState.isRightPanelCollapsed}
+                  onToggleCollapse={onToggleCoordinatorRightPanel}
+                />
+              ) : (
+                <div className="coordinator-spec">
+                  <p className="coordinator-spec__header">NOTES / Spec</p>
+                  <SpecNotePanel
+                    storage={window.localStorage}
+                    draftArtifact={latestDraftForActiveSession}
+                    onApplyDraftResult={onSpecDraftApplied}
+                    onContentChange={setSpecNoteContent}
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+        </section>
+      ) : (
+        <section className="panel-grid">
         <section className={state.activeView === "explorer" ? "panel panel-focused" : "panel"}>
           <header className="panel-header">
             <h2>Explorer</h2>
@@ -1631,9 +1800,9 @@ function App(): React.JSX.Element {
           </div>
         </section>
 
-        <section className={state.activeView === "orchestrator" ? "panel panel-focused" : "panel"}>
+        <section className="panel">
           <header className="panel-header">
-            <h2>Orchestrator</h2>
+            <h2>Coordinator</h2>
             <p>Coordination and specialist execution</p>
           </header>
           <div className="panel-body">
@@ -1659,7 +1828,7 @@ function App(): React.JSX.Element {
                     void onRunOrchestrator();
                   }}
                 >
-                  Run Orchestrator
+                  Run Coordinator
                 </button>
               </div>
 
@@ -1737,7 +1906,7 @@ function App(): React.JSX.Element {
                           tags: event.target.value
                         }))
                       }
-                      placeholder="frontend, orchestrator"
+                      placeholder="frontend, coordinator"
                     />
                   </label>
 
@@ -1772,7 +1941,7 @@ function App(): React.JSX.Element {
                   .
                 </p>
               ) : (
-                <p>No orchestrator runs yet.</p>
+                <p>No coordinator runs yet.</p>
               )}
               {/* latestRunViewModel is derived from latestRunForActiveSession; both are null/non-null
                   simultaneously. Draft fields (draft, draftAppliedAt, draftApplyError) are not projected
@@ -2350,11 +2519,13 @@ function App(): React.JSX.Element {
                 storage={window.localStorage}
                 draftArtifact={latestDraftForActiveSession}
                 onApplyDraftResult={onSpecDraftApplied}
+                onContentChange={setSpecNoteContent}
               />
             )}
           </div>
         </section>
       </section>
+      )}
     </main>
   );
 }

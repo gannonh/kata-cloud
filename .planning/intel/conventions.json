@@ -1,16 +1,16 @@
 {
   "version": 2,
-  "generated": "2026-02-19T20:21:24.113Z",
-  "commitHash": "e08fdac",
+  "generated": "2026-02-19T22:12:01.342Z",
+  "commitHash": "9577f74",
   "naming": {
     "exports": {
       "pattern": "mixed",
-      "confidence": 0.66,
-      "sampleSize": 89,
+      "confidence": 0.64,
+      "sampleSize": 132,
       "breakdown": {
-        "SCREAMING_SNAKE": 4,
-        "PascalCase": 59,
-        "camelCase": 26
+        "SCREAMING_SNAKE": 6,
+        "PascalCase": 84,
+        "camelCase": 42
       }
     }
   },
@@ -18,7 +18,13 @@
     "src/shared/": {
       "purpose": "test files",
       "detectedBy": "suffix-analysis",
-      "fileCount": 13,
+      "fileCount": 15,
+      "dominantSuffix": ".ts"
+    },
+    "src/main/provider-runtime/": {
+      "purpose": "test files",
+      "detectedBy": "suffix-analysis",
+      "fileCount": 7,
       "dominantSuffix": ".ts"
     },
     "bin/": {
@@ -37,10 +43,14 @@
   "fileSuffixes": {
     ".test.ts": {
       "purpose": "test files",
-      "count": 10
+      "count": 15
     },
     ".config.mjs": {
       "purpose": "configuration",
+      "count": 1
+    },
+    ".test.tsx": {
+      "purpose": "test files",
       "count": 1
     }
   }

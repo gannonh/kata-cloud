@@ -217,7 +217,7 @@ async function setActiveSpace(page, repoPath, repoUrl) {
 
       await shell.saveState({
         ...current,
-        activeView: "orchestrator",
+        activeView: "coordinator",
         spaces: nextSpaces,
         lastOpenedAt: now
       });
@@ -268,7 +268,7 @@ async function setActiveContextProvider(page, providerId) {
 
       await shell.saveState({
         ...current,
-        activeView: "orchestrator",
+        activeView: "coordinator",
         spaces: nextSpaces,
         sessions: nextSessions,
         lastOpenedAt: now
@@ -497,20 +497,20 @@ async function getLatestRunSnapshot(page) {
 async function runOrchestratorPrompt(page, prompt, expectedStatus) {
   await ensureOrchestratorRunHelpers(page);
 
-  await page.getByRole("button", { name: "Orchestrator", exact: true }).click();
+  await page.getByRole("button", { name: "Coordinator", exact: true }).click();
   await page.locator("#space-prompt-input").fill(prompt);
 
-  const before = await getLatestRunSnapshot(page);
+  const beforePromptSnapshot = await getRunSnapshot(page, prompt);
   await page.waitForFunction(() => {
     const button = Array.from(document.querySelectorAll("button")).find(
-      (entry) => entry.textContent?.trim() === "Run Orchestrator"
+      (entry) => entry.textContent?.trim() === "Run Coordinator"
     );
     return Boolean(button && !button.disabled);
   });
-  await page.getByRole("button", { name: "Run Orchestrator", exact: true }).click();
+  await page.getByRole("button", { name: "Run Coordinator", exact: true }).click();
 
   await page.waitForFunction(
-    async ({ previousRunCount, targetStatus, targetPrompt, helpersKey }) => {
+    async ({ previousRunCountForPrompt, targetPrompt, helpersKey }) => {
       const shell = window.kataShell;
       if (!shell) {
         throw new Error("kataShell bridge unavailable.");
@@ -523,40 +523,45 @@ async function runOrchestratorPrompt(page, prompt, expectedStatus) {
 
       const state = await shell.getState();
       const runs = helpers.getRunsForActiveContext(state);
-      if (runs.length <= previousRunCount) {
-        return false;
-      }
-
       const matchingRuns = runs.filter((run) => run.prompt === targetPrompt);
-      if (matchingRuns.length === 0) {
-        return false;
-      }
-
-      const latestMatchingRun = helpers.sortRunsByRecency(matchingRuns)[0];
-
-      return Boolean(latestMatchingRun && latestMatchingRun.status === targetStatus);
+      return matchingRuns.length > previousRunCountForPrompt;
     },
     {
-      previousRunCount: before.count,
-      targetStatus: expectedStatus,
+      previousRunCountForPrompt: beforePromptSnapshot.count,
       targetPrompt: prompt,
       helpersKey: ORCHESTRATOR_RUN_HELPERS_KEY
     }
   );
 
-  const matchingRunSnapshot = await getRunSnapshot(page, prompt);
-  const matchingRun = matchingRunSnapshot.latest;
+  const timeoutMs = 45000;
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const matchingRunSnapshot = await getRunSnapshot(page, prompt);
+    const matchingRun = matchingRunSnapshot.latest;
+    if (!matchingRun) {
+      await delay(200);
+      continue;
+    }
 
-  if (!matchingRun) {
-    throw new Error(`Expected run for prompt "${prompt}" after orchestrator execution.`);
-  }
-  if (matchingRun.status !== expectedStatus) {
+    if (matchingRun.status === expectedStatus) {
+      return matchingRun;
+    }
+
+    if (matchingRun.status === "queued" || matchingRun.status === "running") {
+      await delay(250);
+      continue;
+    }
+
     throw new Error(
       `Expected run status ${expectedStatus}, received ${matchingRun.status}. Lifecycle: ${matchingRun.lifecycleText}. Error: ${matchingRun.errorMessage ?? "none"}.`
     );
   }
 
-  return matchingRun;
+  const latestSnapshot = await getRunSnapshot(page, prompt);
+  const latestRun = latestSnapshot.latest;
+  throw new Error(
+    `Timed out waiting for run status ${expectedStatus}. Latest status: ${latestRun?.status ?? "none"}. Lifecycle: ${latestRun?.lifecycleText ?? "n/a"}.`
+  );
 }
 
 async function assertOrchestratorPhaseCoverage(page) {
@@ -591,7 +596,7 @@ async function assertOrchestratorPhaseCoverage(page) {
 async function assertOrchestratorPersistenceAfterRestart(page, coverageEvidence) {
   await ensureOrchestratorRunHelpers(page);
 
-  await page.getByRole("button", { name: "Orchestrator", exact: true }).click();
+  await page.getByRole("button", { name: "Coordinator", exact: true }).click();
   await page.waitForFunction(
     async ({ latestCompletedRunId, failedRunId, helpersKey }) => {
       const shell = window.kataShell;
@@ -688,7 +693,7 @@ async function assertOrchestratorContextDiagnostics(page) {
 async function assertOrchestratorContextDiagnosticsPersistenceAfterRestart(page, coverageEvidence) {
   await ensureOrchestratorRunHelpers(page);
 
-  await page.getByRole("button", { name: "Orchestrator", exact: true }).click();
+  await page.getByRole("button", { name: "Coordinator", exact: true }).click();
   await page.waitForFunction(
     async ({ latestRunId, diagnosticRunId, helpersKey }) => {
       const shell = window.kataShell;
@@ -771,6 +776,38 @@ async function assertOrchestratorProviderExecution(page) {
 
   await assertBodyIncludes(page, `Run ${providerRun.id} is Completed.`);
   await assertBodyIncludes(page, "Provider:", "latest-run provider execution details");
+}
+
+async function assertCoordinatorShellSemantics(page) {
+  await page.getByRole("button", { name: "Coordinator", exact: true }).click();
+
+  await page.waitForFunction(() => {
+    const root = document.querySelector(".coordinator-shell-grid");
+    return Boolean(root);
+  });
+
+  await assertBodyIncludes(page, "Agents", "coordinator sidebar agents section");
+  await assertBodyIncludes(page, "Context", "coordinator sidebar context section");
+  await assertBodyIncludes(page, "Guided progression", "workflow panel heading");
+  await assertBodyIncludes(page, "Creating Spec", "workflow step creating spec");
+  await assertBodyIncludes(page, "Implement", "workflow step implement");
+  await assertBodyIncludes(page, "Accept changes", "workflow step accept changes");
+  const composerPlaceholder = await page.locator("#space-prompt-input").getAttribute("placeholder");
+  if (composerPlaceholder !== "Ask anything or type @ for context") {
+    throw new Error(
+      `Expected chat-first composer placeholder, received: ${composerPlaceholder ?? "(missing)"}`
+    );
+  }
+
+  const firstShellPrompt = "Phase 10 coordinator shell UAT prompt (first run) for history seeding.";
+  const firstCompletedRun = await runOrchestratorPrompt(page, firstShellPrompt, "completed");
+  const secondShellPrompt =
+    "Phase 10 coordinator shell UAT prompt (second run) for chat-first rendering and workflow visibility.";
+  const secondCompletedRun = await runOrchestratorPrompt(page, secondShellPrompt, "completed");
+
+  await assertBodyIncludes(page, `Run ${secondCompletedRun.id} is Completed.`, "chat-thread run status");
+  await assertBodyIncludes(page, "Run History", "chat-thread historical run section");
+  await assertBodyIncludes(page, `Run ${firstCompletedRun.id} is Completed.`, "chat-thread history entry");
 }
 
 function includesScenario(suite, tags) {
@@ -862,6 +899,15 @@ export async function runElectronSuite({ suite = "full", label } = {}) {
       run: async (context) => {
         await setActiveSpace(context.page, context.repoPath, "");
         await assertOrchestratorProviderExecution(context.page);
+      }
+    },
+    {
+      id: "coordinator-shell-semantics-uat",
+      tags: ["uat"],
+      requiresRepo: true,
+      run: async (context) => {
+        await setActiveSpace(context.page, context.repoPath, "");
+        await assertCoordinatorShellSemantics(context.page);
       }
     },
     {

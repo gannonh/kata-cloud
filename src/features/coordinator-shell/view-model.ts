@@ -1,0 +1,252 @@
+import type { OrchestratorRunViewModel } from "../../shared/orchestrator-run-view-model.js";
+import type {
+  CoordinatorChatEntry,
+  CoordinatorShellViewModel,
+  CoordinatorSidebarAgent,
+  CoordinatorSidebarContextItem,
+  CoordinatorWorkflowStep,
+  ProjectCoordinatorShellViewModelInput
+} from "./types.js";
+import { toStatusToneFromRunStatus, toStatusToneFromTaskStatus } from "./types.js";
+
+const DEFAULT_SPEC_MARKDOWN = "## Goal\nDescribe the project outcome.\n\n## Tasks\n- [ ] Add initial tasks";
+
+function toTimestampLabel(value: Date, now: Date): string {
+  const diffMs = now.getTime() - value.getTime();
+  if (diffMs < 60_000) {
+    return "Just now";
+  }
+
+  return value.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
+function toMessageLineCount(prompt: string): number {
+  const normalized = prompt.replace(/\r\n/g, "\n");
+  if (normalized.trim().length === 0) {
+    return 0;
+  }
+
+  return normalized.split("\n").length;
+}
+
+function toSpecReady(specContent: string): boolean {
+  return specContent.trim().length > 0 && specContent.trim() !== DEFAULT_SPEC_MARKDOWN;
+}
+
+function toLatestEntries(
+  input: ProjectCoordinatorShellViewModelInput,
+  now: Date
+): CoordinatorChatEntry[] {
+  const { latestRunRecord, latestRunViewModel } = input;
+  if (!latestRunRecord || !latestRunViewModel) {
+    return [];
+  }
+
+  const createdAt = new Date(latestRunRecord.createdAt);
+  const updatedAt = new Date(latestRunRecord.updatedAt);
+  const promptLineCount = toMessageLineCount(latestRunRecord.prompt);
+  const contextChips =
+    latestRunRecord.contextSnippets?.slice(0, 2).map((snippet, index) => ({
+      id: `${latestRunRecord.id}-chip-${index + 1}`,
+      label: snippet.path.split("/").filter(Boolean).slice(-1)[0] ?? snippet.path
+    })) ?? [];
+
+  const statusLines = [
+    `Run ${latestRunViewModel.id} is ${latestRunViewModel.statusLabel}.`,
+    `Lifecycle: ${latestRunViewModel.lifecycleText}`,
+    `Context preview: ${latestRunViewModel.contextPreview}`
+  ];
+  if (latestRunViewModel.providerExecution) {
+    statusLines.push(
+      `Provider: ${latestRunViewModel.providerExecution.providerId} / ${latestRunViewModel.providerExecution.modelId} (${latestRunViewModel.providerExecution.runtimeMode}) ${latestRunViewModel.providerExecution.status}`
+    );
+  }
+  if (latestRunViewModel.errorMessage) {
+    statusLines.push(latestRunViewModel.errorMessage);
+  }
+  if (latestRunViewModel.contextDiagnostics) {
+    statusLines.push(
+      `Context (${latestRunViewModel.contextDiagnostics.providerId} / ${latestRunViewModel.contextDiagnostics.code}): ${latestRunViewModel.contextDiagnostics.message}`
+    );
+    statusLines.push(
+      `Remediation: ${latestRunViewModel.contextDiagnostics.remediation} ${latestRunViewModel.contextDiagnostics.retryable ? "(retryable)" : "(not retryable)"}`
+    );
+  }
+
+  return [
+    {
+      id: `${latestRunRecord.id}-prompt`,
+      role: "user",
+      authorLabel: input.activeSession?.label ?? "You",
+      timestampLabel: toTimestampLabel(createdAt, now),
+      content: latestRunRecord.prompt,
+      contextChips: [],
+      pastedLineCount: promptLineCount >= 8 ? promptLineCount : undefined
+    },
+    {
+      id: `${latestRunRecord.id}-status`,
+      role: "coordinator",
+      authorLabel: "Coordinator",
+      timestampLabel: toTimestampLabel(updatedAt, now),
+      content: statusLines.join("\n"),
+      status: {
+        label:
+          latestRunViewModel.status === "running" || latestRunViewModel.status === "queued"
+            ? "Thinking"
+            : "Stopped",
+        tone: toStatusToneFromRunStatus(latestRunViewModel.status)
+      },
+      contextChips,
+      modelLabel: latestRunViewModel.providerExecution
+        ? `${latestRunViewModel.providerExecution.providerId} / ${latestRunViewModel.providerExecution.modelId}`
+        : undefined
+    }
+  ];
+}
+
+function toHistoricalEntries(
+  priorRunHistoryViewModels: OrchestratorRunViewModel[]
+): CoordinatorChatEntry[] {
+  return priorRunHistoryViewModels.map((run) => {
+    const lines = [
+      `Run ${run.id} is ${run.statusLabel}.`,
+      `Lifecycle: ${run.lifecycleText}`
+    ];
+    if (run.errorMessage) {
+      lines.push(run.errorMessage);
+    }
+    if (run.contextDiagnostics) {
+      lines.push(
+        `Context (${run.contextDiagnostics.providerId} / ${run.contextDiagnostics.code}): ${run.contextDiagnostics.message}`
+      );
+      lines.push(
+        `Remediation: ${run.contextDiagnostics.remediation} ${run.contextDiagnostics.retryable ? "(retryable)" : "(not retryable)"}`
+      );
+    }
+
+    return {
+      id: `${run.id}-history`,
+      role: "system",
+      authorLabel: "Run History",
+      timestampLabel: "Earlier",
+      content: lines.join("\n"),
+      contextChips: []
+    };
+  });
+}
+
+function toSidebarAgents(input: ProjectCoordinatorShellViewModelInput): CoordinatorSidebarAgent[] {
+  const latestRunStatus = input.latestRunViewModel?.status ?? "none";
+  const latestPrompt = input.latestRunViewModel?.prompt ?? "Waiting for your first prompt.";
+  const baseAgent: CoordinatorSidebarAgent = {
+    id: "coordinator",
+    name: "Coordinator",
+    summary: latestPrompt,
+    taskCount: input.latestRunViewModel?.delegatedTasks.length ?? 0,
+    status: toStatusToneFromRunStatus(latestRunStatus)
+  };
+
+  const delegatedAgents =
+    input.latestRunViewModel?.delegatedTasks.map((task) => ({
+      id: task.id,
+      name: task.specialist,
+      summary: `${task.type} task`,
+      taskCount: 1,
+      status: toStatusToneFromTaskStatus(task.status)
+    })) ?? [];
+
+  return [baseAgent, ...delegatedAgents];
+}
+
+function toSidebarContext(input: ProjectCoordinatorShellViewModelInput): CoordinatorSidebarContextItem[] {
+  const fromSnippets =
+    input.latestRunRecord?.contextSnippets?.map((snippet) => ({
+      id: snippet.id,
+      label: snippet.path.split("/").filter(Boolean).slice(-1)[0] ?? snippet.path,
+      detail: snippet.provider
+    })) ?? [];
+
+  if (fromSnippets.length > 0) {
+    return fromSnippets;
+  }
+
+  return [
+    {
+      id: "spec",
+      label: "Spec",
+      detail: toSpecReady(input.specContent) ? "Ready" : "Drafting"
+    }
+  ];
+}
+
+function toWorkflowSteps(input: ProjectCoordinatorShellViewModelInput): CoordinatorWorkflowStep[] {
+  const latestStatus = input.latestRunViewModel?.status ?? "none";
+  const hasDelegatedTasks = (input.latestRunViewModel?.delegatedTasks.length ?? 0) > 0;
+  const delegatedCompleted = Boolean(
+    input.latestRunViewModel?.delegatedTasks.length &&
+    input.latestRunViewModel.delegatedTasks.every((task) => task.status === "completed")
+  );
+  const specReady = toSpecReady(input.specContent) || Boolean(input.latestRunRecord?.draftAppliedAt);
+
+  const creatingSpecStatus =
+    latestStatus === "queued" || latestStatus === "running"
+      ? "active"
+      : specReady
+        ? "complete"
+        : "active";
+
+  const implementStatus = hasDelegatedTasks
+    ? delegatedCompleted
+      ? "complete"
+      : "active"
+    : "pending";
+
+  const acceptChangesStatus = latestStatus === "completed" && specReady ? "active" : "pending";
+
+  return [
+    {
+      id: "creating-spec",
+      title: "Creating Spec",
+      description:
+        "The coordinator is analyzing your codebase and prompt so you can iterate on the implementation plan.",
+      status: creatingSpecStatus
+    },
+    {
+      id: "implement",
+      title: "Implement",
+      description:
+        "Once the plan looks right, ask the coordinator to execute implementation and verification tasks.",
+      status: implementStatus
+    },
+    {
+      id: "accept-changes",
+      title: "Accept changes",
+      description:
+        "Review diffs in Changes, then stage, commit, and open a pull request through your preferred flow.",
+      status: acceptChangesStatus
+    }
+  ];
+}
+
+export function projectCoordinatorShellViewModel(
+  input: ProjectCoordinatorShellViewModelInput
+): CoordinatorShellViewModel {
+  const now = input.now ?? new Date();
+  const latestRunStatus = input.latestRunViewModel?.status ?? "none";
+  const shellTitle = input.activeSpace?.name ?? "Coordinator session";
+  const shellSubtitle = input.activeSession?.label ?? "No active session";
+
+  return {
+    shellTitle,
+    shellSubtitle,
+    sidebarAgents: toSidebarAgents(input),
+    sidebarContext: toSidebarContext(input),
+    latestEntries: toLatestEntries(input, now),
+    historicalEntries: toHistoricalEntries(input.priorRunHistoryViewModels),
+    workflowSteps: toWorkflowSteps(input),
+    latestRunStatus
+  };
+}

@@ -177,4 +177,19 @@ describe("SpecNotePanel", () => {
       "Spec draft apply failed."
     );
   });
+
+  it("notifies content changes so parent views can react immediately", () => {
+    const storage = createMemoryStorage();
+    const onContentChange = vi.fn();
+
+    render(
+      <SpecNotePanel storage={storage} autosaveDelayMs={10} onContentChange={onContentChange} />
+    );
+
+    fireEvent.change(screen.getByLabelText("Spec Markdown"), {
+      target: { value: "## Goal\nRealtime workflow update" }
+    });
+
+    expect(onContentChange).toHaveBeenLastCalledWith("## Goal\nRealtime workflow update");
+  });
 });

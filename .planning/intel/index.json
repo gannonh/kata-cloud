@@ -1,9 +1,9 @@
 {
   "version": 2,
-  "generated": "2026-02-19T20:21:24.113Z",
+  "generated": "2026-02-19T22:12:01.342Z",
   "source": "code-scan",
   "generatedBy": "scan-codebase",
-  "commitHash": "e08fdac",
+  "commitHash": "9577f74",
   "files": {
     "src/main/index.ts": {
       "exports": [],
@@ -28,6 +28,7 @@
           "./provider-runtime/errors.js",
           "./provider-runtime/registry.js",
           "./provider-runtime/service.js",
+          "./provider-runtime/types.js",
           "./providers/anthropic/adapter.js",
           "./providers/anthropic/api-key-client.js",
           "./providers/openai/adapter.js",
@@ -36,8 +37,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "e08fdac",
-      "indexedAt": "2026-02-19T20:21:24.113Z"
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
     },
     "src/preload/index.ts": {
       "exports": [
@@ -70,6 +71,7 @@
           "./browser/local-dev-browser.js",
           "./context/context-adapter.js",
           "./context/types.js",
+          "./features/coordinator-shell/index.js",
           "./git/changes-diff-text.js",
           "./git/changes.js",
           "./git/space-git-ui-state.js",
@@ -93,8 +95,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "e08fdac",
-      "indexedAt": "2026-02-19T20:21:24.113Z"
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
     },
     "src/shared/state.ts": {
       "exports": [
@@ -144,8 +146,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "e08fdac",
-      "indexedAt": "2026-02-19T20:21:24.113Z"
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
     },
     "src/git/space-git-service.ts": {
       "purpose": "Worktree/branch lifecycle and changes snapshots",
@@ -177,8 +179,8 @@
       },
       "type": "service",
       "layer": "shared",
-      "lastIndexed": "e08fdac",
-      "indexedAt": "2026-02-19T20:21:24.113Z"
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
     },
     "packages/task-parser/src/task-block-parser.js": {
       "purpose": "Parse task blocks from markdown",
@@ -267,8 +269,8 @@
       },
       "type": "test",
       "layer": "shared",
-      "lastIndexed": "e08fdac",
-      "indexedAt": "2026-02-19T20:21:24.113Z"
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
     },
     "src/shared/orchestrator-run-view-model.ts": {
       "exports": [
@@ -371,8 +373,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "9ca1077",
-      "indexedAt": "2026-02-19T16:12:40.080Z"
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
     },
     "bin/playwright-electron-smoke.mjs": {
       "exports": [],
@@ -637,8 +639,8 @@
       },
       "type": "util",
       "layer": "shared",
-      "lastIndexed": "e08fdac",
-      "indexedAt": "2026-02-19T20:21:24.113Z"
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
     },
     "src/main/provider-runtime/registry.node.test.ts": {
       "exports": [],
@@ -691,8 +693,8 @@
       },
       "type": "test",
       "layer": "shared",
-      "lastIndexed": "e08fdac",
-      "indexedAt": "2026-02-19T20:21:24.113Z"
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
     },
     "src/main/provider-runtime/types.ts": {
       "exports": [
@@ -724,27 +726,335 @@
       "layer": "shared",
       "lastIndexed": "e08fdac",
       "indexedAt": "2026-02-19T20:21:24.113Z"
+    },
+    "src/features/coordinator-shell/chat-thread.tsx": {
+      "exports": [
+        "CoordinatorChatThread"
+      ],
+      "imports": {
+        "packages": [
+          "react"
+        ],
+        "local": [
+          "./types.js"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/features/coordinator-shell/components.test.tsx": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "@testing-library/react",
+          "@testing-library/user-event",
+          "vitest"
+        ],
+        "local": [
+          "./chat-thread.js",
+          "./left-sidebar.js",
+          "./workflow-panel.js"
+        ]
+      },
+      "type": "test",
+      "layer": "ui",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/features/coordinator-shell/index.ts": {
+      "exports": [
+        "CoordinatorChatThread",
+        "CoordinatorLeftSidebar",
+        "CoordinatorMessageInputBar",
+        "CoordinatorWorkflowPanel",
+        "coordinatorShellUiStateReducer",
+        "createInitialCoordinatorShellUiState",
+        "isSidebarSectionCollapsed",
+        "projectCoordinatorShellViewModel"
+      ],
+      "imports": {
+        "packages": [],
+        "local": []
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/features/coordinator-shell/left-sidebar.tsx": {
+      "exports": [
+        "CoordinatorLeftSidebar"
+      ],
+      "imports": {
+        "packages": [
+          "react"
+        ],
+        "local": [
+          "./types.js"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/features/coordinator-shell/message-input-bar.tsx": {
+      "exports": [
+        "CoordinatorMessageInputBar"
+      ],
+      "imports": {
+        "packages": [
+          "react"
+        ],
+        "local": []
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/features/coordinator-shell/types.ts": {
+      "exports": [
+        "CoordinatorCenterTab",
+        "CoordinatorChatEntry",
+        "CoordinatorChatStatus",
+        "CoordinatorContextChip",
+        "CoordinatorShellStatusTone",
+        "CoordinatorShellUiAction",
+        "CoordinatorShellUiState",
+        "CoordinatorShellViewModel",
+        "CoordinatorSidebarAgent",
+        "CoordinatorSidebarContextItem",
+        "CoordinatorSidebarSectionId",
+        "CoordinatorWorkflowStep",
+        "CoordinatorWorkflowStepId",
+        "CoordinatorWorkflowStepStatus",
+        "ProjectCoordinatorShellViewModelInput",
+        "toStatusToneFromRunStatus",
+        "toStatusToneFromTaskStatus"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "../../shared/orchestrator-run-view-model.js",
+          "../../shared/state.js"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/features/coordinator-shell/ui-state.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "vitest"
+        ],
+        "local": [
+          "./ui-state.js"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/features/coordinator-shell/ui-state.ts": {
+      "exports": [
+        "coordinatorShellUiStateReducer",
+        "createInitialCoordinatorShellUiState",
+        "getSidebarSections",
+        "isSidebarSectionCollapsed"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "./types.js"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/features/coordinator-shell/view-model.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "vitest"
+        ],
+        "local": [
+          "../../shared/orchestrator-run-view-model.js",
+          "../../shared/state.js",
+          "./view-model.js"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/features/coordinator-shell/view-model.ts": {
+      "exports": [
+        "projectCoordinatorShellViewModel"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "../../shared/orchestrator-run-view-model.js",
+          "./types.js"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/features/coordinator-shell/workflow-panel.tsx": {
+      "exports": [
+        "CoordinatorWorkflowPanel"
+      ],
+      "imports": {
+        "packages": [
+          "react"
+        ],
+        "local": [
+          "./types.js"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/main/provider-runtime/errors.node.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "vitest"
+        ],
+        "local": [
+          "./errors.js"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/main/provider-runtime/errors.ts": {
+      "exports": [
+        "ProviderRuntimeError",
+        "createAuthResolutionError",
+        "createProviderRuntimeError",
+        "mapProviderRuntimeError",
+        "serializeProviderRuntimeError"
+      ],
+      "imports": {
+        "packages": [],
+        "local": [
+          "./types.js"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/preload/index.cts": {
+      "exports": [
+        "PRELOAD_IPC_CHANNELS"
+      ],
+      "imports": {
+        "packages": [
+          "electron"
+        ],
+        "local": [
+          "../context/types.js",
+          "../git/types.js",
+          "../shared/shell-api.js",
+          "../shared/state.js"
+        ]
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/preload/index.test.ts": {
+      "exports": [
+        "PRELOAD_IPC_CHANNELS"
+      ],
+      "imports": {
+        "packages": [
+          "node:fs",
+          "node:path",
+          "node:url",
+          "vitest"
+        ],
+        "local": [
+          "../shared/shell-api.js"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/shared/provider-ipc.test.ts": {
+      "exports": [],
+      "imports": {
+        "packages": [
+          "vitest"
+        ],
+        "local": [
+          "./provider-ipc.js"
+        ]
+      },
+      "type": "test",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
+    },
+    "src/shared/provider-ipc.ts": {
+      "exports": [
+        "ProviderIpcErrorPayload",
+        "parseProviderIpcError"
+      ],
+      "imports": {
+        "packages": [],
+        "local": []
+      },
+      "type": "util",
+      "layer": "shared",
+      "lastIndexed": "9577f74",
+      "indexedAt": "2026-02-19T22:12:01.342Z"
     }
   },
   "stats": {
-    "totalFiles": 39,
+    "totalFiles": 56,
     "byType": {
-      "util": 24,
+      "util": 35,
       "undefined": 3,
       "service": 1,
-      "test": 10,
+      "test": 16,
       "config": 1
     },
     "byLayer": {
-      "shared": 36,
+      "shared": 52,
       "domain": 2,
-      "package": 1
+      "package": 1,
+      "ui": 1
     },
     "byExtension": {
-      ".ts": 29,
-      ".tsx": 1,
+      ".ts": 40,
+      ".tsx": 6,
       ".js": 1,
-      ".mjs": 8
+      ".mjs": 8,
+      ".cts": 1
     }
   }
 }
