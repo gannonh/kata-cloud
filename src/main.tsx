@@ -365,6 +365,7 @@ function App(): React.JSX.Element {
   const [createdPullRequest, setCreatedPullRequest] = useState<SpaceGitCreatePullRequestResult | null>(null);
   const [pullRequestStatusMessage, setPullRequestStatusMessage] = useState<string | null>(null);
   const [coordinatorStatusMessage, setCoordinatorStatusMessage] = useState<string | null>(null);
+  const [specNoteContent, setSpecNoteContent] = useState(() => loadSpecNote(window.localStorage).content);
   const changesSnapshotRequestIdRef = useRef(0);
   const [browserNavigation, setBrowserNavigation] = useState(() => createInitialBrowserNavigationState());
   const [browserInput, setBrowserInput] = useState(DEFAULT_LOCAL_PREVIEW_URL);
@@ -587,8 +588,11 @@ function App(): React.JSX.Element {
     [latestRunViewModel?.contextProvenance]
   );
   const latestDraftForActiveSession = latestRunForActiveSession?.draft;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- state.lastOpenedAt used as cache-buster to re-read spec from localStorage after persist
-  const specNoteSnapshot = useMemo(() => loadSpecNote(window.localStorage), [state.lastOpenedAt]);
+
+  useEffect(() => {
+    setSpecNoteContent(loadSpecNote(window.localStorage).content);
+  }, [state.lastOpenedAt]);
+
   const coordinatorShellViewModel = useMemo(
     () =>
       projectCoordinatorShellViewModel({
@@ -597,7 +601,7 @@ function App(): React.JSX.Element {
         latestRunRecord: latestRunForActiveSession,
         latestRunViewModel: latestRunViewModel ?? undefined,
         priorRunHistoryViewModels,
-        specContent: specNoteSnapshot.content
+        specContent: specNoteContent
       }),
     [
       activeSession,
@@ -605,7 +609,7 @@ function App(): React.JSX.Element {
       latestRunForActiveSession,
       latestRunViewModel,
       priorRunHistoryViewModels,
-      specNoteSnapshot.content
+      specNoteContent
     ]
   );
   const coordinatorModelLabel = useMemo(
@@ -1634,6 +1638,7 @@ function App(): React.JSX.Element {
                     storage={window.localStorage}
                     draftArtifact={latestDraftForActiveSession}
                     onApplyDraftResult={onSpecDraftApplied}
+                    onContentChange={setSpecNoteContent}
                   />
                 </div>
               )}
@@ -2514,6 +2519,7 @@ function App(): React.JSX.Element {
                 storage={window.localStorage}
                 draftArtifact={latestDraftForActiveSession}
                 onApplyDraftResult={onSpecDraftApplied}
+                onContentChange={setSpecNoteContent}
               />
             )}
           </div>

@@ -131,6 +131,25 @@ describe("projectCoordinatorShellViewModel", () => {
     expect(projection.sidebarAgents[0]?.status).toBe("error");
   });
 
+  it("uses createdAt for the prompt entry timestamp and updatedAt for status entry timestamp", () => {
+    const projection = projectCoordinatorShellViewModel({
+      latestRunRecord: createRunRecord({
+        createdAt: "2026-02-19T12:00:00.000Z",
+        updatedAt: "2026-02-19T12:09:00.000Z"
+      }),
+      latestRunViewModel: createRunViewModel({
+        status: "completed",
+        statusLabel: "Completed",
+        lifecycleText: "queued -> running -> completed"
+      }),
+      priorRunHistoryViewModels: [],
+      specContent: "## Goal\nShip coordinator shell",
+      now: new Date("2026-02-19T12:10:00.000Z")
+    });
+
+    expect(projection.latestEntries[0]?.timestampLabel).not.toBe(projection.latestEntries[1]?.timestampLabel);
+  });
+
   it("derives workflow state from run completion and spec readiness", () => {
     const projection = projectCoordinatorShellViewModel({
       latestRunRecord: createRunRecord({

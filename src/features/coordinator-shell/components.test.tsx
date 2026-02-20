@@ -51,6 +51,25 @@ describe("coordinator-shell components", () => {
     expect(onAddContext).toHaveBeenCalledTimes(1);
   });
 
+  it("renders sidebar mode buttons as disabled placeholders", () => {
+    render(
+      <CoordinatorLeftSidebar
+        title="Kata Cloud"
+        subtitle="Session 1"
+        agents={[]}
+        contextItems={[]}
+        collapsedSections={{ agents: false, context: false }}
+        onToggleSection={() => {}}
+        onCreateAgent={() => {}}
+        onAddContext={() => {}}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Agents" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Context" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Tasks" })).toBeDisabled();
+  });
+
   it("renders chat entries with author/timestamp metadata and history heading", () => {
     render(
       <CoordinatorChatThread

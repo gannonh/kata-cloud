@@ -799,12 +799,15 @@ async function assertCoordinatorShellSemantics(page) {
     );
   }
 
-  const shellPrompt =
-    "Phase 10 coordinator shell UAT prompt for chat-first rendering and workflow visibility.";
-  const completedRun = await runOrchestratorPrompt(page, shellPrompt, "completed");
+  const firstShellPrompt = "Phase 10 coordinator shell UAT prompt (first run) for history seeding.";
+  const firstCompletedRun = await runOrchestratorPrompt(page, firstShellPrompt, "completed");
+  const secondShellPrompt =
+    "Phase 10 coordinator shell UAT prompt (second run) for chat-first rendering and workflow visibility.";
+  const secondCompletedRun = await runOrchestratorPrompt(page, secondShellPrompt, "completed");
 
-  await assertBodyIncludes(page, `Run ${completedRun.id} is Completed.`, "chat-thread run status");
+  await assertBodyIncludes(page, `Run ${secondCompletedRun.id} is Completed.`, "chat-thread run status");
   await assertBodyIncludes(page, "Run History", "chat-thread historical run section");
+  await assertBodyIncludes(page, `Run ${firstCompletedRun.id} is Completed.`, "chat-thread history entry");
 }
 
 function includesScenario(suite, tags) {

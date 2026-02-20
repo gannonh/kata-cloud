@@ -67,13 +67,13 @@ export function CoordinatorLeftSidebar(props: LeftSidebarProps): React.JSX.Eleme
       </header>
 
       <div className="coordinator-sidebar__icon-row" aria-label="Sidebar modes">
-        <button type="button" className="coordinator-sidebar__icon-button">
+        <button type="button" className="coordinator-sidebar__icon-button" disabled>
           Agents
         </button>
-        <button type="button" className="coordinator-sidebar__icon-button">
+        <button type="button" className="coordinator-sidebar__icon-button" disabled>
           Context
         </button>
-        <button type="button" className="coordinator-sidebar__icon-button">
+        <button type="button" className="coordinator-sidebar__icon-button" disabled>
           Tasks
         </button>
       </div>

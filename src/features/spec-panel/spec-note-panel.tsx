@@ -10,6 +10,7 @@ type SpecNotePanelProps = {
   makeId?: () => string;
   draftArtifact?: OrchestratorSpecDraft;
   onApplyDraftResult?: (runId: string, status: "applied" | "failed", message?: string) => void;
+  onContentChange?: (content: string) => void;
 };
 
 type ReplyDraft = {
@@ -28,7 +29,8 @@ export function SpecNotePanel({
   now,
   makeId,
   draftArtifact,
-  onApplyDraftResult
+  onApplyDraftResult,
+  onContentChange
 }: SpecNotePanelProps) {
   const [note, setNote] = useState<SpecNoteDocument>(() => loadSpecNote(storage));
   const [autosaveStatus, setAutosaveStatus] = useState("Saved");
@@ -64,6 +66,10 @@ export function SpecNotePanel({
       saveSpecNote(storage, noteRef.current);
     };
   }, [storage]);
+
+  useEffect(() => {
+    onContentChange?.(note.content);
+  }, [note.content, onContentChange]);
 
   useEffect(() => {
     setDraftApplyStatus(null);

@@ -45,6 +45,7 @@ function toLatestEntries(
     return [];
   }
 
+  const createdAt = new Date(latestRunRecord.createdAt);
   const updatedAt = new Date(latestRunRecord.updatedAt);
   const promptLineCount = toMessageLineCount(latestRunRecord.prompt);
   const contextChips =
@@ -80,7 +81,7 @@ function toLatestEntries(
       id: `${latestRunRecord.id}-prompt`,
       role: "user",
       authorLabel: input.activeSession?.label ?? "You",
-      timestampLabel: toTimestampLabel(updatedAt, now),
+      timestampLabel: toTimestampLabel(createdAt, now),
       content: latestRunRecord.prompt,
       contextChips: [],
       pastedLineCount: promptLineCount >= 8 ? promptLineCount : undefined
