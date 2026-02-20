@@ -25,12 +25,14 @@ Current focus is executing v0.2.0 Desktop MVP Closure after shipping orchestrato
 
 **Status:** Complete — 2026-02-19
 **Depends on:** Phase 09
-**Plans:** 3/3 complete
+**Plans:** 5/5 complete
 
 Plans:
 - [x] 10-01-PLAN.md — Coordinator shell projection and transient UI state contracts
 - [x] 10-02-PLAN.md — Sidebar/chat/workflow component primitives with accessibility semantics
 - [x] 10-03-PLAN.md — App integration, three-column wiring, and UAT coverage
+- [x] 10-GAP1-PLAN.md — Gap closure: center/right column responsibility separation
+- [x] 10-GAP2-PLAN.md — Gap closure: coordinator naming normalization
 
 ### Phase 11: Agent Deployment, Waves, and Tab Expansion
 
@@ -81,11 +83,11 @@ No additional milestones planned yet. Next milestone definition starts after v0.
 | 7. Resume Integrity and Context Consistency | v0.1.0 | 2/2 | Complete | 2026-02-19 |
 | 8. Verification Sweep and Guardrail Codification | v0.1.0 | 3/3 | Complete | 2026-02-19 |
 | 9. Runtime Integration and ESM Consolidation | v0.2.0 | 3/3 | Complete | 2026-02-19 |
-| 10. Coordinator Shell and Sidebar Semantics | v0.2.0 | 3/3 | Complete | 2026-02-19 |
+| 10. Coordinator Shell and Sidebar Semantics | v0.2.0 | 5/5 | Complete | 2026-02-19 |
 | 11. Agent Deployment, Waves, and Tab Expansion | v0.2.0 | 0/TBD | Pending | — |
 | 12. Completion Workflow and Safety UX | v0.2.0 | 0/TBD | Pending | — |
 | 13. MVP Verification and Release Handoff | v0.2.0 | 0/TBD | Pending | — |
 
 ---
 *Roadmap created: 2026-02-18*
-*Last updated: 2026-02-19 — Phase 10 completed (plans 10-01, 10-02, 10-03)*
+*Last updated: 2026-02-19 — Phase 10 gap closures completed (plans 10-GAP1, 10-GAP2)*

@@ -3,9 +3,9 @@
 ## Current Position
 
 Phase: 10 (Coordinator Shell and Sidebar Semantics) — completed
-Plan: 10-01, 10-02, 10-03 completed (summaries + verification recorded)
+Plan: 10-01, 10-02, 10-03, 10-GAP1, 10-GAP2 completed (summaries + verification recorded)
 Status: Ready for Phase 11 discussion/planning (`/kata-discuss-phase 11` or `/kata-plan-phase 11`)
-Last activity: 2026-02-19 — Phase 10 execution completed and moved to completed/
+Last activity: 2026-02-19 — Phase 10 gap closures executed and summarized (GAP1, GAP2)
 
 ## Milestone Progress
 
@@ -40,7 +40,7 @@ No blocking scope issues yet. Primary integration risks tracked in requirements:
 - PI packages (`pi-mono`) are ESM-first and viable for selective integration; adoption strategy is to gate by adapter/feature flag.
 - Provider runtime supports explicit `native|pi` mode gating with PI path integration via `@mariozechner/pi-ai`.
 - Preload runtime path is consolidated to ESM-aligned output (`dist/preload/index.js`) and CJS side-build removed from desktop pipeline.
-- Phase 10 artifacts live at `.planning/phases/completed/10-coordinator-shell-and-sidebar-semantics/` (3 summaries + verification).
+- Phase 10 artifacts live at `.planning/phases/completed/10-coordinator-shell-and-sidebar-semantics/` (5 summaries + verification).
 
 ---
-Last updated: 2026-02-19 after Phase 10 completion
+Last updated: 2026-02-19 after Phase 10 gap closure execution
