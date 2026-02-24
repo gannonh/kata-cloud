@@ -50,7 +50,7 @@
     "eslint-plugin-react-refresh": "^0.5.0",
     "globals": "^17.3.0",
     "jsdom": "^28.1.0",
-    "mint": "^4.2.363",
+    "mint": "^4.2.377",
     "playwright-core": "^1.58.2",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
